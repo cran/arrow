@@ -1,5 +1,5 @@
-7f2fef16cefc881a3c46b1ecddcb8921 *DESCRIPTION
-a896619bcc9aee01be33495419faf8e8 *NAMESPACE
+286c02a9521df91617f3b035eece2bbd *DESCRIPTION
+9858ed6a3bd0fcd90df6ea9eda3ad70f *NAMESPACE
 3c27402f52b6d8fe83c9484bb5163a09 *NEWS.md
 36ba5adf33a3a4f393182f404c8298e7 *R/ArrayData.R
 d47266b77b24f96d5eef28eb2a2750ae *R/ChunkedArray.R
@@ -23,7 +23,7 @@ a8d6667083746cf63ad009f626c1f71e *R/csv.R
 de1a9c020f570dd1b2449d4524585957 *R/dictionary.R
 3a5214e6c03eda1f17824c93459c7b2a *R/enums.R
 0011ca4d288eb1fa02c46b7616ab4161 *R/feather.R
-2232e253aac45095ef40ae10e7d5d05d *R/install-arrow.R
+c2d963cc05e4ecdae2f617355b53fc64 *R/install-arrow.R
 6fa2ed4dae7349f82df7ba9bd3c80776 *R/io.R
 62845607b80aa230b93a43facc904b4f *R/json.R
 5f1e6c421541ac0250f04d2d5478cc6e *R/memory_pool.R
@@ -34,10 +34,10 @@ bd4632f09343d5af46fb029bb921ad1e *R/read_table.R
 2af10de839a9256e3f1be6af8141a23c *R/reexports-bit64.R
 fcb5e1c5ef52c212a107d8fa21d2a78f *R/reexports-tidyselect.R
 cfb8c6c77999f73ee911469a4f6292d0 *R/write_arrow.R
-38027921f839a4ace0982c1324d7a4f7 *README.md
+386b1d29e050ce696e8c8267d697a7a9 *README.md
 b42138af7af04ffb1c62af0bbca3e73c *cleanup
-61008210bb5b7072cfdb0b1004d415a1 *configure
-8e6eaaae055822d389ffdc9ca3627480 *configure.win
+ca144a1bf7b552d1146671a8480db86a *configure
+ade9351d2f29ecdef79660b0ef78143a *configure.win
 56b91f89083404add6d82d9e2618b386 *inst/NOTICE.txt
 198ecbee77c8d179546b9bd407bda83e *inst/v0.7.1.parquet
 d2638c0cc193c66486cc2827c527979a *man/BufferOutputStream.Rd
@@ -154,7 +154,7 @@ c6852b907242bcc88b51605c746d0c5d *src/schema.cpp
 c3db632938681a33b038457f7404d4a7 *src/table.cpp
 dfadd79a81e48a5d37e66e88022a5c6a *src/threadpool.cpp
 84ae9f56551aaf9b526e21d0c0f64e8e *tests/testthat.R
-8512dd7ceeefe9c36d6c370ba3fe0266 *tests/testthat/helper-arrow.R
+cea5e742c1ca738fbdd12284db1e0dff *tests/testthat/helper-arrow.R
 d31b5a502b09fa92e126110cf882c3b5 *tests/testthat/test-Array.R
 4c631fb796e24ecc6ab597f4dbf03277 *tests/testthat/test-DataType.R
 1f4bebbc2990fef9206fd11756103c72 *tests/testthat/test-RecordBatch.R
@@ -169,7 +169,7 @@ de142951a2f5656e6d34dbb9df499768 *tests/testthat/test-compressed.R
 2b46f57292f84b85f1b2f7885befdd7b *tests/testthat/test-cputhreadpoolcapacity.R
 c02d14f1474e7e15adb01f6adfe56df3 *tests/testthat/test-feather.R
 388e758e7d2e4c104b0b643efa8e940a *tests/testthat/test-field.R
-856ed0ccd2f471105e51a872364cf60d *tests/testthat/test-install-arrow.R
+c71874cff19744208e1a01016cd486a1 *tests/testthat/test-install-arrow.R
 cbd8c51326f3fa5403d4f294b46f2c7e *tests/testthat/test-json.R
 1fe8f90c32fcdf3491db49e8089cafca *tests/testthat/test-message.R
 07c5a09e3d4e1952ac5ff6ecf534fd71 *tests/testthat/test-messagereader.R
@@ -179,4 +179,4 @@ cbd8c51326f3fa5403d4f294b46f2c7e *tests/testthat/test-json.R
 6c5aa37812ff79919820deefbf6b021b *tests/testthat/test-recordbatchreader.R
 43c1f261a5f7051485a1714b3e68b92c *tests/testthat/test-schema.R
 8e553d7410b0273e76f7dcdd1f067d46 *tests/testthat/test-type.R
-2f9e6406a351c9911cd42d93b79fcce5 *tools/winlibs.R
+9e629b9946a8aacf03577e732904ab46 *tools/winlibs.R
