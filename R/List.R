@@ -15,16 +15,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#' @include R6.R
+#' @include type.R
 
-`arrow::ListType` <- R6Class("arrow::ListType",
-  inherit = `arrow::NestedType`,
+ListType <- R6Class("ListType",
+  inherit = NestedType,
   active = list(
-    value_field = function() shared_ptr(`arrow::Field`, ListType__value_field(self)),
-    value_type = function() `arrow::DataType`$dispatch(ListType__value_type(self))
+    value_field = function() shared_ptr(Field, ListType__value_field(self)),
+    value_type = function() DataType$create(ListType__value_type(self))
   )
 )
 
-#' @rdname DataType
+#' @rdname data-type
 #' @export
-list_of <- function(type) shared_ptr(`arrow::ListType`, list__(type))
+list_of <- function(type) shared_ptr(ListType, list__(type))

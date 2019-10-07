@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 0.14.1.1
+Version: 0.15.0
 Authors@R: c(
     person("Romain", "Fran\u00e7ois", email = "romain@rstudio.com", role = c("aut"), comment = c(ORCID = "0000-0002-2444-4226")),
     person("Jeroen", "Ooms", email = "jeroen@berkeley.edu", role = c("aut")),
@@ -16,7 +16,7 @@ Description: 'Apache' 'Arrow' <https://arrow.apache.org/> is a cross-language
     package provides an interface to the 'Arrow C++' library.
 Depends: R (>= 3.1)
 License: Apache License (>= 2.0)
-URL: https://github.com/apache/arrow/
+URL: https://github.com/apache/arrow/, https://arrow.apache.org/docs/r
 BugReports: https://issues.apache.org/jira/projects/ARROW/issues
 Encoding: UTF-8
 Language: en-US
@@ -24,21 +24,22 @@ LazyData: true
 SystemRequirements: C++11
 Biarch: true
 LinkingTo: Rcpp (>= 1.0.1)
-Imports: assertthat, bit64, fs, purrr, R6, Rcpp (>= 1.0.1), rlang,
+Imports: assertthat, bit64, methods, purrr, R6, Rcpp (>= 1.0.1), rlang,
         tidyselect, utils
 RoxygenNote: 6.1.1
-Suggests: covr, hms, lubridate, pkgdown, rmarkdown, roxygen2, testthat,
-        tibble, vctrs
-Collate: 'enums.R' 'R6.R' 'ArrayData.R' 'ChunkedArray.R' 'Column.R'
-        'Field.R' 'List.R' 'RecordBatch.R' 'RecordBatchReader.R'
-        'RecordBatchWriter.R' 'Schema.R' 'Struct.R' 'Table.R' 'array.R'
-        'arrow-package.R' 'arrowExports.R' 'buffer.R' 'io.R'
+VignetteBuilder: knitr
+Suggests: covr, fs, hms, knitr, lubridate, rmarkdown, testthat, tibble,
+        vctrs
+Collate: 'enums.R' 'arrow-package.R' 'type.R' 'array-data.R' 'array.R'
+        'arrowExports.R' 'buffer.R' 'chunked-array.R' 'io.R'
         'compression.R' 'compute.R' 'csv.R' 'dictionary.R' 'feather.R'
-        'install-arrow.R' 'json.R' 'memory_pool.R' 'message.R'
-        'parquet.R' 'read_record_batch.R' 'read_table.R'
-        'reexports-bit64.R' 'reexports-tidyselect.R' 'write_arrow.R'
+        'field.R' 'filesystem.R' 'install-arrow.R' 'json.R' 'list.R'
+        'memory-pool.R' 'message.R' 'parquet.R' 'read-record-batch.R'
+        'read-table.R' 'record-batch-reader.R' 'record-batch-writer.R'
+        'record-batch.R' 'reexports-bit64.R' 'reexports-tidyselect.R'
+        'schema.R' 'struct.R' 'table.R' 'util.R' 'write-arrow.R'
 NeedsCompilation: yes
-Packaged: 2019-08-08 20:20:55 UTC; enpiar
+Packaged: 2019-10-07 17:13:28 UTC; enpiar
 Author: Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Jeroen Ooms [aut],
   Neal Richardson [aut, cre],
@@ -47,4 +48,4 @@ Author: Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2019-08-08 22:40:08 UTC
+Date/Publication: 2019-10-07 19:00:02 UTC

@@ -15,19 +15,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#' @include R6.R
+#' @include type.R
 
-`arrow::StructType` <- R6Class("arrow::StructType",
-  inherit = `arrow::NestedType`,
+StructType <- R6Class("StructType",
+  inherit = NestedType,
   public = list(
-    GetFieldByName = function(name) shared_ptr(`arrow::Field`, StructType__GetFieldByName(self, name)),
+    GetFieldByName = function(name) shared_ptr(Field, StructType__GetFieldByName(self, name)),
     GetFieldIndex = function(name) StructType__GetFieldIndex(self, name)
   )
 )
 
-#' @rdname DataType
+#' @rdname data-type
 #' @export
 struct <- function(...){
   xp <- struct_(.fields(list(...)))
-  shared_ptr(`arrow::StructType`, xp)
+  shared_ptr(StructType, xp)
 }
