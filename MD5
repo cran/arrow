@@ -1,6 +1,6 @@
-3bd40d2edac7c81c5f9a227361fedc22 *DESCRIPTION
+c05ddfbfe5019fbe8720ac1af9f482ef *DESCRIPTION
 3cf3c41248147dfc4bf185bf552e5ad1 *NAMESPACE
-cf45ee2a386a5ed3e80becde0f8ac82a *NEWS.md
+168260b94864a530bd795be388e95976 *NEWS.md
 e8cc5a4d3c252810b18a94a9694c8ae4 *R/array-data.R
 4b971fd9acc81b71ed4e8d7597f577ce *R/array.R
 a9aa837880ee181514a70d4061d471d3 *R/arrow-package.R
@@ -38,7 +38,7 @@ ad2be90b8ccc041fa4f4f9ca0cd7b8a6 *R/write-arrow.R
 3463960d38b33b6e4e186b833c9ca162 *README.md
 722de0b5c8d5382e84d103815a146ee4 *build/vignette.rds
 b42138af7af04ffb1c62af0bbca3e73c *cleanup
-58968ebee03b77c29f73a1d24b60ed76 *configure
+05d59f58233b5838e215649bdf37b7cd *configure
 ade9351d2f29ecdef79660b0ef78143a *configure.win
 56b91f89083404add6d82d9e2618b386 *inst/NOTICE.txt
 cf99b09707e7787b9ea4b5744516bb83 *inst/doc/arrow.Rmd

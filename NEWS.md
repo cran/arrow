@@ -17,6 +17,10 @@
   under the License.
 -->
 
+# arrow 0.15.1
+
+* This patch release includes bugfixes in the C++ library around dictionary types and Parquet reading.
+
 # arrow 0.15.0
 
 ## Breaking changes
