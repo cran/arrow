@@ -4,10 +4,15 @@
 \name{array}
 \alias{array}
 \alias{Array}
-\title{Array class}
+\alias{DictionaryArray}
+\alias{StructArray}
+\alias{ListArray}
+\title{Arrow Arrays}
 \description{
-Array base type. Immutable data array with some logical type
-and some length.
+An \code{Array} is an immutable data array with some logical type
+and some length. Most logical types are contained in the base
+\code{Array} class; there are also subclasses for \code{DictionaryArray}, \code{ListArray},
+and \code{StructArray}.
 }
 \section{Factory}{
 
@@ -17,6 +22,17 @@ takes the following arguments:
 \item \code{x}: an R vector, list, or \code{data.frame}
 \item \code{type}: an optional \link[=data-type]{data type} for \code{x}. If omitted, the type
 will be inferred from the data.
+}
+
+\code{Array$create()} will return the appropriate subclass of \code{Array}, such as
+\code{DictionaryArray} when given an R factor.
+
+To compose a \code{DictionaryArray} directly, call \code{DictionaryArray$create()},
+which takes two arguments:
+\itemize{
+\item \code{x}: an R vector or \code{Array} of integers for the dictionary indices
+\item \code{dict}: an R vector or \code{Array} of dictionary values (like R factor levels
+but not limited to strings only)
 }
 }
 
@@ -32,24 +48,31 @@ a == a
 \section{Methods}{
 
 \itemize{
-\item \code{$IsNull(i)}: Return true if value at index is null. Does not boundscheck
-\item \code{$IsValid(i)}: Return true if value at index is valid. Does not boundscheck
-\item \code{$length()}: Size in the number of elements this array contains
-\item \code{$offset()}: A relative position into another array's data, to enable zero-copy slicing
-\item \code{$null_count()}: The number of null entries in the array
-\item \code{$type()}: logical type of data
-\item \code{$type_id()}: type id
-\item \code{$Equals(other)} : is this array equal to \code{other}
-\item \code{$ApproxEquals(other)} :
-\item \code{$data()}: return the underlying \link{ArrayData}
-\item \code{$as_vector()}: convert to an R vector
-\item \code{$ToString()}: string representation of the array
-\item \code{$Slice(offset, length = NULL)} : Construct a zero-copy slice of the array with the indicated offset and length. If length is \code{NULL}, the slice goes until the end of the array.
-\item \code{$RangeEquals(other, start_idx, end_idx, other_start_idx)} :
-\item \code{$View(type)}: Construct a zero-copy view of this array with the given type.
-\item \code{$Validate()} : Perform any validation checks to determine obvious inconsistencies
+\item \verb{$IsNull(i)}: Return true if value at index is null. Does not boundscheck
+\item \verb{$IsValid(i)}: Return true if value at index is valid. Does not boundscheck
+\item \verb{$length()}: Size in the number of elements this array contains
+\item \verb{$offset()}: A relative position into another array's data, to enable zero-copy slicing
+\item \verb{$null_count()}: The number of null entries in the array
+\item \verb{$type()}: logical type of data
+\item \verb{$type_id()}: type id
+\item \verb{$Equals(other)} : is this array equal to \code{other}
+\item \verb{$ApproxEquals(other)} :
+\item \verb{$data()}: return the underlying \link{ArrayData}
+\item \verb{$as_vector()}: convert to an R vector
+\item \verb{$ToString()}: string representation of the array
+\item \verb{$Slice(offset, length = NULL)}: Construct a zero-copy slice of the array
+with the indicated offset and length. If length is \code{NULL}, the slice goes
+until the end of the array.
+\item \verb{$Take(i)}: return an \code{Array} with values at positions given by integers
+(R vector or Array Array) \code{i}.
+\item \verb{$Filter(i)}: return an \code{Array} with values at positions where logical
+vector (or Arrow boolean Array) \code{i} is \code{TRUE}.
+\item \verb{$RangeEquals(other, start_idx, end_idx, other_start_idx)} :
+\item \verb{$cast(target_type, safe = TRUE, options = cast_options(safe))}: Alter the
+data in the array to change its type.
+\item \verb{$View(type)}: Construct a zero-copy view of this array with the given type.
+\item \verb{$Validate()} : Perform any validation checks to determine obvious inconsistencies
 within the array's internal data. This can be an expensive check, potentially \code{O(length)}
 }
 }
 
-\keyword{datasets}

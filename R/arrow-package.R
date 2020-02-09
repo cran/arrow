@@ -16,14 +16,31 @@
 # under the License.
 
 #' @importFrom R6 R6Class
-#' @importFrom purrr map map_int map2
+#' @importFrom purrr map map_int map_lgl map_chr map2
 #' @importFrom assertthat assert_that
-#' @importFrom rlang list2 %||% is_false abort dots_n warn enquo quo_is_null enquos is_integerish
+#' @importFrom rlang list2 %||% is_false abort dots_n warn enquo quo_is_null enquos is_integerish quos eval_tidy new_data_mask syms env env_bind as_label set_names
 #' @importFrom Rcpp sourceCpp
 #' @importFrom tidyselect vars_select
 #' @useDynLib arrow, .registration = TRUE
 #' @keywords internal
 "_PACKAGE"
+
+#' @importFrom vctrs s3_register vec_size
+.onLoad <- function(...) {
+  dplyr_methods <- paste0(
+    "dplyr::",
+    c(
+      "select", "filter", "collect", "summarise", "group_by", "groups",
+      "group_vars", "ungroup", "mutate", "arrange", "rename", "pull"
+    )
+  )
+  for (cl in c("Dataset", "RecordBatch", "Table", "arrow_dplyr_query")) {
+    for (m in dplyr_methods) {
+      s3_register(m, cl)
+    }
+  }
+  invisible()
+}
 
 #' Is the C++ Arrow library available?
 #'
@@ -50,7 +67,14 @@ Object <- R6Class("Object",
 
     pointer = function() self$`.:xp:.`,
     `.:xp:.` = NULL,
-    set_pointer = function(xp){
+    set_pointer = function(xp) {
+      if (!inherits(xp, "externalptr")) {
+        stop(
+          class(self)[1], "$new() requires a pointer as input: ",
+          "did you mean $create() instead?",
+          call. = FALSE
+        )
+      }
       self$`.:xp:.` <- xp
     },
     print = function(...){
@@ -73,7 +97,7 @@ Object <- R6Class("Object",
 
 #' @export
 all.equal.Object <- function(target, current, ...) {
-  target == current
+  target$Equals(current)
 }
 
 shared_ptr <- function(class, xp) {

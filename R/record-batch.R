@@ -16,6 +16,7 @@
 # under the License.
 
 #' @include arrow-package.R
+#' @include array.R
 #' @title RecordBatch class
 #' @description A record batch is a collection of equal-length arrays matching
 #' a particular [Schema]. It is a table-like data structure that is semantically
@@ -58,6 +59,10 @@
 #' - `$Slice(offset, length = NULL)`: Create a zero-copy view starting at the
 #'    indicated integer offset and going for the given length, or to the end
 #'    of the table if `NULL`, the default.
+#' - `$Take(i)`: return an `RecordBatch` with rows at positions given by
+#'    integers (R vector or Array Array) `i`.
+#' - `$Filter(i)`: return an `RecordBatch` with rows at positions where logical
+#'    vector (or Arrow boolean Array) `i` is `TRUE`.
 #' - `$serialize()`: Returns a raw vector suitable for interprocess communication
 #' - `$cast(target_schema, safe = TRUE, options = cast_options(safe))`: Alter
 #'    the schema of the record batch.
@@ -109,7 +114,23 @@ RecordBatch <- R6Class("RecordBatch", inherit = Object,
         shared_ptr(RecordBatch, RecordBatch__Slice2(self, offset, length))
       }
     },
-
+    Take = function(i) {
+      if (is.numeric(i)) {
+        i <- as.integer(i)
+      }
+      if (is.integer(i)) {
+        i <- Array$create(i)
+      }
+      assert_is(i, "Array")
+      shared_ptr(RecordBatch, RecordBatch__Take(self, i))
+    },
+    Filter = function(i) {
+      if (is.logical(i)) {
+        i <- Array$create(i)
+      }
+      assert_is(i, "Array")
+      shared_ptr(RecordBatch, RecordBatch__Filter(self, i))
+    },
     serialize = function() ipc___SerializeRecordBatch__Raw(self),
     ToString = function() ToString_tabular(self),
 
@@ -166,21 +187,16 @@ names.RecordBatch <- function(x) {
 #' @importFrom methods as
 #' @export
 `[.RecordBatch` <- function(x, i, j, ..., drop = FALSE) {
-  if (!missing(i)) {
-    if (is.numeric(i) &&
-        length(i) > 0 &&
-        all(i > 0) &&
-        identical(i, as(seq(i[1], i[length(i)], 1), class(i)))) {
-      x <- x$Slice(i[1] - 1, length(i))
-    } else {
-      stop('Only row "Slicing" (taking rows a:b) currently supported', call. = FALSE)
-    }
-  }
   if (!missing(j)) {
+    # Selecting columns is cheaper than filtering rows, so do it first.
+    # That way, if we're filtering too, we have fewer arrays to filter/slice/take
     x <- x$select(j)
     if (drop && ncol(x) == 1L) {
       x <- x$column(0)
     }
+  }
+  if (!missing(i)) {
+    x <- filter_rows(x, i, ...)
   }
   x
 }

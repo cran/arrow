@@ -19,7 +19,7 @@ context("install_arrow()")
 
 i_have_arrow_msg <- "It appears you already have Arrow installed successfully: are you trying to install a different version of the library?
 
-Refer to the R package README <https://github.com/apache/arrow/blob/master/r/README.md> for further details.
+Refer to the R package README <https://github.com/apache/arrow/blob/master/r/README.md> and `vignette('install', package = 'arrow')` for further details.
 
 If you have other trouble, or if you think this message could be improved, please report an issue here: <https://issues.apache.org/jira/projects/ARROW/issues>"
 
@@ -38,12 +38,12 @@ r_only({
   test_that("Solaris and Linux dev version get pointed to C++ guide", {
     expect_match(
       install_arrow_msg(FALSE, "0.13.0", os="sunos"),
-      "See the Arrow C++ developer guide",
+      "See the Arrow developer guide",
       fixed = TRUE
     )
     expect_match(
       install_arrow_msg(FALSE, "0.13.0.9000", os="linux"),
-      "See the Arrow C++ developer guide",
+      "See the Arrow developer guide",
       fixed = TRUE
     )
   })
@@ -51,7 +51,7 @@ r_only({
   test_that("Linux on release version gets pointed to PPA first, then C++", {
     expect_match(
       install_arrow_msg(FALSE, "0.13.0", os="linux"),
-      "dependency. Or, see the Arrow C++ developer guide",
+      "dependency. Or, see the Arrow developer guide",
       fixed = TRUE
     )
   })

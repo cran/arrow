@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-<title>Reading and writing files</title>
+<title>Multi-file datasets</title>
 
 <script type="text/javascript">
 window.onload = function() {
@@ -203,9 +203,20 @@ hr {
 <body>
 <p>The Apache Arrow C++ library provides rich, powerful features for working with columnar data. The <code>arrow</code> R package provides both a low-level interface to the C++ library and some higher-level, R-flavored tools for working with it. This vignette provides an overview of how the pieces fit together, and it describes the conventions that the classes and methods follow in R.</p>
 
+<h1>Multi-file datasets</h1>
+
+<p>The <code>arrow</code> package lets you work efficiently with large, multi-file datasets
+using <code>dplyr</code> methods. See <code>vignette(&quot;dataset&quot;, package = &quot;arrow&quot;)</code> for an overview.</p>
+
 <h1>Reading and writing files</h1>
 
-<p>The <code>arrow</code> package provides some simple functions for using the Arrow C++ library to read and write files. These functions are designed to drop into your normal R workflow without requiring any knowledge of the Arrow C++ library and use naming conventions and arguments that follow popular R packages, particularly <code>readr</code>. The readers return <code>data.frame</code>s (or if you use the <code>tibble</code> package, they will act like <code>tbl_df</code>s), and the writers take <code>data.frame</code>s.</p>
+<p><code>arrow</code> provides some simple functions for using the Arrow C++ library to read and write files.
+These functions are designed to drop into your normal R workflow
+without requiring any knowledge of the Arrow C++ library
+and use naming conventions and arguments that follow popular R packages, particularly <code>readr</code>.
+The readers return <code>data.frame</code>s
+(or if you use the <code>tibble</code> package, they will act like <code>tbl_df</code>s),
+and the writers take <code>data.frame</code>s.</p>
 
 <p>Importantly, <code>arrow</code> provides basic read and write support for the <a href="https://parquet.apache.org/">Apache
 Parquet</a> columnar data file format, without having to set up a database.</p>
@@ -216,8 +227,12 @@ df &lt;- read_parquet(&quot;path/to/file.parquet&quot;)
 
 <p>This function, along with the other readers in the package, takes an optional
 <code>col_select</code> argument, inspired by the
-<a href="https://vroom.r-lib.org/reference/vroom.html"><code>vroom</code></a> package. This argument
-lets you use the <a href="https://tidyselect.r-lib.org/reference/select_helpers.html">&ldquo;tidyselect&rdquo; helper functions</a>, as you can do in <code>dplyr::select()</code>, to specify that you only want to keep certain columns. You may also provide a character vector of column names to keep, as in the &ldquo;select&rdquo; argument to <code>data.table::fread()</code>. By narrowing your selection at read time, you can load a <code>data.frame</code> with less memory overhead.</p>
+<a href="https://vroom.r-lib.org/reference/vroom.html"><code>vroom</code></a> package.
+This argument lets you use the <a href="https://tidyselect.r-lib.org/reference/select_helpers.html">&ldquo;tidyselect&rdquo; helper functions</a>,
+as you can do in <code>dplyr::select()</code>, to specify that you only want to keep certain columns.
+You may also provide a character vector of column names to keep,
+as in the &ldquo;select&rdquo; argument to <code>data.table::fread()</code>.
+By narrowing your selection at read time, you can load a <code>data.frame</code> with less memory overhead.</p>
 
 <p>For example, suppose you had written the <code>iris</code> dataset to Parquet. You could
 read a <code>data.frame</code> with only the columns <code>c(&quot;Sepal.Length&quot;, &quot;Sepal.Width&quot;)</code> by
@@ -232,21 +247,10 @@ doing</p>
 </code></pre>
 
 <p>The <code>arrow</code> package also includes a faster and more robust implementation of the
-Feather file format, providing <code>read_feather()</code> and
-<code>write_feather()</code>. <a href="https://github.com/wesm/feather">Feather</a> was one of the
-initial applications of Apache Arrow for Python and R, providing an efficient,
-common file format language-agnostic data frame storage, along with
-implementations in R and Python.</p>
-
-<p>As Arrow progressed, development of Feather moved to the
-<a href="https://github.com/apache/arrow"><code>apache/arrow</code></a> project, and for the last two
-years, the Python implementation of Feather has just been a wrapper around
-<code>pyarrow</code>. This meant that as Arrow progressed and bugs were fixed, the Python
-version of Feather got the improvements but sadly R did not.</p>
-
-<p>In the <code>arrow</code> package, the R implementation of Feather depends
-on the same underlying C++ library as the Python version does. This should
-result in more reliable and consistent behavior across the two languages, as
+<a href="https://github.com/wesm/feather">Feather</a> file format, providing <code>read_feather()</code> and
+<code>write_feather()</code>. This implementation depends
+on the same underlying C++ library as the Python version does,
+resulting in more reliable and consistent behavior across the two languages, as
 well as <a href="https://wesmckinney.com/blog/feather-arrow-future/">improved performance</a>.</p>
 
 <p>In addition to these readers and writers, the <code>arrow</code> package has wrappers for

@@ -20,6 +20,7 @@ context("Parquet file reading/writing")
 pq_file <- system.file("v0.7.1.parquet", package="arrow")
 
 test_that("reading a known Parquet file to tibble", {
+  skip_if_not_available("snappy")
   df <- read_parquet(pq_file)
   expect_true(tibble::is_tibble(df))
   expect_identical(dim(df), c(10L, 11L))
@@ -37,6 +38,7 @@ test_that("simple int column roundtrip", {
 })
 
 test_that("read_parquet() supports col_select", {
+  skip_if_not_available("snappy")
   df <- read_parquet(pq_file, col_select = c(x, y, z))
   expect_equal(names(df), c("x", "y", "z"))
 
@@ -45,12 +47,14 @@ test_that("read_parquet() supports col_select", {
 })
 
 test_that("read_parquet() with raw data", {
+  skip_if_not_available("snappy")
   test_raw <- readBin(pq_file, what = "raw", n = 5000)
   df <- read_parquet(test_raw)
   expect_identical(dim(df), c(10L, 11L))
 })
 
 test_that("write_parquet() handles various compression= specs", {
+  skip_if_not_available("snappy")
   tab <- Table$create(x1 = 1:5, x2 = 1:5, y = 1:5)
 
   expect_parquet_roundtrip(tab, compression = "snappy")
@@ -59,6 +63,7 @@ test_that("write_parquet() handles various compression= specs", {
 })
 
 test_that("write_parquet() handles various compression_level= specs", {
+  skip_if_not_available("gzip")
   tab <- Table$create(x1 = 1:5, x2 = 1:5, y = 1:5)
 
   expect_parquet_roundtrip(tab, compression = "gzip", compression_level = 4)
@@ -91,4 +96,37 @@ test_that("make_valid_version()", {
 
   expect_equal(make_valid_version(1.0), ParquetVersionType$PARQUET_1_0)
   expect_equal(make_valid_version(2.0), ParquetVersionType$PARQUET_2_0)
+})
+
+test_that("write_parquet() defaults to snappy compression", {
+  skip_if_not_available("snappy")
+  tmp1 <- tempfile()
+  tmp2 <- tempfile()
+  write_parquet(mtcars, tmp1)
+  write_parquet(mtcars, tmp2, compression = "snappy")
+  expect_equal(file.size(tmp1), file.size(tmp2))
+})
+
+test_that("Factors are preserved when writing/reading from Parquet", {
+  fct <- factor(c("a", "b"), levels = c("c", "a", "b"))
+  ord <- factor(c("a", "b"), levels = c("c", "a", "b"), ordered = TRUE)
+  chr <- c("a", "b")
+  df <- tibble::tibble(fct = fct, ord = ord, chr = chr)
+
+  pq_tmp_file <- tempfile()
+  on.exit(unlink(pq_tmp_file))
+
+  write_parquet(df, pq_tmp_file)
+  df_read <- read_parquet(pq_tmp_file)
+  expect_identical(df, df_read)
+})
+
+test_that("write_parquet() to stream", {
+  df <- tibble::tibble(x = 1:5)
+  tf <- tempfile()
+  con <- FileOutputStream$create(tf)
+  on.exit(unlink(tf))
+  write_parquet(df, con)
+  con$close()
+  expect_equal(read_parquet(tf), df)
 })

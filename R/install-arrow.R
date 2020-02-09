@@ -71,9 +71,9 @@ ALREADY_HAVE <- paste(
 )
 
 SEE_DEV_GUIDE <- paste(
-  "See the Arrow C++ developer guide",
-  "<https://arrow.apache.org/docs/developers/cpp.html>",
-  "for instructions on building the library from source."
+  "See the Arrow developer guide",
+  "<https://arrow.apache.org/docs/developers/index.html>",
+  "for instructions on building the C++ library from source."
 )
 # Variation of that
 OR_SEE_DEV_GUIDE <- paste0(
@@ -98,6 +98,7 @@ THEN_REINSTALL <- paste(
 SEE_README <- paste(
   "Refer to the R package README",
   "<https://github.com/apache/arrow/blob/master/r/README.md>",
+  "and `vignette('install', package = 'arrow')`",
   "for further details."
 )
 

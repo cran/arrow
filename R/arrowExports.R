@@ -120,6 +120,10 @@ ChunkedArray__from_list <- function(chunks, s_type){
     .Call(`_arrow_ChunkedArray__from_list` , chunks, s_type)
 }
 
+DictionaryArray__FromArrays <- function(type, indices, dict){
+    .Call(`_arrow_DictionaryArray__FromArrays` , type, indices, dict)
+}
+
 Array__as_vector <- function(array){
     .Call(`_arrow_Array__as_vector` , array)
 }
@@ -208,12 +212,12 @@ ChunkedArray__type <- function(chunked_array){
     .Call(`_arrow_ChunkedArray__type` , chunked_array)
 }
 
-ChunkArray__Slice1 <- function(chunked_array, offset){
-    .Call(`_arrow_ChunkArray__Slice1` , chunked_array, offset)
+ChunkedArray__Slice1 <- function(chunked_array, offset){
+    .Call(`_arrow_ChunkedArray__Slice1` , chunked_array, offset)
 }
 
-ChunkArray__Slice2 <- function(chunked_array, offset, length){
-    .Call(`_arrow_ChunkArray__Slice2` , chunked_array, offset, length)
+ChunkedArray__Slice2 <- function(chunked_array, offset, length){
+    .Call(`_arrow_ChunkedArray__Slice2` , chunked_array, offset, length)
 }
 
 ChunkedArray__View <- function(array, type){
@@ -234,6 +238,10 @@ util___Codec__Create <- function(codec, compression_level){
 
 util___Codec__name <- function(codec){
     .Call(`_arrow_util___Codec__name` , codec)
+}
+
+util___Codec__IsAvailable <- function(codec){
+    .Call(`_arrow_util___Codec__IsAvailable` , codec)
 }
 
 io___CompressedOutputStream__Make <- function(codec, raw){
@@ -264,6 +272,58 @@ Table__cast <- function(table, schema, options){
     .Call(`_arrow_Table__cast` , table, schema, options)
 }
 
+Array__Take <- function(values, indices){
+    .Call(`_arrow_Array__Take` , values, indices)
+}
+
+Array__TakeChunked <- function(values, indices){
+    .Call(`_arrow_Array__TakeChunked` , values, indices)
+}
+
+RecordBatch__Take <- function(batch, indices){
+    .Call(`_arrow_RecordBatch__Take` , batch, indices)
+}
+
+ChunkedArray__Take <- function(values, indices){
+    .Call(`_arrow_ChunkedArray__Take` , values, indices)
+}
+
+ChunkedArray__TakeChunked <- function(values, indices){
+    .Call(`_arrow_ChunkedArray__TakeChunked` , values, indices)
+}
+
+Table__Take <- function(table, indices){
+    .Call(`_arrow_Table__Take` , table, indices)
+}
+
+Table__TakeChunked <- function(table, indices){
+    .Call(`_arrow_Table__TakeChunked` , table, indices)
+}
+
+Array__Filter <- function(values, filter){
+    .Call(`_arrow_Array__Filter` , values, filter)
+}
+
+RecordBatch__Filter <- function(batch, filter){
+    .Call(`_arrow_RecordBatch__Filter` , batch, filter)
+}
+
+ChunkedArray__Filter <- function(values, filter){
+    .Call(`_arrow_ChunkedArray__Filter` , values, filter)
+}
+
+ChunkedArray__FilterChunked <- function(values, filter){
+    .Call(`_arrow_ChunkedArray__FilterChunked` , values, filter)
+}
+
+Table__Filter <- function(table, filter){
+    .Call(`_arrow_Table__Filter` , table, filter)
+}
+
+Table__FilterChunked <- function(table, filter){
+    .Call(`_arrow_Table__FilterChunked` , table, filter)
+}
+
 csv___ReadOptions__initialize <- function(options){
     .Call(`_arrow_csv___ReadOptions__initialize` , options)
 }
@@ -282,6 +342,110 @@ csv___TableReader__Make <- function(input, read_options, parse_options, convert_
 
 csv___TableReader__Read <- function(table_reader){
     .Call(`_arrow_csv___TableReader__Read` , table_reader)
+}
+
+dataset___FSSFactory__Make2 <- function(fs, selector, format, partitioning){
+    .Call(`_arrow_dataset___FSSFactory__Make2` , fs, selector, format, partitioning)
+}
+
+dataset___FSSFactory__Make1 <- function(fs, selector, format){
+    .Call(`_arrow_dataset___FSSFactory__Make1` , fs, selector, format)
+}
+
+dataset___FSSFactory__Make3 <- function(fs, selector, format, factory){
+    .Call(`_arrow_dataset___FSSFactory__Make3` , fs, selector, format, factory)
+}
+
+dataset___ParquetFileFormat__Make <- function(){
+    .Call(`_arrow_dataset___ParquetFileFormat__Make` )
+}
+
+dataset___IpcFileFormat__Make <- function(){
+    .Call(`_arrow_dataset___IpcFileFormat__Make` )
+}
+
+dataset___SFactory__Finish1 <- function(factory){
+    .Call(`_arrow_dataset___SFactory__Finish1` , factory)
+}
+
+dataset___SFactory__Finish2 <- function(factory, schema){
+    .Call(`_arrow_dataset___SFactory__Finish2` , factory, schema)
+}
+
+dataset___Source__schema <- function(source){
+    .Call(`_arrow_dataset___Source__schema` , source)
+}
+
+dataset___SFactory__Inspect <- function(factory){
+    .Call(`_arrow_dataset___SFactory__Inspect` , factory)
+}
+
+dataset___DFactory__Make <- function(sources){
+    .Call(`_arrow_dataset___DFactory__Make` , sources)
+}
+
+dataset___DFactory__Inspect <- function(factory){
+    .Call(`_arrow_dataset___DFactory__Inspect` , factory)
+}
+
+dataset___DFactory__Finish1 <- function(factory){
+    .Call(`_arrow_dataset___DFactory__Finish1` , factory)
+}
+
+dataset___DFactory__Finish2 <- function(factory, schema){
+    .Call(`_arrow_dataset___DFactory__Finish2` , factory, schema)
+}
+
+dataset___DirectoryPartitioning <- function(schm){
+    .Call(`_arrow_dataset___DirectoryPartitioning` , schm)
+}
+
+dataset___DirectoryPartitioning__MakeFactory <- function(field_names){
+    .Call(`_arrow_dataset___DirectoryPartitioning__MakeFactory` , field_names)
+}
+
+dataset___HivePartitioning <- function(schm){
+    .Call(`_arrow_dataset___HivePartitioning` , schm)
+}
+
+dataset___HivePartitioning__MakeFactory <- function(){
+    .Call(`_arrow_dataset___HivePartitioning__MakeFactory` )
+}
+
+dataset___Dataset__create <- function(sources, schm){
+    .Call(`_arrow_dataset___Dataset__create` , sources, schm)
+}
+
+dataset___Dataset__schema <- function(ds){
+    .Call(`_arrow_dataset___Dataset__schema` , ds)
+}
+
+dataset___Dataset__NewScan <- function(ds){
+    .Call(`_arrow_dataset___Dataset__NewScan` , ds)
+}
+
+dataset___ScannerBuilder__Project <- function(sb, cols){
+    invisible(.Call(`_arrow_dataset___ScannerBuilder__Project` , sb, cols))
+}
+
+dataset___ScannerBuilder__Filter <- function(sb, expr){
+    invisible(.Call(`_arrow_dataset___ScannerBuilder__Filter` , sb, expr))
+}
+
+dataset___ScannerBuilder__UseThreads <- function(sb, threads){
+    invisible(.Call(`_arrow_dataset___ScannerBuilder__UseThreads` , sb, threads))
+}
+
+dataset___ScannerBuilder__schema <- function(sb){
+    .Call(`_arrow_dataset___ScannerBuilder__schema` , sb)
+}
+
+dataset___ScannerBuilder__Finish <- function(sb){
+    .Call(`_arrow_dataset___ScannerBuilder__Finish` , sb)
+}
+
+dataset___Scanner__ToTable <- function(scanner){
+    .Call(`_arrow_dataset___Scanner__ToTable` , scanner)
 }
 
 shared_ptr_is_null <- function(xp){
@@ -480,6 +644,62 @@ ListType__value_type <- function(type){
     .Call(`_arrow_ListType__value_type` , type)
 }
 
+dataset___expr__field_ref <- function(name){
+    .Call(`_arrow_dataset___expr__field_ref` , name)
+}
+
+dataset___expr__equal <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__equal` , lhs, rhs)
+}
+
+dataset___expr__not_equal <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__not_equal` , lhs, rhs)
+}
+
+dataset___expr__greater <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__greater` , lhs, rhs)
+}
+
+dataset___expr__greater_equal <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__greater_equal` , lhs, rhs)
+}
+
+dataset___expr__less <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__less` , lhs, rhs)
+}
+
+dataset___expr__less_equal <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__less_equal` , lhs, rhs)
+}
+
+dataset___expr__in <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__in` , lhs, rhs)
+}
+
+dataset___expr__and <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__and` , lhs, rhs)
+}
+
+dataset___expr__or <- function(lhs, rhs){
+    .Call(`_arrow_dataset___expr__or` , lhs, rhs)
+}
+
+dataset___expr__not <- function(lhs){
+    .Call(`_arrow_dataset___expr__not` , lhs)
+}
+
+dataset___expr__is_valid <- function(lhs){
+    .Call(`_arrow_dataset___expr__is_valid` , lhs)
+}
+
+dataset___expr__scalar <- function(x){
+    .Call(`_arrow_dataset___expr__scalar` , x)
+}
+
+dataset___expr__ToString <- function(x){
+    .Call(`_arrow_dataset___expr__ToString` , x)
+}
+
 ipc___feather___TableWriter__SetDescription <- function(writer, description){
     invisible(.Call(`_arrow_ipc___feather___TableWriter__SetDescription` , writer, description))
 }
@@ -608,28 +828,28 @@ fs___FileStats__set_mtime <- function(x, time){
     invisible(.Call(`_arrow_fs___FileStats__set_mtime` , x, time))
 }
 
-fs___Selector__base_dir <- function(selector){
-    .Call(`_arrow_fs___Selector__base_dir` , selector)
+fs___FileSelector__base_dir <- function(selector){
+    .Call(`_arrow_fs___FileSelector__base_dir` , selector)
 }
 
-fs___Selector__allow_non_existent <- function(selector){
-    .Call(`_arrow_fs___Selector__allow_non_existent` , selector)
+fs___FileSelector__allow_non_existent <- function(selector){
+    .Call(`_arrow_fs___FileSelector__allow_non_existent` , selector)
 }
 
-fs___Selector__recursive <- function(selector){
-    .Call(`_arrow_fs___Selector__recursive` , selector)
+fs___FileSelector__recursive <- function(selector){
+    .Call(`_arrow_fs___FileSelector__recursive` , selector)
 }
 
-fs___Selector__create <- function(base_dir, allow_non_existent, recursive){
-    .Call(`_arrow_fs___Selector__create` , base_dir, allow_non_existent, recursive)
+fs___FileSelector__create <- function(base_dir, allow_non_existent, recursive){
+    .Call(`_arrow_fs___FileSelector__create` , base_dir, allow_non_existent, recursive)
 }
 
 fs___FileSystem__GetTargetStats_Paths <- function(file_system, paths){
     .Call(`_arrow_fs___FileSystem__GetTargetStats_Paths` , file_system, paths)
 }
 
-fs___FileSystem__GetTargetStats_Selector <- function(file_system, selector){
-    .Call(`_arrow_fs___FileSystem__GetTargetStats_Selector` , file_system, selector)
+fs___FileSystem__GetTargetStats_FileSelector <- function(file_system, selector){
+    .Call(`_arrow_fs___FileSystem__GetTargetStats_FileSelector` , file_system, selector)
 }
 
 fs___FileSystem__CreateDir <- function(file_system, path, recursive){
@@ -892,10 +1112,6 @@ parquet___arrow___FileReader__ReadTable2 <- function(reader, column_indices){
     .Call(`_arrow_parquet___arrow___FileReader__ReadTable2` , reader, column_indices)
 }
 
-parquet___default_arrow_writer_properties <- function(){
-    .Call(`_arrow_parquet___default_arrow_writer_properties` )
-}
-
 parquet___ArrowWriterProperties___Builder__create <- function(){
     .Call(`_arrow_parquet___ArrowWriterProperties___Builder__create` )
 }
@@ -1148,8 +1364,24 @@ Schema__field <- function(s, i){
     .Call(`_arrow_Schema__field` , s, i)
 }
 
-Schema__names <- function(schema){
-    .Call(`_arrow_Schema__names` , schema)
+Schema__GetFieldByName <- function(s, x){
+    .Call(`_arrow_Schema__GetFieldByName` , s, x)
+}
+
+Schema__fields <- function(schema){
+    .Call(`_arrow_Schema__fields` , schema)
+}
+
+Schema__field_names <- function(schema){
+    .Call(`_arrow_Schema__field_names` , schema)
+}
+
+Schema__HasMetadata <- function(schema){
+    .Call(`_arrow_Schema__HasMetadata` , schema)
+}
+
+Schema__metadata <- function(schema){
+    .Call(`_arrow_Schema__metadata` , schema)
 }
 
 Schema__serialize <- function(schema){

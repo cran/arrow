@@ -28,7 +28,9 @@ test_that("LocalFilesystem", {
   info <- file.info(DESCRIPTION)
 
   expect_equal(stat$size, info$size)
-  expect_equal(stat$mtime, info$mtime)
+  # This fails due to a subsecond difference on Appveyor on Windows with R 3.3 only
+  # So add a greater tolerance to allow for that
+  expect_equal(stat$mtime, info$mtime, tolerance = 1)
 
   tf <- tempfile(fileext = ".txt")
   fs$CopyFile(DESCRIPTION, tf)
@@ -106,14 +108,14 @@ test_that("LocalFileSystem + Selector", {
   dir.create(file.path(td, "dir"))
   writeLines("...", file.path(td, "dir", "three.txt"))
 
-  selector <- Selector$create(td, recursive = TRUE)
+  selector <- FileSelector$create(td, recursive = TRUE)
   stats <- fs$GetTargetStats(selector)
   expect_equal(length(stats), 4L)
   types <- sapply(stats, function(.x) .x$type)
   expect_equal(sum(types == FileType$File), 3L)
   expect_equal(sum(types == FileType$Directory), 1L)
 
-  selector <- Selector$create(td, recursive = FALSE)
+  selector <- FileSelector$create(td, recursive = FALSE)
   stats <- fs$GetTargetStats(selector)
   expect_equal(length(stats), 3L)
   types <- sapply(stats, function(.x) .x$type)

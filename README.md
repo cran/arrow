@@ -19,7 +19,8 @@ also provides computational libraries and zero-copy streaming messaging
 and interprocess communication.
 
 The `arrow` package exposes an interface to the Arrow C++ library to
-access many of its features in R. This includes support for working with
+access many of its features in R. This includes support for analyzing
+large, multi-file datasets (`open_dataset()`), working with individual
 Parquet (`read_parquet()`, `write_parquet()`) and Feather
 (`read_feather()`, `write_feather()`) files, as well as lower-level
 access to Arrow memory and messages.
@@ -36,16 +37,12 @@ Conda users on Linux and macOS can install `arrow` from conda-forge with
 
     conda install -c conda-forge r-arrow
 
-On macOS and Windows, installing a binary package from CRAN will handle
-Arrow’s C++ dependencies for you. On Linux, unless you use `conda`
-you’ll need to first install the C++ library. See the [Arrow project
-installation page](https://arrow.apache.org/install/) to find
-pre-compiled binary packages for some common Linux distributions,
-including Debian, Ubuntu, and CentOS. You’ll need to install
-`libparquet-dev` on Debian and Ubuntu, or `parquet-devel` on CentOS.
-This will also automatically install the Arrow C++ library as a
-dependency. Other Linux distributions must install the C++ library from
-source.
+Installing a released version of the `arrow` package should require no
+additional system dependencies. For macOS and Windows, CRAN hosts binary
+packages that contain the Arrow C++ library. On Linux, source package
+installation will download necessary C++ dependencies automatically on
+most common Linux distributions. See `vignette("install", package =
+"arrow")` for details.
 
 If you install the `arrow` package from source and the C++ library is
 not found, the R package functions will notify you that Arrow is not
@@ -58,15 +55,10 @@ arrow::install_arrow()
 for version- and platform-specific guidance on installing the Arrow C++
 library.
 
-When installing from source, if the R and C++ library versions do not
-match, installation may fail. If you’ve previously installed the
-libraries and want to upgrade the R package, you’ll need to update the
-Arrow C++ library first.
-
 ## Example
 
 ``` r
-library(arrow)
+library(arrow, warn.conflicts = FALSE)
 set.seed(24)
 
 tab <- Table$create(
@@ -115,35 +107,12 @@ Binary R packages for macOS and Windows are built daily and hosted at
 <https://dl.bintray.com/ursalabs/arrow-r/>. To install from there:
 
 ``` r
-install.packages("arrow", repos="https://dl.bintray.com/ursalabs/arrow-r")
+install.packages("arrow", repos = "https://dl.bintray.com/ursalabs/arrow-r")
 ```
 
 These daily package builds are not official Apache releases and are not
 recommended for production use. They may be useful for testing bug fixes
 and new features under active development.
-
-Linux users will need to build the Arrow C++ library from source. See
-“Development” below. Once you have the C++ library, you can install
-the R package from GitHub using the
-[`remotes`](https://remotes.r-lib.org/) package. From within an R
-session,
-
-``` r
-# install.packages("remotes") # Or install "devtools", which includes remotes
-remotes::install_github("apache/arrow/r")
-```
-
-or if you prefer to stay at the command line,
-
-``` shell
-R -e 'remotes::install_github("apache/arrow/r")'
-```
-
-You can specify a particular commit, branch, or
-[release](https://github.com/apache/arrow/releases) to install by
-including a `ref` argument to `install_github()`. This is particularly
-useful to match the R package version to the C++ library version you’ve
-installed.
 
 ## Developing
 
@@ -174,8 +143,8 @@ If you need to alter both the Arrow C++ library and the R package code,
 or if you can’t get a binary version of the latest C++ library
 elsewhere, you’ll need to build it from source too.
 
-First, install the C++ library. See the [C++ developer
-guide](https://arrow.apache.org/docs/developers/cpp.html) for details.
+First, install the C++ library. See the [developer
+guide](https://arrow.apache.org/docs/developers/index.html) for details.
 
 Note that after any change to the C++ library, you must reinstall it and
 run `make clean` or `git clean -fdx .` to remove any cached object code
@@ -190,7 +159,7 @@ checkout:
 
 ``` shell
 cd ../../r
-R -e 'install.packages(c("devtools", "roxygen2", "pkgdown")); devtools::install_dev_deps()'
+R -e 'install.packages(c("devtools", "roxygen2", "pkgdown", "covr")); devtools::install_dev_deps()'
 R CMD INSTALL .
 ```
 
@@ -214,8 +183,14 @@ try setting the environment variable `R_LD_LIBRARY_PATH` to wherever
 Arrow C++ was put in `make install`, e.g. `export
 R_LD_LIBRARY_PATH=/usr/local/lib`, and retry installing the R package.
 
+When installing from source, if the R and C++ library versions do not
+match, installation may fail. If you’ve previously installed the
+libraries and want to upgrade the R package, you’ll need to update the
+Arrow C++ library first.
+
 For any other build/configuration challenges, see the [C++ developer
-guide](https://arrow.apache.org/docs/developers/cpp.html#building).
+guide](https://arrow.apache.org/docs/developers/cpp.html#building) and
+`vignette("install", package = "arrow")`.
 
 ### Editing Rcpp code
 
@@ -226,11 +201,11 @@ you will need to set the `ARROW_R_DEV` environment variable to `TRUE`
 sessions) so that the `data-raw/codegen.R` file is used for code
 generation.
 
-The codegen.R script has these dependencies:
+The codegen.R script has these additional dependencies:
 
 ``` r
 remotes::install_github("romainfrancois/decor")
-install.packages(c("dplyr", "purrr", "glue"))
+install.packages("glue")
 ```
 
 We use Google C++ style in our C++ code. Check for style errors with
@@ -258,6 +233,7 @@ devtools::document() # Update roxygen documentation
 rmarkdown::render("README.Rmd") # To rebuild README.md
 pkgdown::build_site() # To preview the documentation website
 devtools::check() # All package checks; see also below
+covr::package_coverage() # See test coverage statistics
 ```
 
 Any of those can be run from the command line by wrapping them in `R -e
@@ -267,6 +243,6 @@ from the command line (`make test`, `make doc`, `make clean`, etc.)
 ### Full package validation
 
 ``` shell
-R CMD build --keep-empty-dirs .
-R CMD check arrow_*.tar.gz --as-cran --no-manual
+R CMD build .
+R CMD check arrow_*.tar.gz --as-cran
 ```

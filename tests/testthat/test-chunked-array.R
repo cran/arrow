@@ -257,23 +257,23 @@ test_that("chunked_array() supports the type= argument. conversion from INTSXP a
 })
 
 test_that("Array$create() aborts on overflow", {
-  expect_error(chunked_array(128L, type = int8())$type, "Invalid.*downsize")
-  expect_error(chunked_array(-129L, type = int8())$type, "Invalid.*downsize")
+  expect_error(chunked_array(128L, type = int8())$type, "Invalid.*Value is too large")
+  expect_error(chunked_array(-129L, type = int8())$type, "Invalid.*Value is too large")
 
-  expect_error(chunked_array(256L, type = uint8())$type, "Invalid.*downsize")
-  expect_error(chunked_array(-1L, type = uint8())$type, "Invalid.*downsize")
+  expect_error(chunked_array(256L, type = uint8())$type, "Invalid.*Value is too large")
+  expect_error(chunked_array(-1L, type = uint8())$type, "Invalid.*Value is too large")
 
-  expect_error(chunked_array(32768L, type = int16())$type, "Invalid.*downsize")
-  expect_error(chunked_array(-32769L, type = int16())$type, "Invalid.*downsize")
+  expect_error(chunked_array(32768L, type = int16())$type, "Invalid.*Value is too large")
+  expect_error(chunked_array(-32769L, type = int16())$type, "Invalid.*Value is too large")
 
-  expect_error(chunked_array(65536L, type = uint16())$type, "Invalid.*downsize")
-  expect_error(chunked_array(-1L, type = uint16())$type, "Invalid.*downsize")
+  expect_error(chunked_array(65536L, type = uint16())$type, "Invalid.*Value is too large")
+  expect_error(chunked_array(-1L, type = uint16())$type, "Invalid.*Value is too large")
 
-  expect_error(chunked_array(65536L, type = uint16())$type, "Invalid.*downsize")
-  expect_error(chunked_array(-1L, type = uint16())$type, "Invalid.*downsize")
+  expect_error(chunked_array(65536L, type = uint16())$type, "Invalid.*Value is too large")
+  expect_error(chunked_array(-1L, type = uint16())$type, "Invalid.*Value is too large")
 
-  expect_error(chunked_array(bit64::as.integer64(2^31), type = int32()), "Invalid.*downsize")
-  expect_error(chunked_array(bit64::as.integer64(2^32), type = uint32()), "Invalid.*downsize")
+  expect_error(chunked_array(bit64::as.integer64(2^31), type = int32()), "Invalid.*Value is too large")
+  expect_error(chunked_array(bit64::as.integer64(2^32), type = uint32()), "Invalid.*Value is too large")
 })
 
 test_that("chunked_array() convert doubles to integers", {
@@ -350,4 +350,45 @@ test_that("ChunkedArray$View() (ARROW-6542)", {
 test_that("ChunkedArray$Validate()", {
   a <- ChunkedArray$create(1:10)
   expect_error(a$Validate(), NA)
+})
+
+test_that("[ ChunkedArray", {
+  one_chunk <- chunked_array(2:11)
+  x <- chunked_array(1:10, 31:40, 51:55)
+  # Slice
+  expect_vector(x[8:12], c(8:10, 31:32))
+  # Take from same chunk
+  expect_vector(x[c(11, 15, 12)], c(31, 35, 32))
+  # Take from multiple chunks (calls Concatenate)
+  expect_vector(x[c(2, 11, 15, 12, 3)], c(2, 31, 35, 32, 3))
+  # Take with Array (note these are 0-based)
+  take1 <- Array$create(c(10L, 14L, 11L))
+  expect_vector(x[take1], c(31, 35, 32))
+  # Take with ChunkedArray
+  take2 <- ChunkedArray$create(c(10L, 14L), 11L)
+  expect_vector(x[take2], c(31, 35, 32))
+
+  # Filter (with recycling)
+  expect_vector(
+    one_chunk[c(FALSE, TRUE, FALSE, FALSE, TRUE)],
+    c(3, 6, 8, 11)
+  )
+  # Filter where both are 1-chunk
+  expect_vector(
+    one_chunk[ChunkedArray$create(rep(c(FALSE, TRUE, FALSE, FALSE, TRUE), 2))],
+    c(3, 6, 8, 11)
+  )
+  # Filter multi-chunk with logical (-> Array)
+  expect_vector(
+    x[c(FALSE, TRUE, FALSE, FALSE, TRUE)],
+    c(2, 5, 7, 10, 32, 35, 37, 40, 52, 55)
+  )
+  # Filter with a chunked array with different sized chunks
+  p1 <- c(FALSE, TRUE, FALSE, FALSE, TRUE)
+  p2 <- c(TRUE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE)
+  filt <- ChunkedArray$create(p1, p2, p2)
+  expect_vector(
+    x[filt],
+    c(2, 5, 6, 8, 9, 35, 36, 38, 39, 55)
+  )
 })

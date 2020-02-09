@@ -288,12 +288,18 @@ class Converter_Dictionary : public Converter {
     }
 
     if (dict->type_id() != Type::STRING) {
-      Rcpp::stop("Cannot convert Dictionary Array of type `%s` to R",
-                 dict_array->type()->ToString());
+      Rcpp::warning(
+          "Coercing dictionary values from type %s to R character factor levels",
+          dict->type()->ToString());
     }
     bool ordered = dict_array->dict_type()->ordered();
 
-    data.attr("levels") = ArrayVector__as_vector(dict->length(), {dict});
+    // R factor levels must be type "character" so coerce `dict` to STRSXP
+    // TODO (npr): this coercion should be optional, "dictionariesAsFactors" ;)
+    // Alternative: preserve the logical type of the dictionary values
+    // (e.g. if dict is timestamp, return a POSIXt R vector, not factor)
+    data.attr("levels") =
+        Rf_coerceVector(ArrayVector__as_vector(dict->length(), {dict}), STRSXP);
     if (ordered) {
       data.attr("class") = Rcpp::CharacterVector::create("ordered", "factor");
     } else {
@@ -373,7 +379,8 @@ class Converter_Struct : public Converter {
     rn[1] = -n;
     Rf_setAttrib(out, symbols::row_names, rn);
     Rf_setAttrib(out, R_NamesSymbol, colnames);
-    Rf_setAttrib(out, R_ClassSymbol, Rf_mkString("data.frame"));
+    Rf_setAttrib(out, R_ClassSymbol,
+                 Rcpp::CharacterVector::create("tbl_df", "tbl", "data.frame"));
     return out;
   }
 
@@ -627,6 +634,25 @@ class Converter_Int64 : public Converter {
   }
 };
 
+class Converter_Null : public Converter {
+ public:
+  explicit Converter_Null(const ArrayVector& arrays) : Converter(arrays) {}
+
+  SEXP Allocate(R_xlen_t n) const {
+    Rcpp::LogicalVector data(n, NA_LOGICAL);
+    data.attr("class") = "vctrs_unspecified";
+    return data;
+  }
+
+  Status Ingest_all_nulls(SEXP data, R_xlen_t start, R_xlen_t n) const {
+    return Status::OK();
+  }
+
+  Status Ingest_some_nulls(SEXP data, const std::shared_ptr<arrow::Array>& array,
+                           R_xlen_t start, R_xlen_t n) const {
+    return Status::OK();
+  }
+};
 std::shared_ptr<Converter> Converter::Make(const ArrayVector& arrays) {
   switch (arrays[0]->type_id()) {
     // direct support
@@ -705,6 +731,9 @@ std::shared_ptr<Converter> Converter::Make(const ArrayVector& arrays) {
 
     case Type::LIST:
       return std::make_shared<arrow::r::Converter_List>(arrays);
+
+    case Type::NA:
+      return std::make_shared<arrow::r::Converter_Null>(arrays);
 
     default:
       break;

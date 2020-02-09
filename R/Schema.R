@@ -18,86 +18,108 @@
 #' @include arrow-package.R
 #' @title Schema class
 #'
-#' @description Create a `Schema` when you
+#' @description A `Schema` is a list of [Field]s, which map names to
+#' Arrow [data types][data-type]. Create a `Schema` when you
 #' want to convert an R `data.frame` to Arrow but don't want to rely on the
 #' default mapping of R types to Arrow types, such as when you want to choose a
-#' specific numeric precision.
+#' specific numeric precision, or when creating a [Dataset] and you want to
+#' ensure a specific schema rather than inferring it from the various files.
+#'
+#' Many Arrow objects, including [Table] and [Dataset], have a `$schema` method
+#' (active binding) that lets you access their schema.
 #'
 #' @usage NULL
 #' @format NULL
 #' @docType class
-#'
-#' @section Usage:
-#'
-#' ```
-#' s <- schema(...)
-#'
-#' s$ToString()
-#' s$num_fields()
-#' s$field(i)
-#' ```
-#'
 #' @section Methods:
 #'
 #' - `$ToString()`: convert to a string
-#' - `$num_fields()`: returns the number of fields
 #' - `$field(i)`: returns the field at index `i` (0-based)
+#' - `$GetFieldByName(x)`: returns the field with name `x`
+#'
+#' @section Active bindings:
+#'
+#' - `$names`: returns the field names (called in `names(Schema)`)
+#' - `$num_fields`: returns the number of fields (called in `length(Schema)`)
+#' - `$fields`: returns the list of `Field`s in the `Schema`, suitable for
+#'   iterating over
+#' - `$HasMetadata`: logical: does this `Schema` have extra metadata?
+#' - `$metadata`: returns the extra metadata, if present, else `NULL`
 #'
 #' @rdname Schema
 #' @name Schema
+#' @examples
+#' \donttest{
+#' df <- data.frame(col1 = 2:4, col2 = c(0.1, 0.3, 0.5))
+#' tab1 <- Table$create(df)
+#' tab1$schema
+#' tab2 <- Table$create(df, schema = schema(col1 = int8(), col2 = float32()))
+#' tab2$schema
+#' }
 #' @export
 Schema <- R6Class("Schema",
   inherit = Object,
   public = list(
-    ToString = function() prettier_dictionary_type(Schema__ToString(self)),
-    num_fields = function() Schema__num_fields(self),
+    ToString = function() {
+      fields <- print_schema_fields(self)
+      if (self$HasMetadata) {
+        fields <- paste0(fields, "\n\nSee $metadata for additional Schema metadata")
+      }
+      fields
+    },
     field = function(i) shared_ptr(Field, Schema__field(self, i)),
+    GetFieldByName = function(x) shared_ptr(Field, Schema__GetFieldByName(self, x)),
     serialize = function() Schema__serialize(self),
-    Equals = function(other, check_metadata = TRUE) Schema__Equals(self, other, isTRUE(check_metadata))
+    Equals = function(other, check_metadata = TRUE) {
+      Schema__Equals(self, other, isTRUE(check_metadata))
+    }
   ),
   active = list(
-    names = function() Schema__names(self)
+    names = function() Schema__field_names(self),
+    num_fields = function() Schema__num_fields(self),
+    fields = function() map(Schema__fields(self), shared_ptr, class = Field),
+    HasMetadata = function() Schema__HasMetadata(self),
+    metadata = function() {
+      if (self$HasMetadata) {
+        Schema__metadata(self)
+      } else {
+        NULL
+      }
+    }
   )
 )
-
 Schema$create <- function(...) shared_ptr(Schema, schema_(.fields(list2(...))))
+
+print_schema_fields <- function(s) {
+  # Alternative to Schema__ToString that doesn't print metadata
+  paste(map_chr(s$fields, ~.$ToString()), collapse = "\n")
+}
 
 #' @param ... named list of [data types][data-type]
 #' @export
 #' @rdname Schema
-# TODO (npr): add examples once ARROW-5505 merges
 schema <- Schema$create
+
+#' @export
+names.Schema <- function(x) x$names
+
+#' @export
+length.Schema <- function(x) x$num_fields
 
 #' read a Schema from a stream
 #'
-#' @param stream a stream
+#' @param stream a `Message`, `InputStream`, or `Buffer`
 #' @param ... currently ignored
-#'
+#' @return A [Schema]
 #' @export
 read_schema <- function(stream, ...) {
-  UseMethod("read_schema")
-}
-
-#' @export
-read_schema.InputStream <- function(stream, ...) {
-  shared_ptr(Schema, ipc___ReadSchema_InputStream(stream))
-}
-
-#' @export
-read_schema.Buffer <- function(stream, ...) {
-  stream <- BufferReader$create(stream)
-  on.exit(stream$close())
-  shared_ptr(Schema, ipc___ReadSchema_InputStream(stream))
-}
-
-#' @export
-read_schema.raw <- function(stream, ...) {
-  stream <- BufferReader$create(stream)
-  on.exit(stream$close())
-  shared_ptr(Schema, ipc___ReadSchema_InputStream(stream))
-}
-
-#' @export
-read_schema.Message <- function(stream, ...) {
-  shared_ptr(Schema, ipc___ReadSchema_Message(stream))
+  if (inherits(stream, "Message")) {
+    return(shared_ptr(Schema, ipc___ReadSchema_Message(stream)))
+  } else {
+    if (!inherits(stream, "InputStream")) {
+      stream <- BufferReader$create(stream)
+      on.exit(stream$close())
+    }
+    return(shared_ptr(Schema, ipc___ReadSchema_InputStream(stream)))
+  }
 }

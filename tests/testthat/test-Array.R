@@ -26,13 +26,13 @@ test_that("Array", {
   y <- x$Slice(10)
   expect_equal(y$type, int32())
   expect_equal(length(y), 15L)
-  expect_equal(y$as_vector(), c(1:10, 1:5))
+  expect_vector(y, c(1:10, 1:5))
   expect_true(x$RangeEquals(y, 10, 24, 0))
 
   z <- x$Slice(10, 5)
   expect_equal(z$type, int32())
   expect_equal(z$length(), 5L)
-  expect_equal(z$as_vector(), c(1:5))
+  expect_vector(z, c(1:5))
   expect_true(x$RangeEquals(z, 10, 15, 0))
 
   x_dbl <- Array$create(c(1,2,3,4,5,6))
@@ -68,6 +68,14 @@ test_that("Array supports NA", {
   # this is not part of Array api
   expect_equal(Array__Mask(x_int), c(rep(TRUE, 10), FALSE))
   expect_equal(Array__Mask(x_dbl), c(rep(TRUE, 10), FALSE))
+})
+
+test_that("Array support null type (ARROW-7064)", {
+  a <- Array$create(vctrs::unspecified(10))
+  expect_equal(a$type, null())
+
+  v <- a$as_vector()
+  expect_equal(v, vctrs::unspecified(10))
 })
 
 test_that("Array supports logical vectors (ARROW-3341)", {
@@ -275,12 +283,12 @@ test_that("array supports difftime", {
   expect_equal(a$length(), 2L)
   expect_equal(a$as_vector(), c(time, time))
 
-  a <- Array$create(vctrs::vec_c(time, NA))
+  a <- Array$create(vctrs::vec_c(NA, time))
   expect_equal(a$type, time32(unit = TimeUnit$SECOND))
   expect_equal(a$length(), 2L)
-  expect_true(a$IsNull(1))
-  expect_equal(a$as_vector()[1], time)
-  expect_true(is.na(a$as_vector()[2]))
+  expect_true(a$IsNull(0))
+  expect_equal(a$as_vector()[2], time)
+  expect_true(is.na(a$as_vector()[1]))
 })
 
 test_that("support for NaN (ARROW-3615)", {
@@ -373,23 +381,23 @@ test_that("Array$create() supports the type= argument. conversion from INTSXP an
 })
 
 test_that("Array$create() aborts on overflow", {
-  expect_error(Array$create(128L, type = int8())$type, "Invalid.*downsize")
-  expect_error(Array$create(-129L, type = int8())$type, "Invalid.*downsize")
+  expect_error(Array$create(128L, type = int8())$type, "Invalid.*Value is too large")
+  expect_error(Array$create(-129L, type = int8())$type, "Invalid.*Value is too large")
 
-  expect_error(Array$create(256L, type = uint8())$type, "Invalid.*downsize")
-  expect_error(Array$create(-1L, type = uint8())$type, "Invalid.*downsize")
+  expect_error(Array$create(256L, type = uint8())$type, "Invalid.*Value is too large")
+  expect_error(Array$create(-1L, type = uint8())$type, "Invalid.*Value is too large")
 
-  expect_error(Array$create(32768L, type = int16())$type, "Invalid.*downsize")
-  expect_error(Array$create(-32769L, type = int16())$type, "Invalid.*downsize")
+  expect_error(Array$create(32768L, type = int16())$type, "Invalid.*Value is too large")
+  expect_error(Array$create(-32769L, type = int16())$type, "Invalid.*Value is too large")
 
-  expect_error(Array$create(65536L, type = uint16())$type, "Invalid.*downsize")
-  expect_error(Array$create(-1L, type = uint16())$type, "Invalid.*downsize")
+  expect_error(Array$create(65536L, type = uint16())$type, "Invalid.*Value is too large")
+  expect_error(Array$create(-1L, type = uint16())$type, "Invalid.*Value is too large")
 
-  expect_error(Array$create(65536L, type = uint16())$type, "Invalid.*downsize")
-  expect_error(Array$create(-1L, type = uint16())$type, "Invalid.*downsize")
+  expect_error(Array$create(65536L, type = uint16())$type, "Invalid.*Value is too large")
+  expect_error(Array$create(-1L, type = uint16())$type, "Invalid.*Value is too large")
 
-  expect_error(Array$create(bit64::as.integer64(2^31), type = int32()), "Invalid.*downsize")
-  expect_error(Array$create(bit64::as.integer64(2^32), type = uint32()), "Invalid.*downsize")
+  expect_error(Array$create(bit64::as.integer64(2^31), type = int32()), "Invalid.*Value is too large")
+  expect_error(Array$create(bit64::as.integer64(2^32), type = uint32()), "Invalid.*Value is too large")
 })
 
 test_that("Array$create() does not convert doubles to integer", {
@@ -435,7 +443,7 @@ test_that("Array$create() handles data frame -> struct arrays (ARROW-3811)", {
   expect_equivalent(a$as_vector(), df)
 })
 
-test_that("Array$create() can handle data frame with custom struct type (not infered)", {
+test_that("Array$create() can handle data frame with custom struct type (not inferred)", {
   df <- tibble::tibble(x = 1:10, y = 1:10)
   type <- struct(x = float64(), y = int16())
   a <- Array$create(df, type = type)
@@ -461,4 +469,74 @@ test_that("Array$View() (ARROW-6542)", {
 test_that("Array$Validate()", {
   a <- Array$create(1:10)
   expect_error(a$Validate(), NA)
+})
+
+test_that("is.Array", {
+  a <- Array$create(1, type = int32())
+  expect_true(is.Array(a))
+  expect_true(is.Array(a, "int32"))
+  expect_true(is.Array(a, c("int32", "int16")))
+  expect_false(is.Array(a, "utf8"))
+  expect_true(is.Array(a$View(float32())), "float32")
+  expect_false(is.Array(1))
+  expect_true(is.Array(ChunkedArray$create(1, 2)))
+})
+
+test_that("Array$Take()", {
+  a <- Array$create(10:20)
+  expect_equal(as.vector(a$Take(c(4, 2))), c(14, 12))
+})
+
+test_that("[ method on Array", {
+  vec <- 11:20
+  a <- Array$create(vec)
+  expect_vector(a[5:9], vec[5:9])
+  expect_vector(a[c(9, 3, 5)], vec[c(9, 3, 5)])
+  expect_vector(a[rep(c(TRUE, FALSE), 5)], vec[c(1, 3, 5, 7, 9)])
+  expect_vector(a[-4], vec[-4])
+  expect_vector(a[-1], vec[-1])
+})
+
+test_that("[ accepts Arrays and otherwise handles bad input", {
+  vec <- 11:20
+  a <- Array$create(vec)
+  ind <- c(9, 3, 5)
+  expect_error(
+    a[Array$create(ind)],
+    "Cannot extract rows with an Array of type double"
+  )
+  expect_vector(a[Array$create(ind - 1, type = int8())], vec[ind])
+  expect_vector(a[Array$create(ind - 1, type = uint8())], vec[ind])
+  expect_vector(a[ChunkedArray$create(8, 2, 4, type = uint8())], vec[ind])
+
+  filt <- seq_along(vec) %in% ind
+  expect_vector(a[Array$create(filt)], vec[filt])
+
+  expect_error(
+    a["string"],
+    "Cannot extract rows with an object of class character"
+  )
+})
+
+test_that("[ accepts Expressions", {
+  vec <- 11:20
+  a <- Array$create(vec)
+  b <- Array$create(1:10)
+  expect_vector(a[b > 4], vec[5:10])
+})
+
+test_that("Dictionary array: create from arrays, not factor", {
+  a <- DictionaryArray$create(c(2L, 1L, 1L, 2L, 0L), c(4.5, 3.2, 1.1))
+  expect_equal(a$type, dictionary(int32(), float64()))
+})
+
+test_that("Dictionary array: translate to R when dict isn't string", {
+  a <- DictionaryArray$create(c(2L, 1L, 1L, 2L, 0L), c(4.5, 3.2, 1.1))
+  expect_warning(
+    expect_identical(
+      as.vector(a),
+      factor(c(3, 2, 2, 3, 1), labels = c("4.5", "3.2", "1.1"))
+    ),
+    "Coercing dictionary values from type double to R character factor levels"
+  )
 })
