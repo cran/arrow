@@ -1,4 +1,4 @@
-79b283b73802e96cce7999c19def2f1e *DESCRIPTION
+791e5e2954fbfcf0a59ee1cad8760128 *DESCRIPTION
 10eeec879e09e44e9c4407bfb5f55067 *NAMESPACE
 4062cf6742bc2b78d44989617d8d59f5 *NEWS.md
 e8cc5a4d3c252810b18a94a9694c8ae4 *R/array-data.R
@@ -41,7 +41,7 @@ ad2be90b8ccc041fa4f4f9ca0cd7b8a6 *R/write-arrow.R
 3119c5eca695f8fe73c696e515a3c024 *README.md
 f7971fb508024f500b9ba85e95405beb *build/vignette.rds
 b42138af7af04ffb1c62af0bbca3e73c *cleanup
-3e8a4562b6f213d2631d5dede1f229c2 *configure
+e86c914dcb441013591271e8b9bcf7ef *configure
 6438294da4719e0c2698759bb89d60b6 *configure.win
 56b91f89083404add6d82d9e2618b386 *inst/NOTICE.txt
 fb0a077627efc2cca6cb51a44bc3d8fb *inst/build_arrow_static.sh
@@ -181,7 +181,7 @@ fc8a56b16c51a87860485c233d251881 *tests/testthat/test-read-write.R
 2b46f57292f84b85f1b2f7885befdd7b *tests/testthat/test-thread-pool.R
 13dbc2d1ac7ab4b2cc45c94d34443cc0 *tests/testthat/test-type.R
 a44a802fa9a6f47fa2fa4f97b059c3e6 *tools/autobrew
-75089b849f02dcb70e8c0f7242fb462a *tools/linuxlibs.R
+d71432080ee4201b43e89c0574c94571 *tools/linuxlibs.R
 46fdc2ac792a6730d71bdd7b6b4d0780 *tools/ubsan.supp
 9e629b9946a8aacf03577e732904ab46 *tools/winlibs.R
 1fd2700ee28bf88e1bbd3ead5a41f9ad *vignettes/arrow.Rmd
