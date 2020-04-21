@@ -28,9 +28,7 @@ using Rcpp::DataFrame;
 std::shared_ptr<arrow::Table> Table__from_dataframe(DataFrame tbl) {
   auto rb = RecordBatch__from_dataframe(tbl);
 
-  std::shared_ptr<arrow::Table> out;
-  STOP_IF_NOT_OK(arrow::Table::FromRecordBatches({std::move(rb)}, &out));
-  return out;
+  return VALUE_OR_STOP(arrow::Table::FromRecordBatches({std::move(rb)}));
 }
 
 // [[arrow::export]]
@@ -49,12 +47,14 @@ std::shared_ptr<arrow::Schema> Table__schema(const std::shared_ptr<arrow::Table>
 // [[arrow::export]]
 std::shared_ptr<arrow::ChunkedArray> Table__column(
     const std::shared_ptr<arrow::Table>& table, int i) {
+  arrow::r::validate_index(i, table->num_columns());
   return table->column(i);
 }
 
 // [[arrow::export]]
 std::shared_ptr<arrow::Field> Table__field(const std::shared_ptr<arrow::Table>& table,
                                            int i) {
+  arrow::r::validate_index(i, table->num_columns());
   return table->field(i);
 }
 
@@ -77,19 +77,34 @@ std::vector<std::string> Table__ColumnNames(const std::shared_ptr<arrow::Table>&
 // [[arrow::export]]
 std::shared_ptr<arrow::Table> Table__Slice1(const std::shared_ptr<arrow::Table>& table,
                                             int offset) {
+  arrow::r::validate_slice_offset(offset, table->num_rows());
   return table->Slice(offset);
 }
 
 // [[arrow::export]]
 std::shared_ptr<arrow::Table> Table__Slice2(const std::shared_ptr<arrow::Table>& table,
                                             int offset, int length) {
+  arrow::r::validate_slice_offset(offset, table->num_rows());
+  arrow::r::validate_slice_length(length, table->num_rows() - offset);
   return table->Slice(offset, length);
 }
 
 // [[arrow::export]]
 bool Table__Equals(const std::shared_ptr<arrow::Table>& lhs,
-                   const std::shared_ptr<arrow::Table>& rhs) {
-  return lhs->Equals(*rhs.get());
+                   const std::shared_ptr<arrow::Table>& rhs, bool check_metadata) {
+  return lhs->Equals(*rhs.get(), check_metadata);
+}
+
+// [[arrow::export]]
+bool Table__Validate(const std::shared_ptr<arrow::Table>& table) {
+  STOP_IF_NOT_OK(table->Validate());
+  return true;
+}
+
+// [[arrow::export]]
+bool Table__ValidateFull(const std::shared_ptr<arrow::Table>& table) {
+  STOP_IF_NOT_OK(table->ValidateFull());
+  return true;
 }
 
 // [[arrow::export]]
@@ -135,9 +150,9 @@ std::shared_ptr<arrow::Table> Table__from_dots(SEXP lst, SEXP schema_sxp) {
 
     if (Rf_inherits(schema_sxp, "Schema")) {
       auto schema = arrow::r::extract<arrow::Schema>(schema_sxp);
-      STOP_IF_NOT_OK(arrow::Table::FromRecordBatches(schema, batches, &tab));
+      tab = VALUE_OR_STOP(arrow::Table::FromRecordBatches(schema, std::move(batches)));
     } else {
-      STOP_IF_NOT_OK(arrow::Table::FromRecordBatches(batches, &tab));
+      tab = VALUE_OR_STOP(arrow::Table::FromRecordBatches(std::move(batches)));
     }
     return tab;
   }

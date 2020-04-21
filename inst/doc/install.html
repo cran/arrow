@@ -217,7 +217,7 @@ The intended audience for this document is <code>arrow</code> R package users on
 If you&#39;re contributing to the Arrow project,
 you&#39;ll probably want to manage your C++ installation more directly.
 Note also that if you use <code>conda</code> to manage your R environment, this document does not apply.
-You can <code>conda install -c conda-forge r-arrow</code> and you&#39;ll get the latest official
+You can <code>conda install -c conda-forge --strict-channel-priority r-arrow</code> and you&#39;ll get the latest official
 release of the R package along with any C++ dependencies.</p>
 
 <h1>Installation basics</h1>
@@ -233,11 +233,6 @@ can be installed from the Ursa Labs repository:</p>
 <pre><code class="r">install.packages(&quot;arrow&quot;, repos = &quot;https://dl.bintray.com/ursalabs/arrow-r&quot;)
 </code></pre>
 
-<p>In order for <code>install.packages()</code> to download C++ dependencies for <code>arrow</code> on
-Linux, first set the environment variable <code>LIBARROW_DOWNLOAD=true</code>. If you have
-set the <code>NOT_CRAN</code> environment variable, that will be used as a default value
-for <code>LIBARROW_DOWNLOAD</code>.</p>
-
 <p>There currently are no daily <code>conda</code> builds.</p>
 
 <p>You can also install the R package from a git checkout:</p>
@@ -247,7 +242,28 @@ cd arrow/r
 R CMD INSTALL .
 </code></pre>
 
-<p>If you have <code>arrow</code> installed and want to upgrade to a different version,
+<p>If you don&#39;t already have the Arrow C++ libraries on your system,
+when installing the R package from source, it will also download and build
+the Arrow C++ libraries for you. To speed installation up, you can set</p>
+
+<pre><code class="shell">export LIBARROW_BINARY=true
+</code></pre>
+
+<p>to look for C++ binaries prebuilt for your Linux distribution/version.
+Alternatively, you can set</p>
+
+<pre><code class="shell">export LIBARROW_MINIMAL=false
+</code></pre>
+
+<p>to build the Arrow libraries with optional features such as compression libraries
+enabled. This will increase the build time but provides many useful features.
+Prebuilt binaries are built with this flag enabled, so you get the full
+functionality by using them as well.</p>
+
+<p>Both of these variables are also set this way if you have the <code>NOT_CRAN=true</code>
+environment variable set.</p>
+
+<p>If you already have <code>arrow</code> installed and want to upgrade to a different version,
 install a development build, or try to reinstall and fix issues with Linux
 C++ binaries, you can call <code>install_arrow()</code>.
 This function is part of the <code>arrow</code> package,
@@ -331,6 +347,11 @@ some convenience wrappers around the various environment variables described bel
 and has defaults that should isolate the package installation and make it
 more likely to succeed. See its help page for details.</p>
 
+<p>As of version 0.17, it is expected that C++ dependencies should be built successfully
+on all Linux distributions, so if you see this message because the C++ libraries
+errored while building,
+please <a href="https://issues.apache.org/jira/projects/ARROW/issues">report an issue</a>.</p>
+
 <h2>Using system libraries</h2>
 
 <p>If a system library or other installed Arrow is found but it doesn&#39;t match the R package version
@@ -351,7 +372,10 @@ but not for nightly or dev versions, so depending on the R package version you&#
 system packages may not be an option.</p>
 
 <p>Note also that once you have a working R package installation based on system (shared) libraries,
-if you update your system Arrow, you&#39;ll need to reinstall the R package to match its version.</p>
+if you update your system Arrow, you&#39;ll need to reinstall the R package to match its version.
+Similarly, if you&#39;re using Arrow system libraries, running <code>update.packages()</code>
+after a new release of the <code>arrow</code> package will likely fail unless you first
+update the system packages.</p>
 
 <h2>Using a local Arrow C++ build</h2>
 
@@ -408,12 +432,6 @@ This table is checked during the installation process
 and tells the script to use binaries built on a different operating system/version
 because they&#39;re known to work.</p>
 
-<!-- If no binary found for current nightly R package version but yes for yesterday? -->
-
-<!-- TODO add a function to the package to update dev version from bintray? -->
-
-<!-- If that exists, is there a flag to instruct building without arrow so you can access that fn? (yes: LIBARROW_BUILD=FALSE)-->
-
 <h2>Building C++ from source</h2>
 
 <p>If building the C++ library from source fails, check the error message.
@@ -424,53 +442,41 @@ Regardless, if the C++ library fails to compile,
 please <a href="https://issues.apache.org/jira/projects/ARROW/issues">report an issue</a>
 so that we can attempt to improve the script.</p>
 
-<h3>Known C++ build issues</h3>
-
-<p>(1) <code>m4</code> (build dependency for <code>flex</code> and <code>bison</code>, which are build dependencies for <code>thrift</code>)
-fails to build with a message like:</p>
-
-<pre><code>freadahead.c: In function &#39;freadahead&#39;:
-freadahead.c:92:3: error: #error &quot;Please port gnulib freadahead.c to your platform! Look at the definition of fflush, fread, ungetc on your system, then report this to bug-gnulib.&quot;
-</code></pre>
-
-<p>This has been observed on CentOS 8 (Docker image <code>rstudio/r-base:3.6-centos8</code>)
-and Fedora (<code>rhub/fedora-clang-devel</code>).</p>
-
-<p>A solution is to install <code>m4</code> using your system package manager;
-if that&#39;s an option for you, you may as well just install <code>flex</code> and <code>bison</code>
-and avoid this build step entirely.</p>
-
-<!-- TODO: try applying https://src.fedoraproject.org/rpms/m4/raw/master/f/m4-1.4.18-glibc-change-work-around.patch on centos and fedora? -->
-
 <h2>Summary of build environment variables</h2>
 
-<p>By default, these are all unset.</p>
+<p>By default, these are all unset. All boolean variables are case-insensitive.</p>
 
 <ul>
-<li><code>ARROW_USE_PKG_CONFIG</code>: If set to <code>FALSE</code>, the configure script
+<li><code>ARROW_USE_PKG_CONFIG</code>: If set to <code>false</code>, the configure script
 won&#39;t look for Arrow libraries on your system and instead will look to download/build them.
 Use this if you have a version mismatch between installed system libraries
 and the version of the R package you&#39;re installing.</li>
-<li><code>LIBARROW_DOWNLOAD</code>: Unless set to <code>TRUE</code> (case insensitive), the build script
-will not attempt to download C++ binary or source bundles.
+<li><code>LIBARROW_DOWNLOAD</code>: Unless set to <code>false</code>, the build script
+will attempt to download C++ binary or source bundles.
 If you&#39;re in a checkout of the <code>apache/arrow</code> git repository
-and want to build the C++ library from the local source, make this <code>FALSE</code>.</li>
-<li><code>LIBARROW_BUILD</code>: If set to <code>FALSE</code> (case insensitive), the build script
+and want to build the C++ library from the local source, make this <code>false</code>.</li>
+<li><code>LIBARROW_BINARY</code>: If set to <code>true</code>, the script will try to download a binary
+C++ library built for your operating system.
+You may also set it to some other string,
+a related &ldquo;distro-version&rdquo; that has binaries built that work for your OS.
+If no binary is found, installation will fall back to building C++
+dependencies from source.</li>
+<li><code>LIBARROW_BUILD</code>: If set to <code>false</code>, the build script
 will not attempt to build the C++ from source. This means you will only get
 a working <code>arrow</code> R package if a prebuilt binary is found.
 Use this if you want to avoid compiling the C++ library, which may be slow
 and resource-intensive, and ensure that you only use a prebuilt binary.</li>
-<li><code>LIBARROW_BINARY</code>: If set to <code>FALSE</code> (case insensitive),
-the script will not download a binary, but it may still download a source bundle.
-You may also set it to some other string,
-a related &ldquo;distro-version&rdquo; that has binaries built that work for your OS.</li>
+<li><code>LIBARROW_MINIMAL</code>: If set to <code>false</code>, the build script
+will enable some optional features, including compression libraries and the
+<code>jemalloc</code> memory allocator. This will increase the source build time but
+results in a more fully functional library.</li>
 <li><code>NOT_CRAN</code>: If this variable is set to <code>true</code>, as the <code>devtools</code> package does,
-the build script will attempt to download and/or build the Arrow C++ library, if necessary,
-even when running <code>R CMD check</code>. Otherwise, it will only download/build C++
-if you&#39;re not running <code>R CMD check</code>.
-The purpose of this protection is to avoid expensive compilation in
-automated testing environments (unless you opt-in).</li>
-<li><code>ARROW_R_DEV</code>: If set to <code>TRUE</code>, more verbose messaging will be printed
+the build script will set <code>LIBARROW_BINARY=true</code> and <code>LIBARROW_MINIMAL=false</code>
+unless those environment variables are already set. This provides for a more
+complete and fast installation experience for users who already have
+<code>NOT_CRAN=true</code> as part of their workflow, without requiring additional
+environment variables to be set.</li>
+<li><code>ARROW_R_DEV</code>: If set to <code>true</code>, more verbose messaging will be printed
 in the build script. This variable also is needed if you&#39;re modifying <code>Rcpp</code>
 code in the package: see &ldquo;Editing Rcpp code&rdquo; in the README.</li>
 <li><code>DEBUG_DIR</code>: If the C++ library building from source fails (<code>cmake</code>),

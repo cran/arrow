@@ -260,6 +260,13 @@ memory layout of the Arrow columnar format and are not intended as a direct
 replacement for existing R CSV readers (<code>base::read.csv</code>, <code>readr::read_csv</code>,
 <code>data.table::fread</code>) that return an R <code>data.frame</code>.</p>
 
+<h1>Working with Arrow data in Python</h1>
+
+<p>Using <a href="https://rstudio.github.io/reticulate/"><code>reticulate</code></a>, <code>arrow</code> lets you
+share data between R and Python (<code>pyarrow</code>) efficiently, enabling you to take
+advantage of the vibrant ecosystem of Python packages that build on top of
+Apache Arrow. See <code>vignette(&quot;python&quot;, package = &quot;arrow&quot;)</code> for details.</p>
+
 <h1>Access to Arrow messages, buffers, and streams</h1>
 
 <p>The <code>arrow</code> package also provides many lower-level bindings to the C++ library, which enable you

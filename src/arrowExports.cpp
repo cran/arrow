@@ -1183,96 +1183,102 @@ RcppExport SEXP _arrow_Table__TakeChunked(SEXP table_sexp, SEXP indices_sexp){
 
 // compute.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::Array> Array__Filter(const std::shared_ptr<arrow::Array>& values, const std::shared_ptr<arrow::Array>& filter);
-RcppExport SEXP _arrow_Array__Filter(SEXP values_sexp, SEXP filter_sexp){
+std::shared_ptr<arrow::Array> Array__Filter(const std::shared_ptr<arrow::Array>& values, const std::shared_ptr<arrow::Array>& filter, bool keep_na);
+RcppExport SEXP _arrow_Array__Filter(SEXP values_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Array>&>::type values(values_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Array>&>::type filter(filter_sexp);
-	return Rcpp::wrap(Array__Filter(values, filter));
+	Rcpp::traits::input_parameter<bool>::type keep_na(keep_na_sexp);
+	return Rcpp::wrap(Array__Filter(values, filter, keep_na));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_Array__Filter(SEXP values_sexp, SEXP filter_sexp){
+RcppExport SEXP _arrow_Array__Filter(SEXP values_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 	Rf_error("Cannot call Array__Filter(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // compute.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::RecordBatch> RecordBatch__Filter(const std::shared_ptr<arrow::RecordBatch>& batch, const std::shared_ptr<arrow::Array>& filter);
-RcppExport SEXP _arrow_RecordBatch__Filter(SEXP batch_sexp, SEXP filter_sexp){
+std::shared_ptr<arrow::RecordBatch> RecordBatch__Filter(const std::shared_ptr<arrow::RecordBatch>& batch, const std::shared_ptr<arrow::Array>& filter, bool keep_na);
+RcppExport SEXP _arrow_RecordBatch__Filter(SEXP batch_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::RecordBatch>&>::type batch(batch_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Array>&>::type filter(filter_sexp);
-	return Rcpp::wrap(RecordBatch__Filter(batch, filter));
+	Rcpp::traits::input_parameter<bool>::type keep_na(keep_na_sexp);
+	return Rcpp::wrap(RecordBatch__Filter(batch, filter, keep_na));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_RecordBatch__Filter(SEXP batch_sexp, SEXP filter_sexp){
+RcppExport SEXP _arrow_RecordBatch__Filter(SEXP batch_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 	Rf_error("Cannot call RecordBatch__Filter(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // compute.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::ChunkedArray> ChunkedArray__Filter(const std::shared_ptr<arrow::ChunkedArray>& values, const std::shared_ptr<arrow::Array>& filter);
-RcppExport SEXP _arrow_ChunkedArray__Filter(SEXP values_sexp, SEXP filter_sexp){
+std::shared_ptr<arrow::ChunkedArray> ChunkedArray__Filter(const std::shared_ptr<arrow::ChunkedArray>& values, const std::shared_ptr<arrow::Array>& filter, bool keep_na);
+RcppExport SEXP _arrow_ChunkedArray__Filter(SEXP values_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::ChunkedArray>&>::type values(values_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Array>&>::type filter(filter_sexp);
-	return Rcpp::wrap(ChunkedArray__Filter(values, filter));
+	Rcpp::traits::input_parameter<bool>::type keep_na(keep_na_sexp);
+	return Rcpp::wrap(ChunkedArray__Filter(values, filter, keep_na));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_ChunkedArray__Filter(SEXP values_sexp, SEXP filter_sexp){
+RcppExport SEXP _arrow_ChunkedArray__Filter(SEXP values_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 	Rf_error("Cannot call ChunkedArray__Filter(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // compute.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::ChunkedArray> ChunkedArray__FilterChunked(const std::shared_ptr<arrow::ChunkedArray>& values, const std::shared_ptr<arrow::ChunkedArray>& filter);
-RcppExport SEXP _arrow_ChunkedArray__FilterChunked(SEXP values_sexp, SEXP filter_sexp){
+std::shared_ptr<arrow::ChunkedArray> ChunkedArray__FilterChunked(const std::shared_ptr<arrow::ChunkedArray>& values, const std::shared_ptr<arrow::ChunkedArray>& filter, bool keep_na);
+RcppExport SEXP _arrow_ChunkedArray__FilterChunked(SEXP values_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::ChunkedArray>&>::type values(values_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::ChunkedArray>&>::type filter(filter_sexp);
-	return Rcpp::wrap(ChunkedArray__FilterChunked(values, filter));
+	Rcpp::traits::input_parameter<bool>::type keep_na(keep_na_sexp);
+	return Rcpp::wrap(ChunkedArray__FilterChunked(values, filter, keep_na));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_ChunkedArray__FilterChunked(SEXP values_sexp, SEXP filter_sexp){
+RcppExport SEXP _arrow_ChunkedArray__FilterChunked(SEXP values_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 	Rf_error("Cannot call ChunkedArray__FilterChunked(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // compute.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::Table> Table__Filter(const std::shared_ptr<arrow::Table>& table, const std::shared_ptr<arrow::Array>& filter);
-RcppExport SEXP _arrow_Table__Filter(SEXP table_sexp, SEXP filter_sexp){
+std::shared_ptr<arrow::Table> Table__Filter(const std::shared_ptr<arrow::Table>& table, const std::shared_ptr<arrow::Array>& filter, bool keep_na);
+RcppExport SEXP _arrow_Table__Filter(SEXP table_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Table>&>::type table(table_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Array>&>::type filter(filter_sexp);
-	return Rcpp::wrap(Table__Filter(table, filter));
+	Rcpp::traits::input_parameter<bool>::type keep_na(keep_na_sexp);
+	return Rcpp::wrap(Table__Filter(table, filter, keep_na));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_Table__Filter(SEXP table_sexp, SEXP filter_sexp){
+RcppExport SEXP _arrow_Table__Filter(SEXP table_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 	Rf_error("Cannot call Table__Filter(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // compute.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::Table> Table__FilterChunked(const std::shared_ptr<arrow::Table>& table, const std::shared_ptr<arrow::ChunkedArray>& filter);
-RcppExport SEXP _arrow_Table__FilterChunked(SEXP table_sexp, SEXP filter_sexp){
+std::shared_ptr<arrow::Table> Table__FilterChunked(const std::shared_ptr<arrow::Table>& table, const std::shared_ptr<arrow::ChunkedArray>& filter, bool keep_na);
+RcppExport SEXP _arrow_Table__FilterChunked(SEXP table_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Table>&>::type table(table_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::ChunkedArray>&>::type filter(filter_sexp);
-	return Rcpp::wrap(Table__FilterChunked(table, filter));
+	Rcpp::traits::input_parameter<bool>::type keep_na(keep_na_sexp);
+	return Rcpp::wrap(Table__FilterChunked(table, filter, keep_na));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_Table__FilterChunked(SEXP table_sexp, SEXP filter_sexp){
+RcppExport SEXP _arrow_Table__FilterChunked(SEXP table_sexp, SEXP filter_sexp, SEXP keep_na_sexp){
 	Rf_error("Cannot call Table__FilterChunked(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
@@ -1357,67 +1363,270 @@ RcppExport SEXP _arrow_csv___TableReader__Read(SEXP table_reader_sexp){
 
 // dataset.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::SourceFactory> dataset___FSSFactory__Make2(const std::shared_ptr<fs::FileSystem>& fs, const std::shared_ptr<fs::FileSelector>& selector, const std::shared_ptr<ds::FileFormat>& format, const std::shared_ptr<ds::Partitioning>& partitioning);
-RcppExport SEXP _arrow_dataset___FSSFactory__Make2(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp, SEXP partitioning_sexp){
+std::shared_ptr<ds::ScannerBuilder> dataset___Dataset__NewScan(const std::shared_ptr<ds::Dataset>& ds);
+RcppExport SEXP _arrow_dataset___Dataset__NewScan(SEXP ds_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Dataset>&>::type ds(ds_sexp);
+	return Rcpp::wrap(dataset___Dataset__NewScan(ds));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___Dataset__NewScan(SEXP ds_sexp){
+	Rf_error("Cannot call dataset___Dataset__NewScan(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<arrow::Schema> dataset___Dataset__schema(const std::shared_ptr<ds::Dataset>& dataset);
+RcppExport SEXP _arrow_dataset___Dataset__schema(SEXP dataset_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Dataset>&>::type dataset(dataset_sexp);
+	return Rcpp::wrap(dataset___Dataset__schema(dataset));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___Dataset__schema(SEXP dataset_sexp){
+	Rf_error("Cannot call dataset___Dataset__schema(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::string dataset___Dataset__type_name(const std::shared_ptr<ds::Dataset>& dataset);
+RcppExport SEXP _arrow_dataset___Dataset__type_name(SEXP dataset_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Dataset>&>::type dataset(dataset_sexp);
+	return Rcpp::wrap(dataset___Dataset__type_name(dataset));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___Dataset__type_name(SEXP dataset_sexp){
+	Rf_error("Cannot call dataset___Dataset__type_name(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<ds::Dataset> dataset___Dataset__ReplaceSchema(const std::shared_ptr<ds::Dataset>& dataset, const std::shared_ptr<arrow::Schema>& schm);
+RcppExport SEXP _arrow_dataset___Dataset__ReplaceSchema(SEXP dataset_sexp, SEXP schm_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Dataset>&>::type dataset(dataset_sexp);
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Schema>&>::type schm(schm_sexp);
+	return Rcpp::wrap(dataset___Dataset__ReplaceSchema(dataset, schm));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___Dataset__ReplaceSchema(SEXP dataset_sexp, SEXP schm_sexp){
+	Rf_error("Cannot call dataset___Dataset__ReplaceSchema(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<ds::UnionDataset> dataset___UnionDataset__create(const ds::DatasetVector& datasets, const std::shared_ptr<arrow::Schema>& schm);
+RcppExport SEXP _arrow_dataset___UnionDataset__create(SEXP datasets_sexp, SEXP schm_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const ds::DatasetVector&>::type datasets(datasets_sexp);
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Schema>&>::type schm(schm_sexp);
+	return Rcpp::wrap(dataset___UnionDataset__create(datasets, schm));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___UnionDataset__create(SEXP datasets_sexp, SEXP schm_sexp){
+	Rf_error("Cannot call dataset___UnionDataset__create(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+ds::DatasetVector dataset___UnionDataset__children(const std::shared_ptr<ds::UnionDataset>& ds);
+RcppExport SEXP _arrow_dataset___UnionDataset__children(SEXP ds_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::UnionDataset>&>::type ds(ds_sexp);
+	return Rcpp::wrap(dataset___UnionDataset__children(ds));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___UnionDataset__children(SEXP ds_sexp){
+	Rf_error("Cannot call dataset___UnionDataset__children(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<ds::FileFormat> dataset___FileSystemDataset__format(const std::shared_ptr<ds::FileSystemDataset>& dataset);
+RcppExport SEXP _arrow_dataset___FileSystemDataset__format(SEXP dataset_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::FileSystemDataset>&>::type dataset(dataset_sexp);
+	return Rcpp::wrap(dataset___FileSystemDataset__format(dataset));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___FileSystemDataset__format(SEXP dataset_sexp){
+	Rf_error("Cannot call dataset___FileSystemDataset__format(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::vector<std::string> dataset___FileSystemDataset__files(const std::shared_ptr<ds::FileSystemDataset>& dataset);
+RcppExport SEXP _arrow_dataset___FileSystemDataset__files(SEXP dataset_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::FileSystemDataset>&>::type dataset(dataset_sexp);
+	return Rcpp::wrap(dataset___FileSystemDataset__files(dataset));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___FileSystemDataset__files(SEXP dataset_sexp){
+	Rf_error("Cannot call dataset___FileSystemDataset__files(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<ds::Dataset> dataset___DatasetFactory__Finish1(const std::shared_ptr<ds::DatasetFactory>& factory, bool unify_schemas);
+RcppExport SEXP _arrow_dataset___DatasetFactory__Finish1(SEXP factory_sexp, SEXP unify_schemas_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::DatasetFactory>&>::type factory(factory_sexp);
+	Rcpp::traits::input_parameter<bool>::type unify_schemas(unify_schemas_sexp);
+	return Rcpp::wrap(dataset___DatasetFactory__Finish1(factory, unify_schemas));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___DatasetFactory__Finish1(SEXP factory_sexp, SEXP unify_schemas_sexp){
+	Rf_error("Cannot call dataset___DatasetFactory__Finish1(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<ds::Dataset> dataset___DatasetFactory__Finish2(const std::shared_ptr<ds::DatasetFactory>& factory, const std::shared_ptr<arrow::Schema>& schema);
+RcppExport SEXP _arrow_dataset___DatasetFactory__Finish2(SEXP factory_sexp, SEXP schema_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::DatasetFactory>&>::type factory(factory_sexp);
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Schema>&>::type schema(schema_sexp);
+	return Rcpp::wrap(dataset___DatasetFactory__Finish2(factory, schema));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___DatasetFactory__Finish2(SEXP factory_sexp, SEXP schema_sexp){
+	Rf_error("Cannot call dataset___DatasetFactory__Finish2(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<arrow::Schema> dataset___DatasetFactory__Inspect(const std::shared_ptr<ds::DatasetFactory>& factory, bool unify_schemas);
+RcppExport SEXP _arrow_dataset___DatasetFactory__Inspect(SEXP factory_sexp, SEXP unify_schemas_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::DatasetFactory>&>::type factory(factory_sexp);
+	Rcpp::traits::input_parameter<bool>::type unify_schemas(unify_schemas_sexp);
+	return Rcpp::wrap(dataset___DatasetFactory__Inspect(factory, unify_schemas));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___DatasetFactory__Inspect(SEXP factory_sexp, SEXP unify_schemas_sexp){
+	Rf_error("Cannot call dataset___DatasetFactory__Inspect(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<ds::DatasetFactory> dataset___UnionDatasetFactory__Make(const std::vector<std::shared_ptr<ds::DatasetFactory>>& children);
+RcppExport SEXP _arrow_dataset___UnionDatasetFactory__Make(SEXP children_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::vector<std::shared_ptr<ds::DatasetFactory>>&>::type children(children_sexp);
+	return Rcpp::wrap(dataset___UnionDatasetFactory__Make(children));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___UnionDatasetFactory__Make(SEXP children_sexp){
+	Rf_error("Cannot call dataset___UnionDatasetFactory__Make(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<ds::DatasetFactory> dataset___FileSystemDatasetFactory__Make2(const std::shared_ptr<fs::FileSystem>& fs, const std::shared_ptr<fs::FileSelector>& selector, const std::shared_ptr<ds::FileFormat>& format, const std::shared_ptr<ds::Partitioning>& partitioning);
+RcppExport SEXP _arrow_dataset___FileSystemDatasetFactory__Make2(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp, SEXP partitioning_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSystem>&>::type fs(fs_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSelector>&>::type selector(selector_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<ds::FileFormat>&>::type format(format_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Partitioning>&>::type partitioning(partitioning_sexp);
-	return Rcpp::wrap(dataset___FSSFactory__Make2(fs, selector, format, partitioning));
+	return Rcpp::wrap(dataset___FileSystemDatasetFactory__Make2(fs, selector, format, partitioning));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_dataset___FSSFactory__Make2(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp, SEXP partitioning_sexp){
-	Rf_error("Cannot call dataset___FSSFactory__Make2(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_dataset___FileSystemDatasetFactory__Make2(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp, SEXP partitioning_sexp){
+	Rf_error("Cannot call dataset___FileSystemDatasetFactory__Make2(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // dataset.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::SourceFactory> dataset___FSSFactory__Make1(const std::shared_ptr<fs::FileSystem>& fs, const std::shared_ptr<fs::FileSelector>& selector, const std::shared_ptr<ds::FileFormat>& format);
-RcppExport SEXP _arrow_dataset___FSSFactory__Make1(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp){
+std::shared_ptr<ds::DatasetFactory> dataset___FileSystemDatasetFactory__Make1(const std::shared_ptr<fs::FileSystem>& fs, const std::shared_ptr<fs::FileSelector>& selector, const std::shared_ptr<ds::FileFormat>& format);
+RcppExport SEXP _arrow_dataset___FileSystemDatasetFactory__Make1(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSystem>&>::type fs(fs_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSelector>&>::type selector(selector_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<ds::FileFormat>&>::type format(format_sexp);
-	return Rcpp::wrap(dataset___FSSFactory__Make1(fs, selector, format));
+	return Rcpp::wrap(dataset___FileSystemDatasetFactory__Make1(fs, selector, format));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_dataset___FSSFactory__Make1(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp){
-	Rf_error("Cannot call dataset___FSSFactory__Make1(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_dataset___FileSystemDatasetFactory__Make1(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp){
+	Rf_error("Cannot call dataset___FileSystemDatasetFactory__Make1(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // dataset.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::SourceFactory> dataset___FSSFactory__Make3(const std::shared_ptr<fs::FileSystem>& fs, const std::shared_ptr<fs::FileSelector>& selector, const std::shared_ptr<ds::FileFormat>& format, const std::shared_ptr<ds::PartitioningFactory>& factory);
-RcppExport SEXP _arrow_dataset___FSSFactory__Make3(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp, SEXP factory_sexp){
+std::shared_ptr<ds::DatasetFactory> dataset___FileSystemDatasetFactory__Make3(const std::shared_ptr<fs::FileSystem>& fs, const std::shared_ptr<fs::FileSelector>& selector, const std::shared_ptr<ds::FileFormat>& format, const std::shared_ptr<ds::PartitioningFactory>& factory);
+RcppExport SEXP _arrow_dataset___FileSystemDatasetFactory__Make3(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp, SEXP factory_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSystem>&>::type fs(fs_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSelector>&>::type selector(selector_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<ds::FileFormat>&>::type format(format_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<ds::PartitioningFactory>&>::type factory(factory_sexp);
-	return Rcpp::wrap(dataset___FSSFactory__Make3(fs, selector, format, factory));
+	return Rcpp::wrap(dataset___FileSystemDatasetFactory__Make3(fs, selector, format, factory));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_dataset___FSSFactory__Make3(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp, SEXP factory_sexp){
-	Rf_error("Cannot call dataset___FSSFactory__Make3(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_dataset___FileSystemDatasetFactory__Make3(SEXP fs_sexp, SEXP selector_sexp, SEXP format_sexp, SEXP factory_sexp){
+	Rf_error("Cannot call dataset___FileSystemDatasetFactory__Make3(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // dataset.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::ParquetFileFormat> dataset___ParquetFileFormat__Make();
-RcppExport SEXP _arrow_dataset___ParquetFileFormat__Make(){
+std::string dataset___FileFormat__type_name(const std::shared_ptr<ds::FileFormat>& format);
+RcppExport SEXP _arrow_dataset___FileFormat__type_name(SEXP format_sexp){
 BEGIN_RCPP
-	return Rcpp::wrap(dataset___ParquetFileFormat__Make());
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::FileFormat>&>::type format(format_sexp);
+	return Rcpp::wrap(dataset___FileFormat__type_name(format));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_dataset___ParquetFileFormat__Make(){
+RcppExport SEXP _arrow_dataset___FileFormat__type_name(SEXP format_sexp){
+	Rf_error("Cannot call dataset___FileFormat__type_name(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<ds::ParquetFileFormat> dataset___ParquetFileFormat__Make(bool use_buffered_stream, int64_t buffer_size, CharacterVector dict_columns);
+RcppExport SEXP _arrow_dataset___ParquetFileFormat__Make(SEXP use_buffered_stream_sexp, SEXP buffer_size_sexp, SEXP dict_columns_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<bool>::type use_buffered_stream(use_buffered_stream_sexp);
+	Rcpp::traits::input_parameter<int64_t>::type buffer_size(buffer_size_sexp);
+	Rcpp::traits::input_parameter<CharacterVector>::type dict_columns(dict_columns_sexp);
+	return Rcpp::wrap(dataset___ParquetFileFormat__Make(use_buffered_stream, buffer_size, dict_columns));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___ParquetFileFormat__Make(SEXP use_buffered_stream_sexp, SEXP buffer_size_sexp, SEXP dict_columns_sexp){
 	Rf_error("Cannot call dataset___ParquetFileFormat__Make(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
@@ -1433,128 +1642,6 @@ END_RCPP
 #else
 RcppExport SEXP _arrow_dataset___IpcFileFormat__Make(){
 	Rf_error("Cannot call dataset___IpcFileFormat__Make(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::Source> dataset___SFactory__Finish1(const std::shared_ptr<ds::SourceFactory>& factory);
-RcppExport SEXP _arrow_dataset___SFactory__Finish1(SEXP factory_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::SourceFactory>&>::type factory(factory_sexp);
-	return Rcpp::wrap(dataset___SFactory__Finish1(factory));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___SFactory__Finish1(SEXP factory_sexp){
-	Rf_error("Cannot call dataset___SFactory__Finish1(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::Source> dataset___SFactory__Finish2(const std::shared_ptr<ds::SourceFactory>& factory, const std::shared_ptr<arrow::Schema>& schema);
-RcppExport SEXP _arrow_dataset___SFactory__Finish2(SEXP factory_sexp, SEXP schema_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::SourceFactory>&>::type factory(factory_sexp);
-	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Schema>&>::type schema(schema_sexp);
-	return Rcpp::wrap(dataset___SFactory__Finish2(factory, schema));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___SFactory__Finish2(SEXP factory_sexp, SEXP schema_sexp){
-	Rf_error("Cannot call dataset___SFactory__Finish2(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::Schema> dataset___Source__schema(const std::shared_ptr<ds::Source>& source);
-RcppExport SEXP _arrow_dataset___Source__schema(SEXP source_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Source>&>::type source(source_sexp);
-	return Rcpp::wrap(dataset___Source__schema(source));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___Source__schema(SEXP source_sexp){
-	Rf_error("Cannot call dataset___Source__schema(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::Schema> dataset___SFactory__Inspect(const std::shared_ptr<ds::SourceFactory>& factory);
-RcppExport SEXP _arrow_dataset___SFactory__Inspect(SEXP factory_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::SourceFactory>&>::type factory(factory_sexp);
-	return Rcpp::wrap(dataset___SFactory__Inspect(factory));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___SFactory__Inspect(SEXP factory_sexp){
-	Rf_error("Cannot call dataset___SFactory__Inspect(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::DatasetFactory> dataset___DFactory__Make(const std::vector<std::shared_ptr<ds::SourceFactory>>& sources);
-RcppExport SEXP _arrow_dataset___DFactory__Make(SEXP sources_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::vector<std::shared_ptr<ds::SourceFactory>>&>::type sources(sources_sexp);
-	return Rcpp::wrap(dataset___DFactory__Make(sources));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___DFactory__Make(SEXP sources_sexp){
-	Rf_error("Cannot call dataset___DFactory__Make(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::Schema> dataset___DFactory__Inspect(const std::shared_ptr<ds::DatasetFactory>& factory);
-RcppExport SEXP _arrow_dataset___DFactory__Inspect(SEXP factory_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::DatasetFactory>&>::type factory(factory_sexp);
-	return Rcpp::wrap(dataset___DFactory__Inspect(factory));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___DFactory__Inspect(SEXP factory_sexp){
-	Rf_error("Cannot call dataset___DFactory__Inspect(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::Dataset> dataset___DFactory__Finish1(const std::shared_ptr<ds::DatasetFactory>& factory);
-RcppExport SEXP _arrow_dataset___DFactory__Finish1(SEXP factory_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::DatasetFactory>&>::type factory(factory_sexp);
-	return Rcpp::wrap(dataset___DFactory__Finish1(factory));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___DFactory__Finish1(SEXP factory_sexp){
-	Rf_error("Cannot call dataset___DFactory__Finish1(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::Dataset> dataset___DFactory__Finish2(const std::shared_ptr<ds::DatasetFactory>& factory, const std::shared_ptr<arrow::Schema>& schema);
-RcppExport SEXP _arrow_dataset___DFactory__Finish2(SEXP factory_sexp, SEXP schema_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::DatasetFactory>&>::type factory(factory_sexp);
-	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Schema>&>::type schema(schema_sexp);
-	return Rcpp::wrap(dataset___DFactory__Finish2(factory, schema));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___DFactory__Finish2(SEXP factory_sexp, SEXP schema_sexp){
-	Rf_error("Cannot call dataset___DFactory__Finish2(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -1619,52 +1706,6 @@ RcppExport SEXP _arrow_dataset___HivePartitioning__MakeFactory(){
 
 // dataset.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::Dataset> dataset___Dataset__create(const ds::SourceVector& sources, const std::shared_ptr<arrow::Schema>& schm);
-RcppExport SEXP _arrow_dataset___Dataset__create(SEXP sources_sexp, SEXP schm_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const ds::SourceVector&>::type sources(sources_sexp);
-	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Schema>&>::type schm(schm_sexp);
-	return Rcpp::wrap(dataset___Dataset__create(sources, schm));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___Dataset__create(SEXP sources_sexp, SEXP schm_sexp){
-	Rf_error("Cannot call dataset___Dataset__create(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::Schema> dataset___Dataset__schema(const std::shared_ptr<ds::Dataset>& ds);
-RcppExport SEXP _arrow_dataset___Dataset__schema(SEXP ds_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Dataset>&>::type ds(ds_sexp);
-	return Rcpp::wrap(dataset___Dataset__schema(ds));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___Dataset__schema(SEXP ds_sexp){
-	Rf_error("Cannot call dataset___Dataset__schema(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<ds::ScannerBuilder> dataset___Dataset__NewScan(const std::shared_ptr<ds::Dataset>& ds);
-RcppExport SEXP _arrow_dataset___Dataset__NewScan(SEXP ds_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Dataset>&>::type ds(ds_sexp);
-	return Rcpp::wrap(dataset___Dataset__NewScan(ds));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_dataset___Dataset__NewScan(SEXP ds_sexp){
-	Rf_error("Cannot call dataset___Dataset__NewScan(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// dataset.cpp
-#if defined(ARROW_R_WITH_ARROW)
 void dataset___ScannerBuilder__Project(const std::shared_ptr<ds::ScannerBuilder>& sb, const std::vector<std::string>& cols);
 RcppExport SEXP _arrow_dataset___ScannerBuilder__Project(SEXP sb_sexp, SEXP cols_sexp){
 BEGIN_RCPP
@@ -1716,6 +1757,23 @@ RcppExport SEXP _arrow_dataset___ScannerBuilder__UseThreads(SEXP sb_sexp, SEXP t
 
 // dataset.cpp
 #if defined(ARROW_R_WITH_ARROW)
+void dataset___ScannerBuilder__BatchSize(const std::shared_ptr<ds::ScannerBuilder>& sb, int64_t batch_size);
+RcppExport SEXP _arrow_dataset___ScannerBuilder__BatchSize(SEXP sb_sexp, SEXP batch_size_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::ScannerBuilder>&>::type sb(sb_sexp);
+	Rcpp::traits::input_parameter<int64_t>::type batch_size(batch_size_sexp);
+	dataset___ScannerBuilder__BatchSize(sb, batch_size);
+	return R_NilValue;
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___ScannerBuilder__BatchSize(SEXP sb_sexp, SEXP batch_size_sexp){
+	Rf_error("Cannot call dataset___ScannerBuilder__BatchSize(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
 std::shared_ptr<arrow::Schema> dataset___ScannerBuilder__schema(const std::shared_ptr<ds::ScannerBuilder>& sb);
 RcppExport SEXP _arrow_dataset___ScannerBuilder__schema(SEXP sb_sexp){
 BEGIN_RCPP
@@ -1756,6 +1814,36 @@ END_RCPP
 #else
 RcppExport SEXP _arrow_dataset___Scanner__ToTable(SEXP scanner_sexp){
 	Rf_error("Cannot call dataset___Scanner__ToTable(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::vector<std::shared_ptr<ds::ScanTask>> dataset___Scanner__Scan(const std::shared_ptr<ds::Scanner>& scanner);
+RcppExport SEXP _arrow_dataset___Scanner__Scan(SEXP scanner_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::Scanner>&>::type scanner(scanner_sexp);
+	return Rcpp::wrap(dataset___Scanner__Scan(scanner));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___Scanner__Scan(SEXP scanner_sexp){
+	Rf_error("Cannot call dataset___Scanner__Scan(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// dataset.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::vector<std::shared_ptr<arrow::RecordBatch>> dataset___ScanTask__get_batches(const std::shared_ptr<ds::ScanTask>& scan_task);
+RcppExport SEXP _arrow_dataset___ScanTask__get_batches(SEXP scan_task_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<ds::ScanTask>&>::type scan_task(scan_task_sexp);
+	return Rcpp::wrap(dataset___ScanTask__get_batches(scan_task));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_dataset___ScanTask__get_batches(SEXP scan_task_sexp){
+	Rf_error("Cannot call dataset___ScanTask__get_batches(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -1973,6 +2061,20 @@ RcppExport SEXP _arrow_Utf8__initialize(){
 
 // datatype.cpp
 #if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<arrow::DataType> Binary__initialize();
+RcppExport SEXP _arrow_Binary__initialize(){
+BEGIN_RCPP
+	return Rcpp::wrap(Binary__initialize());
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_Binary__initialize(){
+	Rf_error("Cannot call Binary__initialize(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// datatype.cpp
+#if defined(ARROW_R_WITH_ARROW)
 std::shared_ptr<arrow::DataType> Date32__initialize();
 RcppExport SEXP _arrow_Date32__initialize(){
 BEGIN_RCPP
@@ -2046,32 +2148,17 @@ RcppExport SEXP _arrow_FixedSizeBinary__initialize(SEXP byte_width_sexp){
 
 // datatype.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::DataType> Timestamp__initialize1(arrow::TimeUnit::type unit);
-RcppExport SEXP _arrow_Timestamp__initialize1(SEXP unit_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<arrow::TimeUnit::type>::type unit(unit_sexp);
-	return Rcpp::wrap(Timestamp__initialize1(unit));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_Timestamp__initialize1(SEXP unit_sexp){
-	Rf_error("Cannot call Timestamp__initialize1(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// datatype.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::DataType> Timestamp__initialize2(arrow::TimeUnit::type unit, const std::string& timezone);
-RcppExport SEXP _arrow_Timestamp__initialize2(SEXP unit_sexp, SEXP timezone_sexp){
+std::shared_ptr<arrow::DataType> Timestamp__initialize(arrow::TimeUnit::type unit, const std::string& timezone);
+RcppExport SEXP _arrow_Timestamp__initialize(SEXP unit_sexp, SEXP timezone_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<arrow::TimeUnit::type>::type unit(unit_sexp);
 	Rcpp::traits::input_parameter<const std::string&>::type timezone(timezone_sexp);
-	return Rcpp::wrap(Timestamp__initialize2(unit, timezone));
+	return Rcpp::wrap(Timestamp__initialize(unit, timezone));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_Timestamp__initialize2(SEXP unit_sexp, SEXP timezone_sexp){
-	Rf_error("Cannot call Timestamp__initialize2(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_Timestamp__initialize(SEXP unit_sexp, SEXP timezone_sexp){
+	Rf_error("Cannot call Timestamp__initialize(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -2706,254 +2793,83 @@ RcppExport SEXP _arrow_dataset___expr__ToString(SEXP x_sexp){
 
 // feather.cpp
 #if defined(ARROW_R_WITH_ARROW)
-void ipc___feather___TableWriter__SetDescription(const std::unique_ptr<arrow::ipc::feather::TableWriter>& writer, const std::string& description);
-RcppExport SEXP _arrow_ipc___feather___TableWriter__SetDescription(SEXP writer_sexp, SEXP description_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableWriter>&>::type writer(writer_sexp);
-	Rcpp::traits::input_parameter<const std::string&>::type description(description_sexp);
-	ipc___feather___TableWriter__SetDescription(writer, description);
-	return R_NilValue;
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableWriter__SetDescription(SEXP writer_sexp, SEXP description_sexp){
-	Rf_error("Cannot call ipc___feather___TableWriter__SetDescription(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-void ipc___feather___TableWriter__SetNumRows(const std::unique_ptr<arrow::ipc::feather::TableWriter>& writer, int64_t num_rows);
-RcppExport SEXP _arrow_ipc___feather___TableWriter__SetNumRows(SEXP writer_sexp, SEXP num_rows_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableWriter>&>::type writer(writer_sexp);
-	Rcpp::traits::input_parameter<int64_t>::type num_rows(num_rows_sexp);
-	ipc___feather___TableWriter__SetNumRows(writer, num_rows);
-	return R_NilValue;
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableWriter__SetNumRows(SEXP writer_sexp, SEXP num_rows_sexp){
-	Rf_error("Cannot call ipc___feather___TableWriter__SetNumRows(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-void ipc___feather___TableWriter__Append(const std::unique_ptr<arrow::ipc::feather::TableWriter>& writer, const std::string& name, const std::shared_ptr<arrow::Array>& values);
-RcppExport SEXP _arrow_ipc___feather___TableWriter__Append(SEXP writer_sexp, SEXP name_sexp, SEXP values_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableWriter>&>::type writer(writer_sexp);
-	Rcpp::traits::input_parameter<const std::string&>::type name(name_sexp);
-	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Array>&>::type values(values_sexp);
-	ipc___feather___TableWriter__Append(writer, name, values);
-	return R_NilValue;
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableWriter__Append(SEXP writer_sexp, SEXP name_sexp, SEXP values_sexp){
-	Rf_error("Cannot call ipc___feather___TableWriter__Append(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-void ipc___feather___TableWriter__Finalize(const std::unique_ptr<arrow::ipc::feather::TableWriter>& writer);
-RcppExport SEXP _arrow_ipc___feather___TableWriter__Finalize(SEXP writer_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableWriter>&>::type writer(writer_sexp);
-	ipc___feather___TableWriter__Finalize(writer);
-	return R_NilValue;
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableWriter__Finalize(SEXP writer_sexp){
-	Rf_error("Cannot call ipc___feather___TableWriter__Finalize(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::unique_ptr<arrow::ipc::feather::TableWriter> ipc___feather___TableWriter__Open(const std::shared_ptr<arrow::io::OutputStream>& stream);
-RcppExport SEXP _arrow_ipc___feather___TableWriter__Open(SEXP stream_sexp){
+void ipc___WriteFeather__Table(const std::shared_ptr<arrow::io::OutputStream>& stream, const std::shared_ptr<arrow::Table>& table, int version, int chunk_size, arrow::Compression::type compression, int compression_level);
+RcppExport SEXP _arrow_ipc___WriteFeather__Table(SEXP stream_sexp, SEXP table_sexp, SEXP version_sexp, SEXP chunk_size_sexp, SEXP compression_sexp, SEXP compression_level_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::io::OutputStream>&>::type stream(stream_sexp);
-	return Rcpp::wrap(ipc___feather___TableWriter__Open(stream));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableWriter__Open(SEXP stream_sexp){
-	Rf_error("Cannot call ipc___feather___TableWriter__Open(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-void ipc___TableWriter__RecordBatch__WriteFeather(const std::unique_ptr<arrow::ipc::feather::TableWriter>& writer, const std::shared_ptr<arrow::RecordBatch>& batch);
-RcppExport SEXP _arrow_ipc___TableWriter__RecordBatch__WriteFeather(SEXP writer_sexp, SEXP batch_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableWriter>&>::type writer(writer_sexp);
-	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::RecordBatch>&>::type batch(batch_sexp);
-	ipc___TableWriter__RecordBatch__WriteFeather(writer, batch);
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Table>&>::type table(table_sexp);
+	Rcpp::traits::input_parameter<int>::type version(version_sexp);
+	Rcpp::traits::input_parameter<int>::type chunk_size(chunk_size_sexp);
+	Rcpp::traits::input_parameter<arrow::Compression::type>::type compression(compression_sexp);
+	Rcpp::traits::input_parameter<int>::type compression_level(compression_level_sexp);
+	ipc___WriteFeather__Table(stream, table, version, chunk_size, compression, compression_level);
 	return R_NilValue;
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_ipc___TableWriter__RecordBatch__WriteFeather(SEXP writer_sexp, SEXP batch_sexp){
-	Rf_error("Cannot call ipc___TableWriter__RecordBatch__WriteFeather(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_ipc___WriteFeather__Table(SEXP stream_sexp, SEXP table_sexp, SEXP version_sexp, SEXP chunk_size_sexp, SEXP compression_sexp, SEXP compression_level_sexp){
+	Rf_error("Cannot call ipc___WriteFeather__Table(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // feather.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::string ipc___feather___TableReader__GetDescription(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader);
-RcppExport SEXP _arrow_ipc___feather___TableReader__GetDescription(SEXP reader_sexp){
+int ipc___feather___Reader__version(const std::shared_ptr<arrow::ipc::feather::Reader>& reader);
+RcppExport SEXP _arrow_ipc___feather___Reader__version(SEXP reader_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__GetDescription(reader));
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::ipc::feather::Reader>&>::type reader(reader_sexp);
+	return Rcpp::wrap(ipc___feather___Reader__version(reader));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_ipc___feather___TableReader__GetDescription(SEXP reader_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__GetDescription(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_ipc___feather___Reader__version(SEXP reader_sexp){
+	Rf_error("Cannot call ipc___feather___Reader__version(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // feather.cpp
 #if defined(ARROW_R_WITH_ARROW)
-bool ipc___feather___TableReader__HasDescription(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader);
-RcppExport SEXP _arrow_ipc___feather___TableReader__HasDescription(SEXP reader_sexp){
+std::shared_ptr<arrow::Table> ipc___feather___Reader__Read(const std::shared_ptr<arrow::ipc::feather::Reader>& reader, SEXP columns);
+RcppExport SEXP _arrow_ipc___feather___Reader__Read(SEXP reader_sexp, SEXP columns_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__HasDescription(reader));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableReader__HasDescription(SEXP reader_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__HasDescription(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-int ipc___feather___TableReader__version(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader);
-RcppExport SEXP _arrow_ipc___feather___TableReader__version(SEXP reader_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__version(reader));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableReader__version(SEXP reader_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__version(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-int64_t ipc___feather___TableReader__num_rows(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader);
-RcppExport SEXP _arrow_ipc___feather___TableReader__num_rows(SEXP reader_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__num_rows(reader));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableReader__num_rows(SEXP reader_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__num_rows(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-int64_t ipc___feather___TableReader__num_columns(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader);
-RcppExport SEXP _arrow_ipc___feather___TableReader__num_columns(SEXP reader_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__num_columns(reader));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableReader__num_columns(SEXP reader_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__num_columns(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::string ipc___feather___TableReader__GetColumnName(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader, int i);
-RcppExport SEXP _arrow_ipc___feather___TableReader__GetColumnName(SEXP reader_sexp, SEXP i_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
-	Rcpp::traits::input_parameter<int>::type i(i_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__GetColumnName(reader, i));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableReader__GetColumnName(SEXP reader_sexp, SEXP i_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__GetColumnName(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::ChunkedArray> ipc___feather___TableReader__GetColumn(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader, int i);
-RcppExport SEXP _arrow_ipc___feather___TableReader__GetColumn(SEXP reader_sexp, SEXP i_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
-	Rcpp::traits::input_parameter<int>::type i(i_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__GetColumn(reader, i));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_ipc___feather___TableReader__GetColumn(SEXP reader_sexp, SEXP i_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__GetColumn(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// feather.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::Table> ipc___feather___TableReader__Read(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader, SEXP columns);
-RcppExport SEXP _arrow_ipc___feather___TableReader__Read(SEXP reader_sexp, SEXP columns_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::ipc::feather::Reader>&>::type reader(reader_sexp);
 	Rcpp::traits::input_parameter<SEXP>::type columns(columns_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__Read(reader, columns));
+	return Rcpp::wrap(ipc___feather___Reader__Read(reader, columns));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_ipc___feather___TableReader__Read(SEXP reader_sexp, SEXP columns_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__Read(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_ipc___feather___Reader__Read(SEXP reader_sexp, SEXP columns_sexp){
+	Rf_error("Cannot call ipc___feather___Reader__Read(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // feather.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::unique_ptr<arrow::ipc::feather::TableReader> ipc___feather___TableReader__Open(const std::shared_ptr<arrow::io::RandomAccessFile>& stream);
-RcppExport SEXP _arrow_ipc___feather___TableReader__Open(SEXP stream_sexp){
+std::shared_ptr<arrow::ipc::feather::Reader> ipc___feather___Reader__Open(const std::shared_ptr<arrow::io::RandomAccessFile>& stream);
+RcppExport SEXP _arrow_ipc___feather___Reader__Open(SEXP stream_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::io::RandomAccessFile>&>::type stream(stream_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__Open(stream));
+	return Rcpp::wrap(ipc___feather___Reader__Open(stream));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_ipc___feather___TableReader__Open(SEXP stream_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__Open(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_ipc___feather___Reader__Open(SEXP stream_sexp){
+	Rf_error("Cannot call ipc___feather___Reader__Open(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // feather.cpp
 #if defined(ARROW_R_WITH_ARROW)
-Rcpp::CharacterVector ipc___feather___TableReader__column_names(const std::unique_ptr<arrow::ipc::feather::TableReader>& reader);
-RcppExport SEXP _arrow_ipc___feather___TableReader__column_names(SEXP reader_sexp){
+Rcpp::CharacterVector ipc___feather___Reader__column_names(const std::shared_ptr<arrow::ipc::feather::Reader>& reader);
+RcppExport SEXP _arrow_ipc___feather___Reader__column_names(SEXP reader_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::unique_ptr<arrow::ipc::feather::TableReader>&>::type reader(reader_sexp);
-	return Rcpp::wrap(ipc___feather___TableReader__column_names(reader));
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::ipc::feather::Reader>&>::type reader(reader_sexp);
+	return Rcpp::wrap(ipc___feather___Reader__column_names(reader));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_ipc___feather___TableReader__column_names(SEXP reader_sexp){
-	Rf_error("Cannot call ipc___feather___TableReader__column_names(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_ipc___feather___Reader__column_names(SEXP reader_sexp){
+	Rf_error("Cannot call ipc___feather___Reader__column_names(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -3052,159 +2968,159 @@ RcppExport SEXP _arrow_Field__type(SEXP field_sexp){
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-fs::FileType fs___FileStats__type(const std::shared_ptr<fs::FileStats>& x);
-RcppExport SEXP _arrow_fs___FileStats__type(SEXP x_sexp){
+fs::FileType fs___FileInfo__type(const std::shared_ptr<fs::FileInfo>& x);
+RcppExport SEXP _arrow_fs___FileInfo__type(SEXP x_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
-	return Rcpp::wrap(fs___FileStats__type(x));
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
+	return Rcpp::wrap(fs___FileInfo__type(x));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__type(SEXP x_sexp){
-	Rf_error("Cannot call fs___FileStats__type(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__type(SEXP x_sexp){
+	Rf_error("Cannot call fs___FileInfo__type(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-void fs___FileStats__set_type(const std::shared_ptr<fs::FileStats>& x, fs::FileType type);
-RcppExport SEXP _arrow_fs___FileStats__set_type(SEXP x_sexp, SEXP type_sexp){
+void fs___FileInfo__set_type(const std::shared_ptr<fs::FileInfo>& x, fs::FileType type);
+RcppExport SEXP _arrow_fs___FileInfo__set_type(SEXP x_sexp, SEXP type_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
 	Rcpp::traits::input_parameter<fs::FileType>::type type(type_sexp);
-	fs___FileStats__set_type(x, type);
+	fs___FileInfo__set_type(x, type);
 	return R_NilValue;
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__set_type(SEXP x_sexp, SEXP type_sexp){
-	Rf_error("Cannot call fs___FileStats__set_type(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__set_type(SEXP x_sexp, SEXP type_sexp){
+	Rf_error("Cannot call fs___FileInfo__set_type(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::string fs___FileStats__path(const std::shared_ptr<fs::FileStats>& x);
-RcppExport SEXP _arrow_fs___FileStats__path(SEXP x_sexp){
+std::string fs___FileInfo__path(const std::shared_ptr<fs::FileInfo>& x);
+RcppExport SEXP _arrow_fs___FileInfo__path(SEXP x_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
-	return Rcpp::wrap(fs___FileStats__path(x));
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
+	return Rcpp::wrap(fs___FileInfo__path(x));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__path(SEXP x_sexp){
-	Rf_error("Cannot call fs___FileStats__path(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__path(SEXP x_sexp){
+	Rf_error("Cannot call fs___FileInfo__path(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-void fs___FileStats__set_path(const std::shared_ptr<fs::FileStats>& x, const std::string& path);
-RcppExport SEXP _arrow_fs___FileStats__set_path(SEXP x_sexp, SEXP path_sexp){
+void fs___FileInfo__set_path(const std::shared_ptr<fs::FileInfo>& x, const std::string& path);
+RcppExport SEXP _arrow_fs___FileInfo__set_path(SEXP x_sexp, SEXP path_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
 	Rcpp::traits::input_parameter<const std::string&>::type path(path_sexp);
-	fs___FileStats__set_path(x, path);
+	fs___FileInfo__set_path(x, path);
 	return R_NilValue;
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__set_path(SEXP x_sexp, SEXP path_sexp){
-	Rf_error("Cannot call fs___FileStats__set_path(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__set_path(SEXP x_sexp, SEXP path_sexp){
+	Rf_error("Cannot call fs___FileInfo__set_path(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-int64_t fs___FileStats__size(const std::shared_ptr<fs::FileStats>& x);
-RcppExport SEXP _arrow_fs___FileStats__size(SEXP x_sexp){
+int64_t fs___FileInfo__size(const std::shared_ptr<fs::FileInfo>& x);
+RcppExport SEXP _arrow_fs___FileInfo__size(SEXP x_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
-	return Rcpp::wrap(fs___FileStats__size(x));
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
+	return Rcpp::wrap(fs___FileInfo__size(x));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__size(SEXP x_sexp){
-	Rf_error("Cannot call fs___FileStats__size(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__size(SEXP x_sexp){
+	Rf_error("Cannot call fs___FileInfo__size(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-void fs___FileStats__set_size(const std::shared_ptr<fs::FileStats>& x, int64_t size);
-RcppExport SEXP _arrow_fs___FileStats__set_size(SEXP x_sexp, SEXP size_sexp){
+void fs___FileInfo__set_size(const std::shared_ptr<fs::FileInfo>& x, int64_t size);
+RcppExport SEXP _arrow_fs___FileInfo__set_size(SEXP x_sexp, SEXP size_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
 	Rcpp::traits::input_parameter<int64_t>::type size(size_sexp);
-	fs___FileStats__set_size(x, size);
+	fs___FileInfo__set_size(x, size);
 	return R_NilValue;
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__set_size(SEXP x_sexp, SEXP size_sexp){
-	Rf_error("Cannot call fs___FileStats__set_size(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__set_size(SEXP x_sexp, SEXP size_sexp){
+	Rf_error("Cannot call fs___FileInfo__set_size(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::string fs___FileStats__base_name(const std::shared_ptr<fs::FileStats>& x);
-RcppExport SEXP _arrow_fs___FileStats__base_name(SEXP x_sexp){
+std::string fs___FileInfo__base_name(const std::shared_ptr<fs::FileInfo>& x);
+RcppExport SEXP _arrow_fs___FileInfo__base_name(SEXP x_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
-	return Rcpp::wrap(fs___FileStats__base_name(x));
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
+	return Rcpp::wrap(fs___FileInfo__base_name(x));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__base_name(SEXP x_sexp){
-	Rf_error("Cannot call fs___FileStats__base_name(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__base_name(SEXP x_sexp){
+	Rf_error("Cannot call fs___FileInfo__base_name(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::string fs___FileStats__extension(const std::shared_ptr<fs::FileStats>& x);
-RcppExport SEXP _arrow_fs___FileStats__extension(SEXP x_sexp){
+std::string fs___FileInfo__extension(const std::shared_ptr<fs::FileInfo>& x);
+RcppExport SEXP _arrow_fs___FileInfo__extension(SEXP x_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
-	return Rcpp::wrap(fs___FileStats__extension(x));
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
+	return Rcpp::wrap(fs___FileInfo__extension(x));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__extension(SEXP x_sexp){
-	Rf_error("Cannot call fs___FileStats__extension(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__extension(SEXP x_sexp){
+	Rf_error("Cannot call fs___FileInfo__extension(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-SEXP fs___FileStats__mtime(const std::shared_ptr<fs::FileStats>& x);
-RcppExport SEXP _arrow_fs___FileStats__mtime(SEXP x_sexp){
+SEXP fs___FileInfo__mtime(const std::shared_ptr<fs::FileInfo>& x);
+RcppExport SEXP _arrow_fs___FileInfo__mtime(SEXP x_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
-	return Rcpp::wrap(fs___FileStats__mtime(x));
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
+	return Rcpp::wrap(fs___FileInfo__mtime(x));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__mtime(SEXP x_sexp){
-	Rf_error("Cannot call fs___FileStats__mtime(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__mtime(SEXP x_sexp){
+	Rf_error("Cannot call fs___FileInfo__mtime(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-void fs___FileStats__set_mtime(const std::shared_ptr<fs::FileStats>& x, SEXP time);
-RcppExport SEXP _arrow_fs___FileStats__set_mtime(SEXP x_sexp, SEXP time_sexp){
+void fs___FileInfo__set_mtime(const std::shared_ptr<fs::FileInfo>& x, SEXP time);
+RcppExport SEXP _arrow_fs___FileInfo__set_mtime(SEXP x_sexp, SEXP time_sexp){
 BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileStats>&>::type x(x_sexp);
+	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileInfo>&>::type x(x_sexp);
 	Rcpp::traits::input_parameter<SEXP>::type time(time_sexp);
-	fs___FileStats__set_mtime(x, time);
+	fs___FileInfo__set_mtime(x, time);
 	return R_NilValue;
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileStats__set_mtime(SEXP x_sexp, SEXP time_sexp){
-	Rf_error("Cannot call fs___FileStats__set_mtime(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileInfo__set_mtime(SEXP x_sexp, SEXP time_sexp){
+	Rf_error("Cannot call fs___FileInfo__set_mtime(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -3225,16 +3141,16 @@ RcppExport SEXP _arrow_fs___FileSelector__base_dir(SEXP selector_sexp){
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-bool fs___FileSelector__allow_non_existent(const std::shared_ptr<fs::FileSelector>& selector);
-RcppExport SEXP _arrow_fs___FileSelector__allow_non_existent(SEXP selector_sexp){
+bool fs___FileSelector__allow_not_found(const std::shared_ptr<fs::FileSelector>& selector);
+RcppExport SEXP _arrow_fs___FileSelector__allow_not_found(SEXP selector_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSelector>&>::type selector(selector_sexp);
-	return Rcpp::wrap(fs___FileSelector__allow_non_existent(selector));
+	return Rcpp::wrap(fs___FileSelector__allow_not_found(selector));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileSelector__allow_non_existent(SEXP selector_sexp){
-	Rf_error("Cannot call fs___FileSelector__allow_non_existent(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileSelector__allow_not_found(SEXP selector_sexp){
+	Rf_error("Cannot call fs___FileSelector__allow_not_found(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -3255,50 +3171,50 @@ RcppExport SEXP _arrow_fs___FileSelector__recursive(SEXP selector_sexp){
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<fs::FileSelector> fs___FileSelector__create(const std::string& base_dir, bool allow_non_existent, bool recursive);
-RcppExport SEXP _arrow_fs___FileSelector__create(SEXP base_dir_sexp, SEXP allow_non_existent_sexp, SEXP recursive_sexp){
+std::shared_ptr<fs::FileSelector> fs___FileSelector__create(const std::string& base_dir, bool allow_not_found, bool recursive);
+RcppExport SEXP _arrow_fs___FileSelector__create(SEXP base_dir_sexp, SEXP allow_not_found_sexp, SEXP recursive_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::string&>::type base_dir(base_dir_sexp);
-	Rcpp::traits::input_parameter<bool>::type allow_non_existent(allow_non_existent_sexp);
+	Rcpp::traits::input_parameter<bool>::type allow_not_found(allow_not_found_sexp);
 	Rcpp::traits::input_parameter<bool>::type recursive(recursive_sexp);
-	return Rcpp::wrap(fs___FileSelector__create(base_dir, allow_non_existent, recursive));
+	return Rcpp::wrap(fs___FileSelector__create(base_dir, allow_not_found, recursive));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileSelector__create(SEXP base_dir_sexp, SEXP allow_non_existent_sexp, SEXP recursive_sexp){
+RcppExport SEXP _arrow_fs___FileSelector__create(SEXP base_dir_sexp, SEXP allow_not_found_sexp, SEXP recursive_sexp){
 	Rf_error("Cannot call fs___FileSelector__create(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::vector<std::shared_ptr<fs::FileStats>> fs___FileSystem__GetTargetStats_Paths(const std::shared_ptr<fs::FileSystem>& file_system, const std::vector<std::string>& paths);
-RcppExport SEXP _arrow_fs___FileSystem__GetTargetStats_Paths(SEXP file_system_sexp, SEXP paths_sexp){
+std::vector<std::shared_ptr<fs::FileInfo>> fs___FileSystem__GetTargetInfos_Paths(const std::shared_ptr<fs::FileSystem>& file_system, const std::vector<std::string>& paths);
+RcppExport SEXP _arrow_fs___FileSystem__GetTargetInfos_Paths(SEXP file_system_sexp, SEXP paths_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSystem>&>::type file_system(file_system_sexp);
 	Rcpp::traits::input_parameter<const std::vector<std::string>&>::type paths(paths_sexp);
-	return Rcpp::wrap(fs___FileSystem__GetTargetStats_Paths(file_system, paths));
+	return Rcpp::wrap(fs___FileSystem__GetTargetInfos_Paths(file_system, paths));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileSystem__GetTargetStats_Paths(SEXP file_system_sexp, SEXP paths_sexp){
-	Rf_error("Cannot call fs___FileSystem__GetTargetStats_Paths(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileSystem__GetTargetInfos_Paths(SEXP file_system_sexp, SEXP paths_sexp){
+	Rf_error("Cannot call fs___FileSystem__GetTargetInfos_Paths(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
 // filesystem.cpp
 #if defined(ARROW_R_WITH_ARROW)
-std::vector<std::shared_ptr<fs::FileStats>> fs___FileSystem__GetTargetStats_FileSelector(const std::shared_ptr<fs::FileSystem>& file_system, const std::shared_ptr<fs::FileSelector>& selector);
-RcppExport SEXP _arrow_fs___FileSystem__GetTargetStats_FileSelector(SEXP file_system_sexp, SEXP selector_sexp){
+std::vector<std::shared_ptr<fs::FileInfo>> fs___FileSystem__GetTargetInfos_FileSelector(const std::shared_ptr<fs::FileSystem>& file_system, const std::shared_ptr<fs::FileSelector>& selector);
+RcppExport SEXP _arrow_fs___FileSystem__GetTargetInfos_FileSelector(SEXP file_system_sexp, SEXP selector_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSystem>&>::type file_system(file_system_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<fs::FileSelector>&>::type selector(selector_sexp);
-	return Rcpp::wrap(fs___FileSystem__GetTargetStats_FileSelector(file_system, selector));
+	return Rcpp::wrap(fs___FileSystem__GetTargetInfos_FileSelector(file_system, selector));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_fs___FileSystem__GetTargetStats_FileSelector(SEXP file_system_sexp, SEXP selector_sexp){
-	Rf_error("Cannot call fs___FileSystem__GetTargetStats_FileSelector(). Please use arrow::install_arrow() to install required runtime libraries. ");
+RcppExport SEXP _arrow_fs___FileSystem__GetTargetInfos_FileSelector(SEXP file_system_sexp, SEXP selector_sexp){
+	Rf_error("Cannot call fs___FileSystem__GetTargetInfos_FileSelector(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -3863,50 +3779,6 @@ RcppExport SEXP _arrow_io___BufferOutputStream__Write(SEXP stream_sexp, SEXP byt
 }
 #endif
 
-// io.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::io::MockOutputStream> io___MockOutputStream__initialize();
-RcppExport SEXP _arrow_io___MockOutputStream__initialize(){
-BEGIN_RCPP
-	return Rcpp::wrap(io___MockOutputStream__initialize());
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_io___MockOutputStream__initialize(){
-	Rf_error("Cannot call io___MockOutputStream__initialize(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// io.cpp
-#if defined(ARROW_R_WITH_ARROW)
-int64_t io___MockOutputStream__GetExtentBytesWritten(const std::shared_ptr<arrow::io::MockOutputStream>& stream);
-RcppExport SEXP _arrow_io___MockOutputStream__GetExtentBytesWritten(SEXP stream_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::io::MockOutputStream>&>::type stream(stream_sexp);
-	return Rcpp::wrap(io___MockOutputStream__GetExtentBytesWritten(stream));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_io___MockOutputStream__GetExtentBytesWritten(SEXP stream_sexp){
-	Rf_error("Cannot call io___MockOutputStream__GetExtentBytesWritten(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
-// io.cpp
-#if defined(ARROW_R_WITH_ARROW)
-std::shared_ptr<arrow::io::FixedSizeBufferWriter> io___FixedSizeBufferWriter__initialize(const std::shared_ptr<arrow::Buffer>& buffer);
-RcppExport SEXP _arrow_io___FixedSizeBufferWriter__initialize(SEXP buffer_sexp){
-BEGIN_RCPP
-	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Buffer>&>::type buffer(buffer_sexp);
-	return Rcpp::wrap(io___FixedSizeBufferWriter__initialize(buffer));
-END_RCPP
-}
-#else
-RcppExport SEXP _arrow_io___FixedSizeBufferWriter__initialize(SEXP buffer_sexp){
-	Rf_error("Cannot call io___FixedSizeBufferWriter__initialize(). Please use arrow::install_arrow() to install required runtime libraries. ");
-}
-#endif
-
 // json.cpp
 #if defined(ARROW_R_WITH_ARROW)
 std::shared_ptr<arrow::json::ReadOptions> json___ReadOptions__initialize(List_ options);
@@ -4321,6 +4193,21 @@ END_RCPP
 #else
 RcppExport SEXP _arrow_parquet___arrow___FileReader__ReadTable2(SEXP reader_sexp, SEXP column_indices_sexp){
 	Rf_error("Cannot call parquet___arrow___FileReader__ReadTable2(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// parquet.cpp
+#if defined(ARROW_R_WITH_ARROW)
+int64_t parquet___arrow___FileReader__num_rows(const std::unique_ptr<parquet::arrow::FileReader>& reader);
+RcppExport SEXP _arrow_parquet___arrow___FileReader__num_rows(SEXP reader_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::unique_ptr<parquet::arrow::FileReader>&>::type reader(reader_sexp);
+	return Rcpp::wrap(parquet___arrow___FileReader__num_rows(reader));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_parquet___arrow___FileReader__num_rows(SEXP reader_sexp){
+	Rf_error("Cannot call parquet___arrow___FileReader__num_rows(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -4753,6 +4640,168 @@ RcppExport SEXP _arrow_parquet___arrow___FileReader__GetSchema(SEXP reader_sexp)
 }
 #endif
 
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<arrow::Array> ImportArray(uintptr_t array, uintptr_t schema);
+RcppExport SEXP _arrow_ImportArray(SEXP array_sexp, SEXP schema_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<uintptr_t>::type array(array_sexp);
+	Rcpp::traits::input_parameter<uintptr_t>::type schema(schema_sexp);
+	return Rcpp::wrap(ImportArray(array, schema));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_ImportArray(SEXP array_sexp, SEXP schema_sexp){
+	Rf_error("Cannot call ImportArray(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<arrow::RecordBatch> ImportRecordBatch(uintptr_t array, uintptr_t schema);
+RcppExport SEXP _arrow_ImportRecordBatch(SEXP array_sexp, SEXP schema_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<uintptr_t>::type array(array_sexp);
+	Rcpp::traits::input_parameter<uintptr_t>::type schema(schema_sexp);
+	return Rcpp::wrap(ImportRecordBatch(array, schema));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_ImportRecordBatch(SEXP array_sexp, SEXP schema_sexp){
+	Rf_error("Cannot call ImportRecordBatch(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+uintptr_t allocate_arrow_schema();
+RcppExport SEXP _arrow_allocate_arrow_schema(){
+BEGIN_RCPP
+	return Rcpp::wrap(allocate_arrow_schema());
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_allocate_arrow_schema(){
+	Rf_error("Cannot call allocate_arrow_schema(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+void delete_arrow_schema(uintptr_t ptr);
+RcppExport SEXP _arrow_delete_arrow_schema(SEXP ptr_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<uintptr_t>::type ptr(ptr_sexp);
+	delete_arrow_schema(ptr);
+	return R_NilValue;
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_delete_arrow_schema(SEXP ptr_sexp){
+	Rf_error("Cannot call delete_arrow_schema(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+uintptr_t allocate_arrow_array();
+RcppExport SEXP _arrow_allocate_arrow_array(){
+BEGIN_RCPP
+	return Rcpp::wrap(allocate_arrow_array());
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_allocate_arrow_array(){
+	Rf_error("Cannot call allocate_arrow_array(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+void delete_arrow_array(uintptr_t ptr);
+RcppExport SEXP _arrow_delete_arrow_array(SEXP ptr_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<uintptr_t>::type ptr(ptr_sexp);
+	delete_arrow_array(ptr);
+	return R_NilValue;
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_delete_arrow_array(SEXP ptr_sexp){
+	Rf_error("Cannot call delete_arrow_array(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+void ExportType(const std::shared_ptr<arrow::DataType>& type, uintptr_t ptr);
+RcppExport SEXP _arrow_ExportType(SEXP type_sexp, SEXP ptr_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::DataType>&>::type type(type_sexp);
+	Rcpp::traits::input_parameter<uintptr_t>::type ptr(ptr_sexp);
+	ExportType(type, ptr);
+	return R_NilValue;
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_ExportType(SEXP type_sexp, SEXP ptr_sexp){
+	Rf_error("Cannot call ExportType(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+void ExportSchema(const std::shared_ptr<arrow::Schema>& schema, uintptr_t ptr);
+RcppExport SEXP _arrow_ExportSchema(SEXP schema_sexp, SEXP ptr_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Schema>&>::type schema(schema_sexp);
+	Rcpp::traits::input_parameter<uintptr_t>::type ptr(ptr_sexp);
+	ExportSchema(schema, ptr);
+	return R_NilValue;
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_ExportSchema(SEXP schema_sexp, SEXP ptr_sexp){
+	Rf_error("Cannot call ExportSchema(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+void ExportArray(const std::shared_ptr<arrow::Array>& array, uintptr_t ptr, uintptr_t schema_ptr);
+RcppExport SEXP _arrow_ExportArray(SEXP array_sexp, SEXP ptr_sexp, SEXP schema_ptr_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Array>&>::type array(array_sexp);
+	Rcpp::traits::input_parameter<uintptr_t>::type ptr(ptr_sexp);
+	Rcpp::traits::input_parameter<uintptr_t>::type schema_ptr(schema_ptr_sexp);
+	ExportArray(array, ptr, schema_ptr);
+	return R_NilValue;
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_ExportArray(SEXP array_sexp, SEXP ptr_sexp, SEXP schema_ptr_sexp){
+	Rf_error("Cannot call ExportArray(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// py-to-r.cpp
+#if defined(ARROW_R_WITH_ARROW)
+void ExportRecordBatch(const std::shared_ptr<arrow::RecordBatch>& batch, uintptr_t ptr, uintptr_t schema_ptr);
+RcppExport SEXP _arrow_ExportRecordBatch(SEXP batch_sexp, SEXP ptr_sexp, SEXP schema_ptr_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::RecordBatch>&>::type batch(batch_sexp);
+	Rcpp::traits::input_parameter<uintptr_t>::type ptr(ptr_sexp);
+	Rcpp::traits::input_parameter<uintptr_t>::type schema_ptr(schema_ptr_sexp);
+	ExportRecordBatch(batch, ptr, schema_ptr);
+	return R_NilValue;
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_ExportRecordBatch(SEXP batch_sexp, SEXP ptr_sexp, SEXP schema_ptr_sexp){
+	Rf_error("Cannot call ExportRecordBatch(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
 // recordbatch.cpp
 #if defined(ARROW_R_WITH_ARROW)
 int RecordBatch__num_columns(const std::shared_ptr<arrow::RecordBatch>& x);
@@ -4878,16 +4927,17 @@ RcppExport SEXP _arrow_RecordBatch__from_dataframe(SEXP tbl_sexp){
 
 // recordbatch.cpp
 #if defined(ARROW_R_WITH_ARROW)
-bool RecordBatch__Equals(const std::shared_ptr<arrow::RecordBatch>& self, const std::shared_ptr<arrow::RecordBatch>& other);
-RcppExport SEXP _arrow_RecordBatch__Equals(SEXP self_sexp, SEXP other_sexp){
+bool RecordBatch__Equals(const std::shared_ptr<arrow::RecordBatch>& self, const std::shared_ptr<arrow::RecordBatch>& other, bool check_metadata);
+RcppExport SEXP _arrow_RecordBatch__Equals(SEXP self_sexp, SEXP other_sexp, SEXP check_metadata_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::RecordBatch>&>::type self(self_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::RecordBatch>&>::type other(other_sexp);
-	return Rcpp::wrap(RecordBatch__Equals(self, other));
+	Rcpp::traits::input_parameter<bool>::type check_metadata(check_metadata_sexp);
+	return Rcpp::wrap(RecordBatch__Equals(self, other, check_metadata));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_RecordBatch__Equals(SEXP self_sexp, SEXP other_sexp){
+RcppExport SEXP _arrow_RecordBatch__Equals(SEXP self_sexp, SEXP other_sexp, SEXP check_metadata_sexp){
 	Rf_error("Cannot call RecordBatch__Equals(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
@@ -5408,6 +5458,22 @@ RcppExport SEXP _arrow_Schema__metadata(SEXP schema_sexp){
 
 // schema.cpp
 #if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<arrow::Schema> Schema__WithMetadata(const std::shared_ptr<arrow::Schema>& schema, Rcpp::CharacterVector metadata);
+RcppExport SEXP _arrow_Schema__WithMetadata(SEXP schema_sexp, SEXP metadata_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Schema>&>::type schema(schema_sexp);
+	Rcpp::traits::input_parameter<Rcpp::CharacterVector>::type metadata(metadata_sexp);
+	return Rcpp::wrap(Schema__WithMetadata(schema, metadata));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_Schema__WithMetadata(SEXP schema_sexp, SEXP metadata_sexp){
+	Rf_error("Cannot call Schema__WithMetadata(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// schema.cpp
+#if defined(ARROW_R_WITH_ARROW)
 Rcpp::RawVector Schema__serialize(const std::shared_ptr<arrow::Schema>& schema);
 RcppExport SEXP _arrow_Schema__serialize(SEXP schema_sexp){
 BEGIN_RCPP
@@ -5435,6 +5501,21 @@ END_RCPP
 #else
 RcppExport SEXP _arrow_Schema__Equals(SEXP schema_sexp, SEXP other_sexp, SEXP check_metadata_sexp){
 	Rf_error("Cannot call Schema__Equals(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// schema.cpp
+#if defined(ARROW_R_WITH_ARROW)
+std::shared_ptr<arrow::Schema> arrow__UnifySchemas(const std::vector<std::shared_ptr<arrow::Schema>>& schemas);
+RcppExport SEXP _arrow_arrow__UnifySchemas(SEXP schemas_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::vector<std::shared_ptr<arrow::Schema>>&>::type schemas(schemas_sexp);
+	return Rcpp::wrap(arrow__UnifySchemas(schemas));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_arrow__UnifySchemas(SEXP schemas_sexp){
+	Rf_error("Cannot call arrow__UnifySchemas(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -5595,17 +5676,48 @@ RcppExport SEXP _arrow_Table__Slice2(SEXP table_sexp, SEXP offset_sexp, SEXP len
 
 // table.cpp
 #if defined(ARROW_R_WITH_ARROW)
-bool Table__Equals(const std::shared_ptr<arrow::Table>& lhs, const std::shared_ptr<arrow::Table>& rhs);
-RcppExport SEXP _arrow_Table__Equals(SEXP lhs_sexp, SEXP rhs_sexp){
+bool Table__Equals(const std::shared_ptr<arrow::Table>& lhs, const std::shared_ptr<arrow::Table>& rhs, bool check_metadata);
+RcppExport SEXP _arrow_Table__Equals(SEXP lhs_sexp, SEXP rhs_sexp, SEXP check_metadata_sexp){
 BEGIN_RCPP
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Table>&>::type lhs(lhs_sexp);
 	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Table>&>::type rhs(rhs_sexp);
-	return Rcpp::wrap(Table__Equals(lhs, rhs));
+	Rcpp::traits::input_parameter<bool>::type check_metadata(check_metadata_sexp);
+	return Rcpp::wrap(Table__Equals(lhs, rhs, check_metadata));
 END_RCPP
 }
 #else
-RcppExport SEXP _arrow_Table__Equals(SEXP lhs_sexp, SEXP rhs_sexp){
+RcppExport SEXP _arrow_Table__Equals(SEXP lhs_sexp, SEXP rhs_sexp, SEXP check_metadata_sexp){
 	Rf_error("Cannot call Table__Equals(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// table.cpp
+#if defined(ARROW_R_WITH_ARROW)
+bool Table__Validate(const std::shared_ptr<arrow::Table>& table);
+RcppExport SEXP _arrow_Table__Validate(SEXP table_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Table>&>::type table(table_sexp);
+	return Rcpp::wrap(Table__Validate(table));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_Table__Validate(SEXP table_sexp){
+	Rf_error("Cannot call Table__Validate(). Please use arrow::install_arrow() to install required runtime libraries. ");
+}
+#endif
+
+// table.cpp
+#if defined(ARROW_R_WITH_ARROW)
+bool Table__ValidateFull(const std::shared_ptr<arrow::Table>& table);
+RcppExport SEXP _arrow_Table__ValidateFull(SEXP table_sexp){
+BEGIN_RCPP
+	Rcpp::traits::input_parameter<const std::shared_ptr<arrow::Table>&>::type table(table_sexp);
+	return Rcpp::wrap(Table__ValidateFull(table));
+END_RCPP
+}
+#else
+RcppExport SEXP _arrow_Table__ValidateFull(SEXP table_sexp){
+	Rf_error("Cannot call Table__ValidateFull(). Please use arrow::install_arrow() to install required runtime libraries. ");
 }
 #endif
 
@@ -5775,43 +5887,48 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_ChunkedArray__TakeChunked", (DL_FUNC) &_arrow_ChunkedArray__TakeChunked, 2}, 
 		{ "_arrow_Table__Take", (DL_FUNC) &_arrow_Table__Take, 2}, 
 		{ "_arrow_Table__TakeChunked", (DL_FUNC) &_arrow_Table__TakeChunked, 2}, 
-		{ "_arrow_Array__Filter", (DL_FUNC) &_arrow_Array__Filter, 2}, 
-		{ "_arrow_RecordBatch__Filter", (DL_FUNC) &_arrow_RecordBatch__Filter, 2}, 
-		{ "_arrow_ChunkedArray__Filter", (DL_FUNC) &_arrow_ChunkedArray__Filter, 2}, 
-		{ "_arrow_ChunkedArray__FilterChunked", (DL_FUNC) &_arrow_ChunkedArray__FilterChunked, 2}, 
-		{ "_arrow_Table__Filter", (DL_FUNC) &_arrow_Table__Filter, 2}, 
-		{ "_arrow_Table__FilterChunked", (DL_FUNC) &_arrow_Table__FilterChunked, 2}, 
+		{ "_arrow_Array__Filter", (DL_FUNC) &_arrow_Array__Filter, 3}, 
+		{ "_arrow_RecordBatch__Filter", (DL_FUNC) &_arrow_RecordBatch__Filter, 3}, 
+		{ "_arrow_ChunkedArray__Filter", (DL_FUNC) &_arrow_ChunkedArray__Filter, 3}, 
+		{ "_arrow_ChunkedArray__FilterChunked", (DL_FUNC) &_arrow_ChunkedArray__FilterChunked, 3}, 
+		{ "_arrow_Table__Filter", (DL_FUNC) &_arrow_Table__Filter, 3}, 
+		{ "_arrow_Table__FilterChunked", (DL_FUNC) &_arrow_Table__FilterChunked, 3}, 
 		{ "_arrow_csv___ReadOptions__initialize", (DL_FUNC) &_arrow_csv___ReadOptions__initialize, 1}, 
 		{ "_arrow_csv___ParseOptions__initialize", (DL_FUNC) &_arrow_csv___ParseOptions__initialize, 1}, 
 		{ "_arrow_csv___ConvertOptions__initialize", (DL_FUNC) &_arrow_csv___ConvertOptions__initialize, 1}, 
 		{ "_arrow_csv___TableReader__Make", (DL_FUNC) &_arrow_csv___TableReader__Make, 4}, 
 		{ "_arrow_csv___TableReader__Read", (DL_FUNC) &_arrow_csv___TableReader__Read, 1}, 
-		{ "_arrow_dataset___FSSFactory__Make2", (DL_FUNC) &_arrow_dataset___FSSFactory__Make2, 4}, 
-		{ "_arrow_dataset___FSSFactory__Make1", (DL_FUNC) &_arrow_dataset___FSSFactory__Make1, 3}, 
-		{ "_arrow_dataset___FSSFactory__Make3", (DL_FUNC) &_arrow_dataset___FSSFactory__Make3, 4}, 
-		{ "_arrow_dataset___ParquetFileFormat__Make", (DL_FUNC) &_arrow_dataset___ParquetFileFormat__Make, 0}, 
+		{ "_arrow_dataset___Dataset__NewScan", (DL_FUNC) &_arrow_dataset___Dataset__NewScan, 1}, 
+		{ "_arrow_dataset___Dataset__schema", (DL_FUNC) &_arrow_dataset___Dataset__schema, 1}, 
+		{ "_arrow_dataset___Dataset__type_name", (DL_FUNC) &_arrow_dataset___Dataset__type_name, 1}, 
+		{ "_arrow_dataset___Dataset__ReplaceSchema", (DL_FUNC) &_arrow_dataset___Dataset__ReplaceSchema, 2}, 
+		{ "_arrow_dataset___UnionDataset__create", (DL_FUNC) &_arrow_dataset___UnionDataset__create, 2}, 
+		{ "_arrow_dataset___UnionDataset__children", (DL_FUNC) &_arrow_dataset___UnionDataset__children, 1}, 
+		{ "_arrow_dataset___FileSystemDataset__format", (DL_FUNC) &_arrow_dataset___FileSystemDataset__format, 1}, 
+		{ "_arrow_dataset___FileSystemDataset__files", (DL_FUNC) &_arrow_dataset___FileSystemDataset__files, 1}, 
+		{ "_arrow_dataset___DatasetFactory__Finish1", (DL_FUNC) &_arrow_dataset___DatasetFactory__Finish1, 2}, 
+		{ "_arrow_dataset___DatasetFactory__Finish2", (DL_FUNC) &_arrow_dataset___DatasetFactory__Finish2, 2}, 
+		{ "_arrow_dataset___DatasetFactory__Inspect", (DL_FUNC) &_arrow_dataset___DatasetFactory__Inspect, 2}, 
+		{ "_arrow_dataset___UnionDatasetFactory__Make", (DL_FUNC) &_arrow_dataset___UnionDatasetFactory__Make, 1}, 
+		{ "_arrow_dataset___FileSystemDatasetFactory__Make2", (DL_FUNC) &_arrow_dataset___FileSystemDatasetFactory__Make2, 4}, 
+		{ "_arrow_dataset___FileSystemDatasetFactory__Make1", (DL_FUNC) &_arrow_dataset___FileSystemDatasetFactory__Make1, 3}, 
+		{ "_arrow_dataset___FileSystemDatasetFactory__Make3", (DL_FUNC) &_arrow_dataset___FileSystemDatasetFactory__Make3, 4}, 
+		{ "_arrow_dataset___FileFormat__type_name", (DL_FUNC) &_arrow_dataset___FileFormat__type_name, 1}, 
+		{ "_arrow_dataset___ParquetFileFormat__Make", (DL_FUNC) &_arrow_dataset___ParquetFileFormat__Make, 3}, 
 		{ "_arrow_dataset___IpcFileFormat__Make", (DL_FUNC) &_arrow_dataset___IpcFileFormat__Make, 0}, 
-		{ "_arrow_dataset___SFactory__Finish1", (DL_FUNC) &_arrow_dataset___SFactory__Finish1, 1}, 
-		{ "_arrow_dataset___SFactory__Finish2", (DL_FUNC) &_arrow_dataset___SFactory__Finish2, 2}, 
-		{ "_arrow_dataset___Source__schema", (DL_FUNC) &_arrow_dataset___Source__schema, 1}, 
-		{ "_arrow_dataset___SFactory__Inspect", (DL_FUNC) &_arrow_dataset___SFactory__Inspect, 1}, 
-		{ "_arrow_dataset___DFactory__Make", (DL_FUNC) &_arrow_dataset___DFactory__Make, 1}, 
-		{ "_arrow_dataset___DFactory__Inspect", (DL_FUNC) &_arrow_dataset___DFactory__Inspect, 1}, 
-		{ "_arrow_dataset___DFactory__Finish1", (DL_FUNC) &_arrow_dataset___DFactory__Finish1, 1}, 
-		{ "_arrow_dataset___DFactory__Finish2", (DL_FUNC) &_arrow_dataset___DFactory__Finish2, 2}, 
 		{ "_arrow_dataset___DirectoryPartitioning", (DL_FUNC) &_arrow_dataset___DirectoryPartitioning, 1}, 
 		{ "_arrow_dataset___DirectoryPartitioning__MakeFactory", (DL_FUNC) &_arrow_dataset___DirectoryPartitioning__MakeFactory, 1}, 
 		{ "_arrow_dataset___HivePartitioning", (DL_FUNC) &_arrow_dataset___HivePartitioning, 1}, 
 		{ "_arrow_dataset___HivePartitioning__MakeFactory", (DL_FUNC) &_arrow_dataset___HivePartitioning__MakeFactory, 0}, 
-		{ "_arrow_dataset___Dataset__create", (DL_FUNC) &_arrow_dataset___Dataset__create, 2}, 
-		{ "_arrow_dataset___Dataset__schema", (DL_FUNC) &_arrow_dataset___Dataset__schema, 1}, 
-		{ "_arrow_dataset___Dataset__NewScan", (DL_FUNC) &_arrow_dataset___Dataset__NewScan, 1}, 
 		{ "_arrow_dataset___ScannerBuilder__Project", (DL_FUNC) &_arrow_dataset___ScannerBuilder__Project, 2}, 
 		{ "_arrow_dataset___ScannerBuilder__Filter", (DL_FUNC) &_arrow_dataset___ScannerBuilder__Filter, 2}, 
 		{ "_arrow_dataset___ScannerBuilder__UseThreads", (DL_FUNC) &_arrow_dataset___ScannerBuilder__UseThreads, 2}, 
+		{ "_arrow_dataset___ScannerBuilder__BatchSize", (DL_FUNC) &_arrow_dataset___ScannerBuilder__BatchSize, 2}, 
 		{ "_arrow_dataset___ScannerBuilder__schema", (DL_FUNC) &_arrow_dataset___ScannerBuilder__schema, 1}, 
 		{ "_arrow_dataset___ScannerBuilder__Finish", (DL_FUNC) &_arrow_dataset___ScannerBuilder__Finish, 1}, 
 		{ "_arrow_dataset___Scanner__ToTable", (DL_FUNC) &_arrow_dataset___Scanner__ToTable, 1}, 
+		{ "_arrow_dataset___Scanner__Scan", (DL_FUNC) &_arrow_dataset___Scanner__Scan, 1}, 
+		{ "_arrow_dataset___ScanTask__get_batches", (DL_FUNC) &_arrow_dataset___ScanTask__get_batches, 1}, 
 		{ "_arrow_shared_ptr_is_null", (DL_FUNC) &_arrow_shared_ptr_is_null, 1}, 
 		{ "_arrow_unique_ptr_is_null", (DL_FUNC) &_arrow_unique_ptr_is_null, 1}, 
 		{ "_arrow_Int8__initialize", (DL_FUNC) &_arrow_Int8__initialize, 0}, 
@@ -5827,13 +5944,13 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_Float64__initialize", (DL_FUNC) &_arrow_Float64__initialize, 0}, 
 		{ "_arrow_Boolean__initialize", (DL_FUNC) &_arrow_Boolean__initialize, 0}, 
 		{ "_arrow_Utf8__initialize", (DL_FUNC) &_arrow_Utf8__initialize, 0}, 
+		{ "_arrow_Binary__initialize", (DL_FUNC) &_arrow_Binary__initialize, 0}, 
 		{ "_arrow_Date32__initialize", (DL_FUNC) &_arrow_Date32__initialize, 0}, 
 		{ "_arrow_Date64__initialize", (DL_FUNC) &_arrow_Date64__initialize, 0}, 
 		{ "_arrow_Null__initialize", (DL_FUNC) &_arrow_Null__initialize, 0}, 
 		{ "_arrow_Decimal128Type__initialize", (DL_FUNC) &_arrow_Decimal128Type__initialize, 2}, 
 		{ "_arrow_FixedSizeBinary__initialize", (DL_FUNC) &_arrow_FixedSizeBinary__initialize, 1}, 
-		{ "_arrow_Timestamp__initialize1", (DL_FUNC) &_arrow_Timestamp__initialize1, 1}, 
-		{ "_arrow_Timestamp__initialize2", (DL_FUNC) &_arrow_Timestamp__initialize2, 2}, 
+		{ "_arrow_Timestamp__initialize", (DL_FUNC) &_arrow_Timestamp__initialize, 2}, 
 		{ "_arrow_Time32__initialize", (DL_FUNC) &_arrow_Time32__initialize, 1}, 
 		{ "_arrow_Time64__initialize", (DL_FUNC) &_arrow_Time64__initialize, 1}, 
 		{ "_arrow_list__", (DL_FUNC) &_arrow_list__, 1}, 
@@ -5875,44 +5992,33 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_dataset___expr__is_valid", (DL_FUNC) &_arrow_dataset___expr__is_valid, 1}, 
 		{ "_arrow_dataset___expr__scalar", (DL_FUNC) &_arrow_dataset___expr__scalar, 1}, 
 		{ "_arrow_dataset___expr__ToString", (DL_FUNC) &_arrow_dataset___expr__ToString, 1}, 
-		{ "_arrow_ipc___feather___TableWriter__SetDescription", (DL_FUNC) &_arrow_ipc___feather___TableWriter__SetDescription, 2}, 
-		{ "_arrow_ipc___feather___TableWriter__SetNumRows", (DL_FUNC) &_arrow_ipc___feather___TableWriter__SetNumRows, 2}, 
-		{ "_arrow_ipc___feather___TableWriter__Append", (DL_FUNC) &_arrow_ipc___feather___TableWriter__Append, 3}, 
-		{ "_arrow_ipc___feather___TableWriter__Finalize", (DL_FUNC) &_arrow_ipc___feather___TableWriter__Finalize, 1}, 
-		{ "_arrow_ipc___feather___TableWriter__Open", (DL_FUNC) &_arrow_ipc___feather___TableWriter__Open, 1}, 
-		{ "_arrow_ipc___TableWriter__RecordBatch__WriteFeather", (DL_FUNC) &_arrow_ipc___TableWriter__RecordBatch__WriteFeather, 2}, 
-		{ "_arrow_ipc___feather___TableReader__GetDescription", (DL_FUNC) &_arrow_ipc___feather___TableReader__GetDescription, 1}, 
-		{ "_arrow_ipc___feather___TableReader__HasDescription", (DL_FUNC) &_arrow_ipc___feather___TableReader__HasDescription, 1}, 
-		{ "_arrow_ipc___feather___TableReader__version", (DL_FUNC) &_arrow_ipc___feather___TableReader__version, 1}, 
-		{ "_arrow_ipc___feather___TableReader__num_rows", (DL_FUNC) &_arrow_ipc___feather___TableReader__num_rows, 1}, 
-		{ "_arrow_ipc___feather___TableReader__num_columns", (DL_FUNC) &_arrow_ipc___feather___TableReader__num_columns, 1}, 
-		{ "_arrow_ipc___feather___TableReader__GetColumnName", (DL_FUNC) &_arrow_ipc___feather___TableReader__GetColumnName, 2}, 
-		{ "_arrow_ipc___feather___TableReader__GetColumn", (DL_FUNC) &_arrow_ipc___feather___TableReader__GetColumn, 2}, 
-		{ "_arrow_ipc___feather___TableReader__Read", (DL_FUNC) &_arrow_ipc___feather___TableReader__Read, 2}, 
-		{ "_arrow_ipc___feather___TableReader__Open", (DL_FUNC) &_arrow_ipc___feather___TableReader__Open, 1}, 
-		{ "_arrow_ipc___feather___TableReader__column_names", (DL_FUNC) &_arrow_ipc___feather___TableReader__column_names, 1}, 
+		{ "_arrow_ipc___WriteFeather__Table", (DL_FUNC) &_arrow_ipc___WriteFeather__Table, 6}, 
+		{ "_arrow_ipc___feather___Reader__version", (DL_FUNC) &_arrow_ipc___feather___Reader__version, 1}, 
+		{ "_arrow_ipc___feather___Reader__Read", (DL_FUNC) &_arrow_ipc___feather___Reader__Read, 2}, 
+		{ "_arrow_ipc___feather___Reader__Open", (DL_FUNC) &_arrow_ipc___feather___Reader__Open, 1}, 
+		{ "_arrow_ipc___feather___Reader__column_names", (DL_FUNC) &_arrow_ipc___feather___Reader__column_names, 1}, 
 		{ "_arrow_Field__initialize", (DL_FUNC) &_arrow_Field__initialize, 3}, 
 		{ "_arrow_Field__ToString", (DL_FUNC) &_arrow_Field__ToString, 1}, 
 		{ "_arrow_Field__name", (DL_FUNC) &_arrow_Field__name, 1}, 
 		{ "_arrow_Field__Equals", (DL_FUNC) &_arrow_Field__Equals, 2}, 
 		{ "_arrow_Field__nullable", (DL_FUNC) &_arrow_Field__nullable, 1}, 
 		{ "_arrow_Field__type", (DL_FUNC) &_arrow_Field__type, 1}, 
-		{ "_arrow_fs___FileStats__type", (DL_FUNC) &_arrow_fs___FileStats__type, 1}, 
-		{ "_arrow_fs___FileStats__set_type", (DL_FUNC) &_arrow_fs___FileStats__set_type, 2}, 
-		{ "_arrow_fs___FileStats__path", (DL_FUNC) &_arrow_fs___FileStats__path, 1}, 
-		{ "_arrow_fs___FileStats__set_path", (DL_FUNC) &_arrow_fs___FileStats__set_path, 2}, 
-		{ "_arrow_fs___FileStats__size", (DL_FUNC) &_arrow_fs___FileStats__size, 1}, 
-		{ "_arrow_fs___FileStats__set_size", (DL_FUNC) &_arrow_fs___FileStats__set_size, 2}, 
-		{ "_arrow_fs___FileStats__base_name", (DL_FUNC) &_arrow_fs___FileStats__base_name, 1}, 
-		{ "_arrow_fs___FileStats__extension", (DL_FUNC) &_arrow_fs___FileStats__extension, 1}, 
-		{ "_arrow_fs___FileStats__mtime", (DL_FUNC) &_arrow_fs___FileStats__mtime, 1}, 
-		{ "_arrow_fs___FileStats__set_mtime", (DL_FUNC) &_arrow_fs___FileStats__set_mtime, 2}, 
+		{ "_arrow_fs___FileInfo__type", (DL_FUNC) &_arrow_fs___FileInfo__type, 1}, 
+		{ "_arrow_fs___FileInfo__set_type", (DL_FUNC) &_arrow_fs___FileInfo__set_type, 2}, 
+		{ "_arrow_fs___FileInfo__path", (DL_FUNC) &_arrow_fs___FileInfo__path, 1}, 
+		{ "_arrow_fs___FileInfo__set_path", (DL_FUNC) &_arrow_fs___FileInfo__set_path, 2}, 
+		{ "_arrow_fs___FileInfo__size", (DL_FUNC) &_arrow_fs___FileInfo__size, 1}, 
+		{ "_arrow_fs___FileInfo__set_size", (DL_FUNC) &_arrow_fs___FileInfo__set_size, 2}, 
+		{ "_arrow_fs___FileInfo__base_name", (DL_FUNC) &_arrow_fs___FileInfo__base_name, 1}, 
+		{ "_arrow_fs___FileInfo__extension", (DL_FUNC) &_arrow_fs___FileInfo__extension, 1}, 
+		{ "_arrow_fs___FileInfo__mtime", (DL_FUNC) &_arrow_fs___FileInfo__mtime, 1}, 
+		{ "_arrow_fs___FileInfo__set_mtime", (DL_FUNC) &_arrow_fs___FileInfo__set_mtime, 2}, 
 		{ "_arrow_fs___FileSelector__base_dir", (DL_FUNC) &_arrow_fs___FileSelector__base_dir, 1}, 
-		{ "_arrow_fs___FileSelector__allow_non_existent", (DL_FUNC) &_arrow_fs___FileSelector__allow_non_existent, 1}, 
+		{ "_arrow_fs___FileSelector__allow_not_found", (DL_FUNC) &_arrow_fs___FileSelector__allow_not_found, 1}, 
 		{ "_arrow_fs___FileSelector__recursive", (DL_FUNC) &_arrow_fs___FileSelector__recursive, 1}, 
 		{ "_arrow_fs___FileSelector__create", (DL_FUNC) &_arrow_fs___FileSelector__create, 3}, 
-		{ "_arrow_fs___FileSystem__GetTargetStats_Paths", (DL_FUNC) &_arrow_fs___FileSystem__GetTargetStats_Paths, 2}, 
-		{ "_arrow_fs___FileSystem__GetTargetStats_FileSelector", (DL_FUNC) &_arrow_fs___FileSystem__GetTargetStats_FileSelector, 2}, 
+		{ "_arrow_fs___FileSystem__GetTargetInfos_Paths", (DL_FUNC) &_arrow_fs___FileSystem__GetTargetInfos_Paths, 2}, 
+		{ "_arrow_fs___FileSystem__GetTargetInfos_FileSelector", (DL_FUNC) &_arrow_fs___FileSystem__GetTargetInfos_FileSelector, 2}, 
 		{ "_arrow_fs___FileSystem__CreateDir", (DL_FUNC) &_arrow_fs___FileSystem__CreateDir, 3}, 
 		{ "_arrow_fs___FileSystem__DeleteDir", (DL_FUNC) &_arrow_fs___FileSystem__DeleteDir, 2}, 
 		{ "_arrow_fs___FileSystem__DeleteDirContents", (DL_FUNC) &_arrow_fs___FileSystem__DeleteDirContents, 2}, 
@@ -5948,9 +6054,6 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_io___BufferOutputStream__Finish", (DL_FUNC) &_arrow_io___BufferOutputStream__Finish, 1}, 
 		{ "_arrow_io___BufferOutputStream__Tell", (DL_FUNC) &_arrow_io___BufferOutputStream__Tell, 1}, 
 		{ "_arrow_io___BufferOutputStream__Write", (DL_FUNC) &_arrow_io___BufferOutputStream__Write, 2}, 
-		{ "_arrow_io___MockOutputStream__initialize", (DL_FUNC) &_arrow_io___MockOutputStream__initialize, 0}, 
-		{ "_arrow_io___MockOutputStream__GetExtentBytesWritten", (DL_FUNC) &_arrow_io___MockOutputStream__GetExtentBytesWritten, 1}, 
-		{ "_arrow_io___FixedSizeBufferWriter__initialize", (DL_FUNC) &_arrow_io___FixedSizeBufferWriter__initialize, 1}, 
 		{ "_arrow_json___ReadOptions__initialize", (DL_FUNC) &_arrow_json___ReadOptions__initialize, 1}, 
 		{ "_arrow_json___ParseOptions__initialize", (DL_FUNC) &_arrow_json___ParseOptions__initialize, 1}, 
 		{ "_arrow_json___TableReader__Make", (DL_FUNC) &_arrow_json___TableReader__Make, 3}, 
@@ -5978,6 +6081,7 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_parquet___arrow___FileReader__OpenFile", (DL_FUNC) &_arrow_parquet___arrow___FileReader__OpenFile, 2}, 
 		{ "_arrow_parquet___arrow___FileReader__ReadTable1", (DL_FUNC) &_arrow_parquet___arrow___FileReader__ReadTable1, 1}, 
 		{ "_arrow_parquet___arrow___FileReader__ReadTable2", (DL_FUNC) &_arrow_parquet___arrow___FileReader__ReadTable2, 2}, 
+		{ "_arrow_parquet___arrow___FileReader__num_rows", (DL_FUNC) &_arrow_parquet___arrow___FileReader__num_rows, 1}, 
 		{ "_arrow_parquet___ArrowWriterProperties___Builder__create", (DL_FUNC) &_arrow_parquet___ArrowWriterProperties___Builder__create, 0}, 
 		{ "_arrow_parquet___ArrowWriterProperties___Builder__store_schema", (DL_FUNC) &_arrow_parquet___ArrowWriterProperties___Builder__store_schema, 1}, 
 		{ "_arrow_parquet___ArrowWriterProperties___Builder__enable_deprecated_int96_timestamps", (DL_FUNC) &_arrow_parquet___ArrowWriterProperties___Builder__enable_deprecated_int96_timestamps, 1}, 
@@ -6004,6 +6108,16 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_parquet___arrow___FileWriter__Close", (DL_FUNC) &_arrow_parquet___arrow___FileWriter__Close, 1}, 
 		{ "_arrow_parquet___arrow___WriteTable", (DL_FUNC) &_arrow_parquet___arrow___WriteTable, 4}, 
 		{ "_arrow_parquet___arrow___FileReader__GetSchema", (DL_FUNC) &_arrow_parquet___arrow___FileReader__GetSchema, 1}, 
+		{ "_arrow_ImportArray", (DL_FUNC) &_arrow_ImportArray, 2}, 
+		{ "_arrow_ImportRecordBatch", (DL_FUNC) &_arrow_ImportRecordBatch, 2}, 
+		{ "_arrow_allocate_arrow_schema", (DL_FUNC) &_arrow_allocate_arrow_schema, 0}, 
+		{ "_arrow_delete_arrow_schema", (DL_FUNC) &_arrow_delete_arrow_schema, 1}, 
+		{ "_arrow_allocate_arrow_array", (DL_FUNC) &_arrow_allocate_arrow_array, 0}, 
+		{ "_arrow_delete_arrow_array", (DL_FUNC) &_arrow_delete_arrow_array, 1}, 
+		{ "_arrow_ExportType", (DL_FUNC) &_arrow_ExportType, 2}, 
+		{ "_arrow_ExportSchema", (DL_FUNC) &_arrow_ExportSchema, 2}, 
+		{ "_arrow_ExportArray", (DL_FUNC) &_arrow_ExportArray, 3}, 
+		{ "_arrow_ExportRecordBatch", (DL_FUNC) &_arrow_ExportRecordBatch, 3}, 
 		{ "_arrow_RecordBatch__num_columns", (DL_FUNC) &_arrow_RecordBatch__num_columns, 1}, 
 		{ "_arrow_RecordBatch__num_rows", (DL_FUNC) &_arrow_RecordBatch__num_rows, 1}, 
 		{ "_arrow_RecordBatch__schema", (DL_FUNC) &_arrow_RecordBatch__schema, 1}, 
@@ -6012,7 +6126,7 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_RecordBatch__GetColumnByName", (DL_FUNC) &_arrow_RecordBatch__GetColumnByName, 2}, 
 		{ "_arrow_RecordBatch__select", (DL_FUNC) &_arrow_RecordBatch__select, 2}, 
 		{ "_arrow_RecordBatch__from_dataframe", (DL_FUNC) &_arrow_RecordBatch__from_dataframe, 1}, 
-		{ "_arrow_RecordBatch__Equals", (DL_FUNC) &_arrow_RecordBatch__Equals, 2}, 
+		{ "_arrow_RecordBatch__Equals", (DL_FUNC) &_arrow_RecordBatch__Equals, 3}, 
 		{ "_arrow_RecordBatch__RemoveColumn", (DL_FUNC) &_arrow_RecordBatch__RemoveColumn, 2}, 
 		{ "_arrow_RecordBatch__column_name", (DL_FUNC) &_arrow_RecordBatch__column_name, 2}, 
 		{ "_arrow_RecordBatch__names", (DL_FUNC) &_arrow_RecordBatch__names, 1}, 
@@ -6046,8 +6160,10 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_Schema__field_names", (DL_FUNC) &_arrow_Schema__field_names, 1}, 
 		{ "_arrow_Schema__HasMetadata", (DL_FUNC) &_arrow_Schema__HasMetadata, 1}, 
 		{ "_arrow_Schema__metadata", (DL_FUNC) &_arrow_Schema__metadata, 1}, 
+		{ "_arrow_Schema__WithMetadata", (DL_FUNC) &_arrow_Schema__WithMetadata, 2}, 
 		{ "_arrow_Schema__serialize", (DL_FUNC) &_arrow_Schema__serialize, 1}, 
 		{ "_arrow_Schema__Equals", (DL_FUNC) &_arrow_Schema__Equals, 3}, 
+		{ "_arrow_arrow__UnifySchemas", (DL_FUNC) &_arrow_arrow__UnifySchemas, 1}, 
 		{ "_arrow_Table__from_dataframe", (DL_FUNC) &_arrow_Table__from_dataframe, 1}, 
 		{ "_arrow_Table__num_columns", (DL_FUNC) &_arrow_Table__num_columns, 1}, 
 		{ "_arrow_Table__num_rows", (DL_FUNC) &_arrow_Table__num_rows, 1}, 
@@ -6058,7 +6174,9 @@ static const R_CallMethodDef CallEntries[] = {
 		{ "_arrow_Table__ColumnNames", (DL_FUNC) &_arrow_Table__ColumnNames, 1}, 
 		{ "_arrow_Table__Slice1", (DL_FUNC) &_arrow_Table__Slice1, 2}, 
 		{ "_arrow_Table__Slice2", (DL_FUNC) &_arrow_Table__Slice2, 3}, 
-		{ "_arrow_Table__Equals", (DL_FUNC) &_arrow_Table__Equals, 2}, 
+		{ "_arrow_Table__Equals", (DL_FUNC) &_arrow_Table__Equals, 3}, 
+		{ "_arrow_Table__Validate", (DL_FUNC) &_arrow_Table__Validate, 1}, 
+		{ "_arrow_Table__ValidateFull", (DL_FUNC) &_arrow_Table__ValidateFull, 1}, 
 		{ "_arrow_Table__GetColumnByName", (DL_FUNC) &_arrow_Table__GetColumnByName, 2}, 
 		{ "_arrow_Table__select", (DL_FUNC) &_arrow_Table__select, 2}, 
 		{ "_arrow_Table__from_dots", (DL_FUNC) &_arrow_Table__from_dots, 2}, 

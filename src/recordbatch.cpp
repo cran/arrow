@@ -53,6 +53,7 @@ arrow::ArrayVector RecordBatch__columns(
 // [[arrow::export]]
 std::shared_ptr<arrow::Array> RecordBatch__column(
     const std::shared_ptr<arrow::RecordBatch>& batch, int i) {
+  arrow::r::validate_index(i, batch->num_columns());
   return batch->column(i);
 }
 
@@ -102,21 +103,22 @@ std::shared_ptr<arrow::RecordBatch> RecordBatch__from_dataframe(Rcpp::DataFrame 
 
 // [[arrow::export]]
 bool RecordBatch__Equals(const std::shared_ptr<arrow::RecordBatch>& self,
-                         const std::shared_ptr<arrow::RecordBatch>& other) {
-  return self->Equals(*other);
+                         const std::shared_ptr<arrow::RecordBatch>& other,
+                         bool check_metadata) {
+  return self->Equals(*other, check_metadata);
 }
 
 // [[arrow::export]]
 std::shared_ptr<arrow::RecordBatch> RecordBatch__RemoveColumn(
     const std::shared_ptr<arrow::RecordBatch>& batch, int i) {
-  std::shared_ptr<arrow::RecordBatch> res;
-  STOP_IF_NOT_OK(batch->RemoveColumn(i, &res));
-  return res;
+  arrow::r::validate_index(i, batch->num_columns());
+  return VALUE_OR_STOP(batch->RemoveColumn(i));
 }
 
 // [[arrow::export]]
 std::string RecordBatch__column_name(const std::shared_ptr<arrow::RecordBatch>& batch,
                                      int i) {
+  arrow::r::validate_index(i, batch->num_columns());
   return batch->column_name(i);
 }
 
@@ -134,12 +136,15 @@ Rcpp::CharacterVector RecordBatch__names(
 // [[arrow::export]]
 std::shared_ptr<arrow::RecordBatch> RecordBatch__Slice1(
     const std::shared_ptr<arrow::RecordBatch>& self, int offset) {
+  arrow::r::validate_slice_offset(offset, self->num_rows());
   return self->Slice(offset);
 }
 
 // [[arrow::export]]
 std::shared_ptr<arrow::RecordBatch> RecordBatch__Slice2(
     const std::shared_ptr<arrow::RecordBatch>& self, int offset, int length) {
+  arrow::r::validate_slice_offset(offset, self->num_rows());
+  arrow::r::validate_slice_length(length, self->num_rows() - offset);
   return self->Slice(offset, length);
 }
 
@@ -156,8 +161,8 @@ Rcpp::RawVector ipc___SerializeRecordBatch__Raw(
   // serialize into the bytes of the raw vector
   auto buffer = std::make_shared<arrow::r::RBuffer<RAWSXP, Rcpp::RawVector>>(out);
   arrow::io::FixedSizeBufferWriter stream(buffer);
-  STOP_IF_NOT_OK(
-      arrow::ipc::SerializeRecordBatch(*batch, arrow::default_memory_pool(), &stream));
+  STOP_IF_NOT_OK(arrow::ipc::SerializeRecordBatch(
+      *batch, arrow::ipc::IpcWriteOptions::Defaults(), &stream));
   STOP_IF_NOT_OK(stream.Close());
 
   return out;
@@ -167,11 +172,10 @@ Rcpp::RawVector ipc___SerializeRecordBatch__Raw(
 std::shared_ptr<arrow::RecordBatch> ipc___ReadRecordBatch__InputStream__Schema(
     const std::shared_ptr<arrow::io::InputStream>& stream,
     const std::shared_ptr<arrow::Schema>& schema) {
-  std::shared_ptr<arrow::RecordBatch> batch;
   // TODO: promote to function arg
   arrow::ipc::DictionaryMemo memo;
-  STOP_IF_NOT_OK(arrow::ipc::ReadRecordBatch(schema, &memo, stream.get(), &batch));
-  return batch;
+  return VALUE_OR_STOP(arrow::ipc::ReadRecordBatch(
+      schema, &memo, arrow::ipc::IpcReadOptions::Defaults(), stream.get()));
 }
 
 namespace arrow {

@@ -29,11 +29,10 @@
 #'
 #' @rdname Message
 #' @name Message
-Message <- R6Class("Message", inherit = Object,
+Message <- R6Class("Message", inherit = ArrowObject,
   public = list(
-    Equals = function(other){
-      assert_is(other, "Message")
-      ipc___Message__Equals(self, other)
+    Equals = function(other, ...) {
+      inherits(other, "Message") && ipc___Message__Equals(self, other)
     },
     body_length = function() ipc___Message__body_length(self),
     Verify = function() ipc___Message__Verify(self)
@@ -58,7 +57,7 @@ Message <- R6Class("Message", inherit = Object,
 #' @rdname MessageReader
 #' @name MessageReader
 #' @export
-MessageReader <- R6Class("MessageReader", inherit = Object,
+MessageReader <- R6Class("MessageReader", inherit = ArrowObject,
   public = list(
     ReadNextMessage = function() unique_ptr(Message, ipc___MessageReader__ReadNextMessage(self))
   )

@@ -227,8 +227,8 @@ std::shared_ptr<Array> MakeFactorArrayImpl(Rcpp::IntegerVector_ factor,
   using value_type = typename arrow::TypeTraits<Type>::ArrayType::value_type;
   auto n = factor.size();
 
-  std::shared_ptr<Buffer> indices_buffer;
-  STOP_IF_NOT_OK(AllocateBuffer(n * sizeof(value_type), &indices_buffer));
+  std::shared_ptr<Buffer> indices_buffer =
+      VALUE_OR_STOP(AllocateBuffer(n * sizeof(value_type)));
 
   std::vector<std::shared_ptr<Buffer>> buffers{nullptr, indices_buffer};
 
@@ -243,8 +243,7 @@ std::shared_ptr<Array> MakeFactorArrayImpl(Rcpp::IntegerVector_ factor,
 
   if (i < n) {
     // there are NA's so we need a null buffer
-    std::shared_ptr<Buffer> null_buffer;
-    STOP_IF_NOT_OK(AllocateBuffer(BitUtil::BytesForBits(n), &null_buffer));
+    auto null_buffer = VALUE_OR_STOP(AllocateBuffer(BitUtil::BytesForBits(n)));
     internal::FirstTimeBitmapWriter null_bitmap_writer(null_buffer->mutable_data(), 0, n);
 
     // catch up
@@ -274,9 +273,7 @@ std::shared_ptr<Array> MakeFactorArrayImpl(Rcpp::IntegerVector_ factor,
   SEXP levels = Rf_getAttrib(factor, R_LevelsSymbol);
   auto dict = MakeStringArray(levels, utf8());
 
-  std::shared_ptr<Array> out;
-  STOP_IF_NOT_OK(DictionaryArray::FromArrays(type, array_indices, dict, &out));
-  return out;
+  return VALUE_OR_STOP(DictionaryArray::FromArrays(type, array_indices, dict));
 }
 
 std::shared_ptr<Array> MakeFactorArray(Rcpp::IntegerVector_ factor,
@@ -298,7 +295,9 @@ std::shared_ptr<Array> MakeStructArray(SEXP df, const std::shared_ptr<DataType>&
   for (int i = 0; i < n; i++) {
     children[i] = Array__from_vector(VECTOR_ELT(df, i), type->child(i)->type(), true);
   }
-  return std::make_shared<StructArray>(type, children[0]->length(), children);
+
+  int64_t rows = n ? children[0]->length() : 0;
+  return std::make_shared<StructArray>(type, rows, children);
 }
 
 std::shared_ptr<Array> MakeListArray(SEXP x, const std::shared_ptr<DataType>& type) {
@@ -953,7 +952,14 @@ std::shared_ptr<arrow::DataType> InferArrowTypeFromVector<INTSXP>(SEXP x) {
   } else if (Rf_inherits(x, "Date")) {
     return date32();
   } else if (Rf_inherits(x, "POSIXct")) {
-    return timestamp(TimeUnit::MICRO, "GMT");
+    std::string tzone;
+    auto tzone_sexp = Rf_getAttrib(x, symbols::tzone);
+    if (Rf_isNull(tzone_sexp)) {
+      tzone = "";
+    } else {
+      tzone = CHAR(STRING_ELT(tzone_sexp, 0));
+    }
+    return timestamp(TimeUnit::MICRO, tzone);
   }
   return int32();
 }
@@ -964,7 +970,14 @@ std::shared_ptr<arrow::DataType> InferArrowTypeFromVector<REALSXP>(SEXP x) {
     return date32();
   }
   if (Rf_inherits(x, "POSIXct")) {
-    return timestamp(TimeUnit::MICRO, "GMT");
+    std::string tzone;
+    auto tzone_sexp = Rf_getAttrib(x, symbols::tzone);
+    if (Rf_isNull(tzone_sexp)) {
+      tzone = "";
+    } else {
+      tzone = CHAR(STRING_ELT(tzone_sexp, 0));
+    }
+    return timestamp(TimeUnit::MICRO, tzone);
   }
   if (Rf_inherits(x, "integer64")) {
     return int64();
@@ -1054,11 +1067,10 @@ std::shared_ptr<Array> MakeSimpleArray(SEXP x) {
                                                std::make_shared<RBuffer<RTYPE>>(vec)};
 
   int null_count = 0;
-  std::shared_ptr<Buffer> null_bitmap;
 
   auto first_na = std::find_if(p_vec_start, p_vec_end, is_na<value_type>);
   if (first_na < p_vec_end) {
-    STOP_IF_NOT_OK(AllocateBuffer(BitUtil::BytesForBits(n), &null_bitmap));
+    auto null_bitmap = VALUE_OR_STOP(AllocateBuffer(BitUtil::BytesForBits(n)));
     internal::FirstTimeBitmapWriter bitmap_writer(null_bitmap->mutable_data(), 0, n);
 
     // first loop to clear all the bits before the first NA
@@ -1273,9 +1285,7 @@ std::shared_ptr<arrow::Array> DictionaryArray__FromArrays(
     const std::shared_ptr<arrow::DataType>& type,
     const std::shared_ptr<arrow::Array>& indices,
     const std::shared_ptr<arrow::Array>& dict) {
-  std::shared_ptr<arrow::Array> out;
-  STOP_IF_NOT_OK(arrow::DictionaryArray::FromArrays(type, indices, dict, &out));
-  return out;
+  return VALUE_OR_STOP(arrow::DictionaryArray::FromArrays(type, indices, dict));
 }
 
 #endif

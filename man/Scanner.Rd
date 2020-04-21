@@ -6,9 +6,24 @@
 \title{Scan the contents of a dataset}
 \description{
 A \code{Scanner} iterates over a \link{Dataset}'s fragments and returns data
-according to given row filtering and column projection. Use a
-\code{ScannerBuilder}, from a \code{Dataset}'s \verb{$NewScan()} method, to construct one.
+according to given row filtering and column projection. A \code{ScannerBuilder}
+can help create one.
 }
+\section{Factory}{
+
+\code{Scanner$create()} wraps the \code{ScannerBuilder} interface to make a \code{Scanner}.
+It takes the following arguments:
+\itemize{
+\item \code{dataset}: A \code{Dataset} or \code{arrow_dplyr_query} object, as returned by the
+\code{dplyr} methods on \code{Dataset}.
+\item \code{projection}: A character vector of column names to select
+\item \code{filter}: A \code{Expression} to filter the scanned rows by, or \code{TRUE} (default)
+to keep all rows.
+\item \code{use_threads}: logical: should scanning use multithreading? Default \code{TRUE}
+\item \code{...}: Additional arguments, currently ignored
+}
+}
+
 \section{Methods}{
 
 \code{ScannerBuilder} has the following methods:
@@ -19,6 +34,9 @@ by \code{cols}, a character vector of column names
 \item \verb{$UseThreads(threads)}: logical: should the scan use multithreading?
 The method's default input is \code{TRUE}, but you must call the method to enable
 multithreading because the scanner default is \code{FALSE}.
+\item \verb{$BatchSize(batch_size)}: integer: Maximum row count of scanned record
+batches, default is 32K. If scanned record batches are overflowing memory
+then this method can be called to reduce their size.
 \item \verb{$schema}: Active binding, returns the \link{Schema} of the Dataset
 \item \verb{$Finish()}: Returns a \code{Scanner}
 }

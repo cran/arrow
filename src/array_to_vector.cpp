@@ -397,8 +397,7 @@ class Converter_Struct : public Converter {
     auto struct_array = internal::checked_cast<arrow::StructArray*>(array.get());
     int nf = converters.size();
     // Flatten() deals with merging of nulls
-    ArrayVector arrays(nf);
-    STOP_IF_NOT_OK(struct_array->Flatten(default_memory_pool(), &arrays));
+    auto arrays = VALUE_OR_STOP(struct_array->Flatten(default_memory_pool()));
     for (int i = 0; i < nf; i++) {
       STOP_IF_NOT_OK(
           converters[i]->Ingest_some_nulls(VECTOR_ELT(data, i), arrays[i], start, n));
@@ -516,6 +515,9 @@ class Converter_Timestamp : public Converter_Time<value_type, TimestampType> {
   SEXP Allocate(R_xlen_t n) const {
     Rcpp::NumericVector data(no_init(n));
     Rf_classgets(data, arrow::r::data::classes_POSIXct);
+    auto array = internal::checked_cast<TimestampArray*>(Converter::arrays_[0].get());
+    auto array_type = internal::checked_cast<const TimestampType*>(array->type().get());
+    data.attr("tzone") = array_type->timezone();
     return data;
   }
 };
@@ -572,8 +574,7 @@ class Converter_List : public Converter {
     auto values_array = list_array->values();
 
     auto ingest_one = [&](R_xlen_t i) {
-      auto slice =
-          values_array->Slice(list_array->value_offset(i), list_array->value_length(i));
+      auto slice = list_array->value_slice(i);
       SET_VECTOR_ELT(data, i + start, Array__as_vector(slice));
     };
 
@@ -655,8 +656,15 @@ class Converter_Null : public Converter {
     return Status::OK();
   }
 };
+
 std::shared_ptr<Converter> Converter::Make(const ArrayVector& arrays) {
-  switch (arrays[0]->type_id()) {
+  if (arrays.empty()) {
+    Rcpp::stop(tfm::format("Must have at least one array to create a converter"));
+  }
+
+  auto type = arrays[0]->type();
+
+  switch (type->id()) {
     // direct support
     case Type::INT32:
       return std::make_shared<arrow::r::Converter_SimpleArray<INTSXP>>(arrays);
@@ -741,7 +749,7 @@ std::shared_ptr<Converter> Converter::Make(const ArrayVector& arrays) {
       break;
   }
 
-  Rcpp::stop(tfm::format("cannot handle Array of type %s", arrays[0]->type()->name()));
+  Rcpp::stop(tfm::format("cannot handle Array of type %s", type->name()));
   return nullptr;
 }
 

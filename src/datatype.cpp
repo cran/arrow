@@ -74,6 +74,9 @@ std::shared_ptr<arrow::DataType> Boolean__initialize() { return arrow::boolean()
 std::shared_ptr<arrow::DataType> Utf8__initialize() { return arrow::utf8(); }
 
 // [[arrow::export]]
+std::shared_ptr<arrow::DataType> Binary__initialize() { return arrow::binary(); }
+
+// [[arrow::export]]
 std::shared_ptr<arrow::DataType> Date32__initialize() { return arrow::date32(); }
 
 // [[arrow::export]]
@@ -85,22 +88,24 @@ std::shared_ptr<arrow::DataType> Null__initialize() { return arrow::null(); }
 // [[arrow::export]]
 std::shared_ptr<arrow::DataType> Decimal128Type__initialize(int32_t precision,
                                                             int32_t scale) {
-  return arrow::decimal(precision, scale);
+  // Use the builder that validates inputs
+  return VALUE_OR_STOP(arrow::Decimal128Type::Make(precision, scale));
 }
 
 // [[arrow::export]]
 std::shared_ptr<arrow::DataType> FixedSizeBinary__initialize(int32_t byte_width) {
+  if (byte_width == NA_INTEGER) {
+    Rcpp::stop("'byte_width' cannot be NA");
+  }
+  if (byte_width < 1) {
+    Rcpp::stop("'byte_width' must be > 0");
+  }
   return arrow::fixed_size_binary(byte_width);
 }
 
 // [[arrow::export]]
-std::shared_ptr<arrow::DataType> Timestamp__initialize1(arrow::TimeUnit::type unit) {
-  return arrow::timestamp(unit);
-}
-
-// [[arrow::export]]
-std::shared_ptr<arrow::DataType> Timestamp__initialize2(arrow::TimeUnit::type unit,
-                                                        const std::string& timezone) {
+std::shared_ptr<arrow::DataType> Timestamp__initialize(arrow::TimeUnit::type unit,
+                                                       const std::string& timezone) {
   return arrow::timestamp(unit, timezone);
 }
 

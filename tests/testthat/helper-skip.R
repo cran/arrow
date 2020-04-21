@@ -21,3 +21,17 @@ skip_if_not_available <- function(feature) {
     skip(paste("Arrow C++ not built with support for", feature))
   }
 }
+
+skip_if_no_pyarrow <- function() {
+  skip_if_not_installed("reticulate")
+  if (!reticulate::py_module_available("pyarrow")) {
+    skip("pyarrow not available for testing")
+  }
+}
+
+skip_if_not_dev_mode <- function() {
+  skip_if_not(
+    identical(tolower(Sys.getenv("ARROW_R_DEV")), "true"),
+    "environment variable ARROW_R_DEV"
+  )
+}

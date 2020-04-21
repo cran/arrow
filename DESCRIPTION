@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 0.16.0.2
+Version: 0.17.0
 Authors@R: c(
     person("Romain", "Fran\u00e7ois", email = "romain@rstudio.com", role = c("aut"), comment = c(ORCID = "0000-0002-2444-4226")),
     person("Jeroen", "Ooms", email = "jeroen@berkeley.edu", role = c("aut")),
@@ -26,21 +26,21 @@ Biarch: true
 LinkingTo: Rcpp (>= 1.0.1)
 Imports: assertthat, bit64, methods, purrr, R6, Rcpp (>= 1.0.1), rlang,
         tidyselect, utils, vctrs
-RoxygenNote: 7.0.2
+RoxygenNote: 7.1.0
 VignetteBuilder: knitr
-Suggests: dplyr, hms, knitr, lubridate, pkgload, rmarkdown, testthat,
-        tibble
+Suggests: dplyr, hms, knitr, lubridate, pkgload, reticulate, rmarkdown,
+        testthat, tibble
 Collate: 'enums.R' 'arrow-package.R' 'type.R' 'array-data.R' 'array.R'
         'arrowExports.R' 'buffer.R' 'chunked-array.R' 'io.R'
-        'compression.R' 'compute.R' 'csv.R' 'dataset.R' 'dictionary.R'
+        'compression.R' 'compute.R' 'config.R' 'csv.R' 'dataset.R'
+        'filesystem.R' 'ipc_stream.R' 'deprecated.R' 'dictionary.R'
         'record-batch.R' 'table.R' 'expression.R' 'dplyr.R' 'feather.R'
-        'field.R' 'filesystem.R' 'install-arrow.R' 'json.R' 'list.R'
-        'memory-pool.R' 'message.R' 'parquet.R' 'read-record-batch.R'
-        'read-table.R' 'record-batch-reader.R' 'record-batch-writer.R'
-        'reexports-bit64.R' 'reexports-tidyselect.R' 'schema.R'
-        'struct.R' 'util.R' 'write-arrow.R'
+        'field.R' 'install-arrow.R' 'json.R' 'list.R' 'memory-pool.R'
+        'message.R' 'parquet.R' 'python.R' 'record-batch-reader.R'
+        'record-batch-writer.R' 'reexports-bit64.R'
+        'reexports-tidyselect.R' 'schema.R' 'struct.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2020-02-14 00:59:58 UTC; enpiar
+Packaged: 2020-04-21 15:34:35 UTC; enpiar
 Author: Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Jeroen Ooms [aut],
   Neal Richardson [aut, cre],
@@ -49,4 +49,4 @@ Author: Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2020-02-14 12:20:05 UTC
+Date/Publication: 2020-04-21 18:10:02 UTC

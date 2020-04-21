@@ -57,7 +57,7 @@ StatusCode <- enum("StatusCode",
   Invalid = 4L, IOError = 5L, CapacityError = 6L, IndexError = 7L,
   UnknownError = 9L, NotImplemented = 10L, SerializationError = 11L,
   PythonError = 12L, RError = 13L,
-  PlasmaObjectExists = 20L, PlasmaObjectNonexistent = 21L,
+  PlasmaObjectExists = 20L, PlasmaObjectNotFound = 21L,
   PlasmaStoreFull = 22L, PlasmaObjectAlreadySealed = 23L
 )
 
@@ -76,13 +76,14 @@ MessageType <- enum("Message::Type",
 #' @rdname enums
 #' @export
 CompressionType <- enum("Compression::type",
-  UNCOMPRESSED = 0L, SNAPPY = 1L, GZIP = 2L, BROTLI = 3L, ZSTD = 4L, LZ4 = 5L, LZO = 6L, BZ2 = 7L
+  UNCOMPRESSED = 0L, SNAPPY = 1L, GZIP = 2L, BROTLI = 3L, ZSTD = 4L, LZ4 = 5L,
+  LZ4_FRAME = 6L, LZO = 7L, BZ2 = 8L
 )
 
 #' @export
 #' @rdname enums
 FileType <- enum("FileType",
-  NonExistent = 0L, Unknown = 1L, File = 2L, Directory = 3L
+  NotFound = 0L, Unknown = 1L, File = 2L, Directory = 3L
 )
 
 #' @export

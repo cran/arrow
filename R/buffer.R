@@ -35,11 +35,13 @@
 #' @export
 #' @include arrow-package.R
 #' @include enums.R
-Buffer <- R6Class("Buffer", inherit = Object,
+Buffer <- R6Class("Buffer", inherit = ArrowObject,
   public = list(
     ZeroPadding = function() Buffer__ZeroPadding(self),
     data = function() Buffer__data(self),
-    Equals = function(other) Buffer__Equals(self, other)
+    Equals = function(other, ...) {
+      inherits(other, "Buffer") && Buffer__Equals(self, other)
+    }
   ),
 
   active = list(
@@ -51,9 +53,11 @@ Buffer <- R6Class("Buffer", inherit = Object,
 
 Buffer$create <- function(x) {
   if (inherits(x, "Buffer")) {
-    return(x)
+    x
   } else if (inherits(x, c("raw", "numeric", "integer", "complex"))) {
-    return(shared_ptr(Buffer, r___RBuffer__initialize(x)))
+    shared_ptr(Buffer, r___RBuffer__initialize(x))
+  } else if (inherits(x, "BufferOutputStream")) {
+    x$finish()
   } else {
     stop("Cannot convert object of class ", class(x), " to arrow::Buffer")
   }

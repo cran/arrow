@@ -70,7 +70,7 @@
 #'    until the end of the array.
 #' - `$Take(i)`: return an `Array` with values at positions given by integers
 #'    (R vector or Array Array) `i`.
-#' - `$Filter(i)`: return an `Array` with values at positions where logical
+#' - `$Filter(i, keep_na = TRUE)`: return an `Array` with values at positions where logical
 #'    vector (or Arrow boolean Array) `i` is `TRUE`.
 #' - `$RangeEquals(other, start_idx, end_idx, other_start_idx)` :
 #' - `$cast(target_type, safe = TRUE, options = cast_options(safe))`: Alter the
@@ -83,25 +83,41 @@
 #' @name array
 #' @export
 Array <- R6Class("Array",
-  inherit = Object,
+  inherit = ArrowObject,
   public = list(
+    ..dispatch = function() {
+      type_id <- self$type_id()
+      if (type_id == Type$DICTIONARY){
+        shared_ptr(DictionaryArray, self$pointer())
+      } else if (type_id == Type$STRUCT) {
+        shared_ptr(StructArray, self$pointer())
+      } else if (type_id == Type$LIST) {
+        shared_ptr(ListArray, self$pointer())
+      } else {
+        self
+      }
+    },
     IsNull = function(i) Array__IsNull(self, i),
     IsValid = function(i) Array__IsValid(self, i),
     length = function() Array__length(self),
     type_id = function() Array__type_id(self),
-    Equals = function(other) Array__Equals(self, other),
-    ApproxEquals = function(other) Array__ApproxEquals(self, other),
+    Equals = function(other, ...) {
+      inherits(other, "Array") && Array__Equals(self, other)
+    },
+    ApproxEquals = function(other) {
+      inherits(other, "Array") && Array__ApproxEquals(self, other)
+    },
     data = function() shared_ptr(ArrayData, Array__data(self)),
     as_vector = function() Array__as_vector(self),
     ToString = function() {
       typ <- paste0("<", self$type$ToString(), ">")
       paste(typ, Array__ToString(self), sep = "\n")
     },
-    Slice = function(offset, length = NULL){
+    Slice = function(offset, length = NULL) {
       if (is.null(length)) {
-        shared_ptr(Array, Array__Slice1(self, offset))
+        Array$create(Array__Slice1(self, offset))
       } else {
-        shared_ptr(Array, Array__Slice2(self, offset, length))
+        Array$create(Array__Slice2(self, offset, length))
       }
     },
     Take = function(i) {
@@ -115,30 +131,27 @@ Array <- R6Class("Array",
         return(shared_ptr(ChunkedArray, Array__TakeChunked(self, i)))
       }
       assert_is(i, "Array")
-      shared_ptr(Array, Array__Take(self, i))
+      Array$create(Array__Take(self, i))
     },
-    Filter = function(i) {
+    Filter = function(i, keep_na = TRUE) {
       if (is.logical(i)) {
         i <- Array$create(i)
       }
       assert_is(i, "Array")
-      shared_ptr(Array, Array__Filter(self, i))
+      Array$create(Array__Filter(self, i, keep_na))
     },
-    RangeEquals = function(other, start_idx, end_idx, other_start_idx) {
+    RangeEquals = function(other, start_idx, end_idx, other_start_idx = 0L) {
       assert_is(other, "Array")
       Array__RangeEquals(self, other, start_idx, end_idx, other_start_idx)
     },
     cast = function(target_type, safe = TRUE, options = cast_options(safe)) {
-      assert_is(target_type, "DataType")
       assert_is(options, "CastOptions")
-      Array$create(Array__cast(self, target_type, options))
+      Array$create(Array__cast(self, as_type(target_type), options))
     },
     View = function(type) {
-      Array$create(Array__View(self, type))
+      Array$create(Array__View(self, as_type(type)))
     },
-    Validate = function() {
-      Array__Validate(self)
-    }
+    Validate = function() Array__Validate(self)
   ),
   active = list(
     null_count = function() Array__null_count(self),
@@ -148,17 +161,12 @@ Array <- R6Class("Array",
 )
 Array$create <- function(x, type = NULL) {
   if (!inherits(x, "externalptr")) {
+    if (!is.null(type)) {
+      type <- as_type(type)
+    }
     x <- Array__from_vector(x, type)
   }
-  a <- shared_ptr(Array, x)
-  if (a$type_id() == Type$DICTIONARY){
-    a <- shared_ptr(DictionaryArray, x)
-  } else if (a$type_id() == Type$STRUCT) {
-    a <- shared_ptr(StructArray, x)
-  } else if (a$type_id() == Type$LIST) {
-    a <- shared_ptr(ListArray, x)
-  }
-  a
+  shared_ptr(Array, x)$..dispatch()
 }
 
 #' @rdname array
@@ -169,6 +177,9 @@ DictionaryArray <- R6Class("DictionaryArray", inherit = Array,
   public = list(
     indices = function() Array$create(DictionaryArray__indices(self)),
     dictionary = function() Array$create(DictionaryArray__dictionary(self))
+  ),
+  active = list(
+    ordered = function() self$type$ordered
   )
 )
 DictionaryArray$create <- function(x, dict = NULL) {
@@ -221,9 +232,18 @@ ListArray <- R6Class("ListArray", inherit = Array,
 length.Array <- function(x) x$length()
 
 #' @export
+is.na.Array <- function(x) {
+  if (x$type == null()) {
+    rep(TRUE, length(x))
+  } else {
+    !Array__Mask(x)
+  }
+}
+
+#' @export
 as.vector.Array <- function(x, mode) x$as_vector()
 
-filter_rows <- function(x, i, ...) {
+filter_rows <- function(x, i, keep_na = TRUE, ...) {
   # General purpose function for [ row subsetting with R semantics
   # Based on the input for `i`, calls x$Filter, x$Slice, or x$Take
   nrows <- x$num_rows %||% x$length() # Depends on whether Array or Table-like
@@ -237,7 +257,7 @@ filter_rows <- function(x, i, ...) {
       x
     } else {
       i <- rep_len(i, nrows) # For R recycling behavior; consider vctrs::vec_recycle()
-      x$Filter(i)
+      x$Filter(i, keep_na)
     }
   } else if (is.numeric(i)) {
     if (all(i < 0)) {
@@ -255,7 +275,7 @@ filter_rows <- function(x, i, ...) {
     # NOTE: this doesn't do the - 1 offset
     x$Take(i)
   } else if (is.Array(i, "bool")) {
-    x$Filter(i)
+    x$Filter(i, keep_na)
   } else {
     # Unsupported cases
     if (is.Array(i)) {
@@ -267,6 +287,42 @@ filter_rows <- function(x, i, ...) {
 
 #' @export
 `[.Array` <- filter_rows
+
+#' @importFrom utils head
+#' @export
+head.Array <- function(x, n = 6L, ...) {
+  assert_is(n, c("numeric", "integer"))
+  assert_that(length(n) == 1)
+  len <- NROW(x)
+  if (n < 0) {
+    # head(x, negative) means all but the last n rows
+    n <- max(len + n, 0)
+  } else {
+    n <- min(len, n)
+  }
+  if (n == len) {
+    return(x)
+  }
+  x$Slice(0, n)
+}
+
+#' @importFrom utils tail
+#' @export
+tail.Array <- function(x, n = 6L, ...) {
+  assert_is(n, c("numeric", "integer"))
+  assert_that(length(n) == 1)
+  len <- NROW(x)
+  if (n < 0) {
+    # tail(x, negative) means all but the first n rows
+    n <- min(-n, len)
+  } else {
+    n <- max(len - n, 0)
+  }
+  if (n == 0) {
+    return(x)
+  }
+  x$Slice(n)
+}
 
 is.sliceable <- function(i) {
   # Determine whether `i` can be expressed as a $Slice() command

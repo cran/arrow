@@ -69,17 +69,18 @@
 #' - `$Take(i)`: return an `Table` with rows at positions given by
 #'    integers `i`. If `i` is an Arrow `Array` or `ChunkedArray`, it will be
 #'    coerced to an R vector before taking.
-#' - `$Filter(i)`: return an `Table` with rows at positions where logical
+#' - `$Filter(i, keep_na = TRUE)`: return an `Table` with rows at positions where logical
 #'    vector or Arrow boolean-type `(Chunked)Array` `i` is `TRUE`.
 #' - `$serialize(output_stream, ...)`: Write the table to the given
 #'    [OutputStream]
 #' - `$cast(target_schema, safe = TRUE, options = cast_options(safe))`: Alter
 #'    the schema of the record batch.
 #'
-#' There are also some active bindings
+#' There are also some active bindings:
 #' - `$num_columns`
 #' - `$num_rows`
 #' - `$schema`
+#' - `$metadata`: Returns the key-value metadata of the `Schema`
 #' - `$columns`: Returns a list of `ChunkedArray`s
 #' @rdname Table
 #' @name Table
@@ -94,11 +95,9 @@
 #' as.data.frame(tab[4:8, c("gear", "hp", "wt")])
 #' }
 #' @export
-Table <- R6Class("Table", inherit = Object,
+Table <- R6Class("Table", inherit = ArrowObject,
   public = list(
     column = function(i) {
-      assert_is(i, c("numeric", "integer"))
-      assert_that(length(i) == 1)
       shared_ptr(ChunkedArray, Table__column(self, i))
     },
     ColumnNames = function() Table__ColumnNames(self),
@@ -151,19 +150,27 @@ Table <- R6Class("Table", inherit = Object,
       assert_is(i, "Array")
       shared_ptr(Table, Table__Take(self, i))
     },
-    Filter = function(i) {
+    Filter = function(i, keep_na = TRUE) {
       if (is.logical(i)) {
         i <- Array$create(i)
       }
       if (inherits(i, "ChunkedArray")) {
-        return(shared_ptr(Table, Table__FilterChunked(self, i)))
+        return(shared_ptr(Table, Table__FilterChunked(self, i, keep_na)))
       }
       assert_is(i, "Array")
-      shared_ptr(Table, Table__Filter(self, i))
+      shared_ptr(Table, Table__Filter(self, i, keep_na))
     },
 
-    Equals = function(other) {
-      Table__Equals(self, other)
+    Equals = function(other, check_metadata = FALSE, ...) {
+      inherits(other, "Table") && Table__Equals(self, other, isTRUE(check_metadata))
+    },
+
+    Validate = function() {
+      Table__Validate(self)
+    },
+
+    ValidateFull = function() {
+      Table__ValidateFull(self)
     }
   ),
 
@@ -171,11 +178,12 @@ Table <- R6Class("Table", inherit = Object,
     num_columns = function() Table__num_columns(self),
     num_rows = function() Table__num_rows(self),
     schema = function() shared_ptr(Schema, Table__schema(self)),
+    metadata = function() self$schema$metadata,
     columns = function() map(Table__columns(self), shared_ptr, class = ChunkedArray)
   )
 )
 
-Table$create <- function(..., schema = NULL){
+Table$create <- function(..., schema = NULL) {
   dots <- list2(...)
   # making sure there are always names
   if (is.null(names(dots))) {
@@ -186,7 +194,7 @@ Table$create <- function(..., schema = NULL){
 }
 
 #' @export
-as.data.frame.Table <- function(x, row.names = NULL, optional = FALSE, use_threads = TRUE, ...){
+as.data.frame.Table <- function(x, row.names = NULL, optional = FALSE, ...) {
   Table__to_dataframe(x, use_threads = option_use_threads())
 }
 

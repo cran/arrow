@@ -36,6 +36,9 @@
 #' - `$ToString()`: convert to a string
 #' - `$field(i)`: returns the field at index `i` (0-based)
 #' - `$GetFieldByName(x)`: returns the field with name `x`
+#' - `$WithMetadata(metadata)`: returns a new `Schema` with the key-value
+#'    `metadata` set. Note that all list elements in `metadata` will be coerced
+#'    to `character`.
 #'
 #' @section Active bindings:
 #'
@@ -58,7 +61,7 @@
 #' }
 #' @export
 Schema <- R6Class("Schema",
-  inherit = Object,
+  inherit = ArrowObject,
   public = list(
     ToString = function() {
       fields <- print_schema_fields(self)
@@ -70,8 +73,13 @@ Schema <- R6Class("Schema",
     field = function(i) shared_ptr(Field, Schema__field(self, i)),
     GetFieldByName = function(x) shared_ptr(Field, Schema__GetFieldByName(self, x)),
     serialize = function() Schema__serialize(self),
-    Equals = function(other, check_metadata = TRUE) {
-      Schema__Equals(self, other, isTRUE(check_metadata))
+    WithMetadata = function(metadata = list()) {
+      # metadata must be a named character vector
+      metadata <- map_chr(metadata, as.character)
+      shared_ptr(Schema, Schema__WithMetadata(self, metadata))
+    },
+    Equals = function(other, check_metadata = FALSE, ...) {
+      inherits(other, "Schema") && Schema__Equals(self, other, isTRUE(check_metadata))
     }
   ),
   active = list(
@@ -122,4 +130,20 @@ read_schema <- function(stream, ...) {
     }
     return(shared_ptr(Schema, ipc___ReadSchema_InputStream(stream)))
   }
+}
+
+#' Combine and harmonize schemas
+#'
+#' @param ... [Schema]s to unify
+#' @param schemas Alternatively, a list of schemas
+#' @return A `Schema` with the union of fields contained in the inputs
+#' @export
+#' @examples
+#' \dontrun{
+#' a <- schema(b = double(), c = bool())
+#' z <- schema(b = double(), k = utf8())
+#' unify_schemas(a, z),
+#' }
+unify_schemas <- function(..., schemas = list(...)) {
+  shared_ptr(Schema, arrow__UnifySchemas(schemas))
 }

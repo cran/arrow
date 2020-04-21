@@ -60,7 +60,7 @@ of the table if \code{NULL}, the default.
 \item \verb{$Take(i)}: return an \code{Table} with rows at positions given by
 integers \code{i}. If \code{i} is an Arrow \code{Array} or \code{ChunkedArray}, it will be
 coerced to an R vector before taking.
-\item \verb{$Filter(i)}: return an \code{Table} with rows at positions where logical
+\item \verb{$Filter(i, keep_na = TRUE)}: return an \code{Table} with rows at positions where logical
 vector or Arrow boolean-type \verb{(Chunked)Array} \code{i} is \code{TRUE}.
 \item \verb{$serialize(output_stream, ...)}: Write the table to the given
 \link{OutputStream}
@@ -68,11 +68,12 @@ vector or Arrow boolean-type \verb{(Chunked)Array} \code{i} is \code{TRUE}.
 the schema of the record batch.
 }
 
-There are also some active bindings
+There are also some active bindings:
 \itemize{
 \item \verb{$num_columns}
 \item \verb{$num_rows}
 \item \verb{$schema}
+\item \verb{$metadata}: Returns the key-value metadata of the \code{Schema}
 \item \verb{$columns}: Returns a list of \code{ChunkedArray}s
 }
 }

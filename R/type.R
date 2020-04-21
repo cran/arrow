@@ -29,14 +29,13 @@
 #' @rdname DataType
 #' @name DataType
 DataType <- R6Class("DataType",
-  inherit = Object,
+  inherit = ArrowObject,
   public = list(
     ToString = function() {
       DataType__ToString(self)
     },
-    Equals = function(other) {
-      assert_is(other, "DataType")
-      DataType__Equals(self, other)
+    Equals = function(other, ...) {
+      inherits(other, "DataType") && DataType__Equals(self, other)
     },
     num_children = function() {
       DataType__num_children(self)
@@ -141,6 +140,8 @@ Float32 <- R6Class("Float32", inherit = FixedWidthType)
 Float64 <- R6Class("Float64", inherit = FixedWidthType)
 Boolean <- R6Class("Boolean", inherit = FixedWidthType)
 Utf8 <- R6Class("Utf8", inherit = DataType)
+Binary <- R6Class("Binary", inherit = DataType)
+FixedSizeBinary <- R6Class("FixedSizeBinary", inherit = FixedWidthType)
 
 DateType <- R6Class("DateType",
   inherit = FixedWidthType,
@@ -203,6 +204,9 @@ NestedType <- R6Class("NestedType", inherit = DataType)
 #' either "s" or "ms", while `time64()` can be "us" or "ns". `timestamp()` can
 #' take any of those four values.
 #' @param timezone For `timestamp()`, an optional time zone string.
+#' @param byte_width For `binary()`, an optional integer width to create a
+#' `FixedSizeBinary` type. The default `NULL` results in a `BinaryType` with
+#' variable width.
 #' @param precision For `decimal()`, precision
 #' @param scale For `decimal()`, scale
 #' @param type For `list_of()`, a data type to make a list-of-type
@@ -283,6 +287,16 @@ utf8 <- function() shared_ptr(Utf8, Utf8__initialize())
 
 #' @rdname data-type
 #' @export
+binary <- function(byte_width = NULL) {
+  if (is.null(byte_width)) {
+    shared_ptr(Binary, Binary__initialize())
+  } else {
+    shared_ptr(FixedSizeBinary, FixedSizeBinary__initialize(byte_width))
+  }
+}
+
+#' @rdname data-type
+#' @export
 string <- utf8
 
 #' @rdname data-type
@@ -321,10 +335,10 @@ make_valid_time_unit <- function(unit, valid_units) {
     # Allow non-integer input for convenience
     unit <- as.integer(unit)
   } else {
-    stop('"unit" should be one of ', oxford_paste(names(valid_units), "or"), call.=FALSE)
+    stop('"unit" should be one of ', oxford_paste(names(valid_units), "or"), call. = FALSE)
   }
   if (!(unit %in% valid_units)) {
-    stop('"unit" should be one of ', oxford_paste(valid_units, "or"), call.=FALSE)
+    stop('"unit" should be one of ', oxford_paste(valid_units, "or"), call. = FALSE)
   }
   unit
 }
@@ -345,21 +359,38 @@ null <- function() shared_ptr(Null, Null__initialize())
 
 #' @rdname data-type
 #' @export
-timestamp <- function(unit = c("s", "ms", "us", "ns"), timezone) {
+timestamp <- function(unit = c("s", "ms", "us", "ns"), timezone = "") {
   if (is.character(unit)) {
     unit <- match.arg(unit)
   }
   unit <- make_valid_time_unit(unit, c(valid_time64_units, valid_time32_units))
-  if (missing(timezone)) {
-    shared_ptr(Timestamp, Timestamp__initialize1(unit))
-  } else {
-    assert_that(is.character(timezone), length(timezone) == 1)
-    shared_ptr(Timestamp, Timestamp__initialize2(unit, timezone))
-  }
+  assert_that(is.string(timezone))
+  shared_ptr(Timestamp, Timestamp__initialize(unit, timezone))
 }
 
 #' @rdname data-type
 #' @export
 decimal <- function(precision, scale) {
+  if (is.numeric(precision)) {
+    precision <- as.integer(precision)
+  } else {
+    stop('"precision" must be an integer', call. = FALSE)
+  }
+  if (is.numeric(scale)) {
+    scale <- as.integer(scale)
+  } else {
+    stop('"scale" must be an integer', call. = FALSE)
+  }
   shared_ptr(Decimal128Type, Decimal128Type__initialize(precision, scale))
+}
+
+as_type <- function(type, name = "type") {
+  if (identical(type, double())) {
+    # Magic so that we don't have to mask this base function
+    type <- float64()
+  }
+  if (!inherits(type, "DataType")) {
+    stop(name, " must be a DataType, not ", class(type), call. = FALSE)
+  }
+  type
 }

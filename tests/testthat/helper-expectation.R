@@ -35,3 +35,14 @@ expect_equivalent <- function(object, expected, ...) {
   }
   testthat::expect_equivalent(object, expected, ...)
 }
+
+# expect_equal but for DataTypes, so the error prints better
+expect_type_equal <- function(object, expected, ...) {
+  expect_equal(object, expected, ..., label = object$ToString(), expected.label = expected$ToString())
+}
+
+expect_match_arg_error <- function(object, values=c()) {
+  expect_error(object, paste0("'arg' .*", paste(dQuote(values), collapse = ", ")))
+}
+
+expect_deprecated <- expect_warning

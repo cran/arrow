@@ -39,7 +39,7 @@
 #' - `$Take(i)`: return a `ChunkedArray` with values at positions given by
 #'    integers `i`. If `i` is an Arrow `Array` or `ChunkedArray`, it will be
 #'    coerced to an R vector before taking.
-#' - `$Filter(i)`: return a `ChunkedArray` with values at positions where
+#' - `$Filter(i, keep_na = TRUE)`: return a `ChunkedArray` with values at positions where
 #'    logical vector or Arrow boolean-type `(Chunked)Array` `i` is `TRUE`.
 #' - `$cast(target_type, safe = TRUE, options = cast_options(safe))`: Alter the
 #'    data in the array to change its type.
@@ -56,7 +56,7 @@
 #' @name ChunkedArray
 #' @seealso [Array]
 #' @export
-ChunkedArray <- R6Class("ChunkedArray", inherit = Object,
+ChunkedArray <- R6Class("ChunkedArray", inherit = ArrowObject,
   public = list(
     length = function() ChunkedArray__length(self),
     chunk = function(i) Array$create(ChunkedArray__chunk(self, i)),
@@ -81,23 +81,22 @@ ChunkedArray <- R6Class("ChunkedArray", inherit = Object,
       assert_is(i, "Array")
       return(shared_ptr(ChunkedArray, ChunkedArray__Take(self, i)))
     },
-    Filter = function(i) {
+    Filter = function(i, keep_na = TRUE) {
       if (is.logical(i)) {
         i <- Array$create(i)
       }
       if (inherits(i, "ChunkedArray")) {
-        return(shared_ptr(ChunkedArray, ChunkedArray__FilterChunked(self, i)))
+        return(shared_ptr(ChunkedArray, ChunkedArray__FilterChunked(self, i, keep_na)))
       }
       assert_is(i, "Array")
-      shared_ptr(ChunkedArray, ChunkedArray__Filter(self, i))
+      shared_ptr(ChunkedArray, ChunkedArray__Filter(self, i, keep_na))
     },
     cast = function(target_type, safe = TRUE, options = cast_options(safe)) {
-      assert_is(target_type, "DataType")
       assert_is(options, "CastOptions")
-      shared_ptr(ChunkedArray, ChunkedArray__cast(self, target_type, options))
+      shared_ptr(ChunkedArray, ChunkedArray__cast(self, as_type(target_type), options))
     },
     View = function(type) {
-      shared_ptr(ChunkedArray, ChunkedArray__View(self, type))
+      shared_ptr(ChunkedArray, ChunkedArray__View(self, as_type(type)))
     },
     Validate = function() {
       ChunkedArray__Validate(self)
@@ -116,8 +115,8 @@ ChunkedArray <- R6Class("ChunkedArray", inherit = Object,
       }
       out
     },
-    Equals = function(other) {
-      ChunkedArray__Equals(self, other)
+    Equals = function(other, ...) {
+      inherits(other, "ChunkedArray") && ChunkedArray__Equals(self, other)
     }
   ),
   active = list(
@@ -129,6 +128,9 @@ ChunkedArray <- R6Class("ChunkedArray", inherit = Object,
 )
 
 ChunkedArray$create <- function(..., type = NULL) {
+  if (!is.null(type)) {
+    type <- as_type(type)
+  }
   shared_ptr(ChunkedArray, ChunkedArray__from_list(list2(...), type))
 }
 
@@ -145,4 +147,13 @@ length.ChunkedArray <- function(x) x$length()
 as.vector.ChunkedArray <- function(x, mode) x$as_vector()
 
 #' @export
+is.na.ChunkedArray <- function(x) unlist(lapply(x$chunks, is.na))
+
+#' @export
 `[.ChunkedArray` <- filter_rows
+
+#' @export
+head.ChunkedArray <- head.Array
+
+#' @export
+tail.ChunkedArray <- tail.Array
