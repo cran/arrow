@@ -17,6 +17,12 @@
   under the License.
 -->
 
+# arrow 0.17.1
+
+* Updates for compatibility with `dplyr` 1.0
+* `reticulate::r_to_py()` conversion now correctly works automatically, without having to call the method yourself
+* Assorted bug fixes in the C++ library around Parquet reading
+
 # arrow 0.17.0
 
 ## Feather v2

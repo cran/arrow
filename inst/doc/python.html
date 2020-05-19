@@ -272,7 +272,7 @@ function is not implemented in the <code>arrow</code> R package. We can use <cod
 to use it efficiently.</p>
 
 <pre><code class="r">b &lt;- Array$create(c(5, 6, 7, 8, 9))
-a_and_b &lt;- pa$concat_arrays(r_to_py(list(a, b)))
+a_and_b &lt;- pa$concat_arrays(list(a, b))
 a_and_b
 
 ## Array

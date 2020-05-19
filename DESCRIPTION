@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 0.17.0
+Version: 0.17.1
 Authors@R: c(
     person("Romain", "Fran\u00e7ois", email = "romain@rstudio.com", role = c("aut"), comment = c(ORCID = "0000-0002-2444-4226")),
     person("Jeroen", "Ooms", email = "jeroen@berkeley.edu", role = c("aut")),
@@ -40,7 +40,7 @@ Collate: 'enums.R' 'arrow-package.R' 'type.R' 'array-data.R' 'array.R'
         'record-batch-writer.R' 'reexports-bit64.R'
         'reexports-tidyselect.R' 'schema.R' 'struct.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2020-04-21 15:34:35 UTC; enpiar
+Packaged: 2020-05-15 21:00:15 UTC; enpiar
 Author: Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Jeroen Ooms [aut],
   Neal Richardson [aut, cre],
@@ -49,4 +49,4 @@ Author: Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2020-04-21 18:10:02 UTC
+Date/Publication: 2020-05-19 20:30:15 UTC

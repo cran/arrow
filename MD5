@@ -1,6 +1,6 @@
-04bd9b3247c894ddc3c7b15110cb840b *DESCRIPTION
+b23c1d70aeaabf8274e9395ba2c1ec7f *DESCRIPTION
 9c27a87b44f60e2a8d211abbe6beda20 *NAMESPACE
-02d9522634fc8d0ddf9ceced43c5851b *NEWS.md
+49a1ae16d4e2fe5f986215eb654ea1ab *NEWS.md
 516e302acc85ef82d8db7c9926222f38 *R/array-data.R
 93667e1b5680aea14fb8bd1a1f36c93a *R/array.R
 eaf8975b468fa030823b8d07b1eb5630 *R/arrow-package.R
@@ -14,7 +14,7 @@ ed576a45dce01b63f41c5361f5d2bb3e *R/csv.R
 ed1a62f0c76285844e4e924f22545c48 *R/dataset.R
 84797cac9746fdac56317df5c84af8e4 *R/deprecated.R
 4aed7c2f7034cb70352a2a7473fbbf2c *R/dictionary.R
-9998d9b8e8eb51bf6403b9c62d787b6f *R/dplyr.R
+f648f53ccd0a86e9a53e4535d48367e1 *R/dplyr.R
 17e308d206a24d83f8fee8221b8a97a7 *R/enums.R
 4bcf0af7e4abfc16de24f25c4ddde6e9 *R/expression.R
 8b1476a31fae3a8fa8e065a8a90d46d4 *R/feather.R
@@ -28,7 +28,7 @@ e9bff04ffd1a374a06d82e066693b953 *R/filesystem.R
 4eea681b2431558298973bb99e5b915a *R/memory-pool.R
 02118c0d566396105cd6d72bb8b75d4b *R/message.R
 bc29b993feb1fce04ed3d945ab7474f5 *R/parquet.R
-7e1fa790964267b648123b8b06ff16d2 *R/python.R
+54661906e5acc5fd68c8fe1207ba4964 *R/python.R
 1ee39751167f6760f9e6c14dab88d134 *R/record-batch-reader.R
 bd09aad167ac14242d7d8efe41939452 *R/record-batch-writer.R
 9af4aaada09e388683994d294570f5bb *R/record-batch.R
@@ -53,8 +53,8 @@ f600048348c78de18320eee45897b574 *inst/doc/dataset.R
 1032200ea608d5b1d93fcc26eeee8c2a *inst/doc/dataset.html
 57b58bf3a004dd80c784854f2816ddbe *inst/doc/install.Rmd
 3dde0a7db51759961dc4183a3127b29d *inst/doc/install.html
-3ea33b0281f713f2f8fd9f599d3018ce *inst/doc/python.Rmd
-fce3b9e968d1f40ed475098183541a00 *inst/doc/python.html
+5acf3c324054abff83caf13430ffccdb *inst/doc/python.Rmd
+44c83db5afdc37c66c811336f9a91fcc *inst/doc/python.html
 198ecbee77c8d179546b9bd407bda83e *inst/v0.7.1.parquet
 c0bfe25a68c914e120a7b3da66557bf7 *man/ArrayData.Rd
 a906914a0aca946d57389731cc4a326c *man/ChunkedArray.Rd
@@ -172,7 +172,7 @@ e6c387ded429a7630f4bf69e8187984e *tests/testthat/test-chunked-array.R
 03352584868e5e388d05e9c3c9f5ce2b *tests/testthat/test-csv.R
 cb0d29437712026a753acd999afb40b6 *tests/testthat/test-data-type.R
 79d80ff98db0adba8f76e7698674b5f1 *tests/testthat/test-dataset.R
-47008828d526b8708b25a9b90309a06f *tests/testthat/test-dplyr.R
+848fc4242833a72007663573880f1cbb *tests/testthat/test-dplyr.R
 172594515805d956779b988d2bde526c *tests/testthat/test-expression.R
 9e6729ca1676ca0f6aa95637e14c2e86 *tests/testthat/test-feather.R
 6524a46f5b51611115647b19f77c3ffc *tests/testthat/test-field.R
@@ -196,4 +196,4 @@ a44a802fa9a6f47fa2fa4f97b059c3e6 *tools/autobrew
 231fc435f1807fd55920060cf5ccd4c0 *vignettes/arrow.Rmd
 1d7c041734211f3af53807a3e2be9c25 *vignettes/dataset.Rmd
 57b58bf3a004dd80c784854f2816ddbe *vignettes/install.Rmd
-3ea33b0281f713f2f8fd9f599d3018ce *vignettes/python.Rmd
+5acf3c324054abff83caf13430ffccdb *vignettes/python.Rmd
