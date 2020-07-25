@@ -442,6 +442,20 @@ Regardless, if the C++ library fails to compile,
 please <a href="https://issues.apache.org/jira/projects/ARROW/issues">report an issue</a>
 so that we can attempt to improve the script.</p>
 
+<h2>Known installation issues</h2>
+
+<ul>
+<li><p>On CentOS, if you are using a more modern <code>devtoolset</code>, you may need to set
+the environment variables <code>CC=/usr/bin/gcc CXX=/usr/bin/g++</code>.
+See discussion <a href="https://issues.apache.org/jira/browse/ARROW-8586">here</a>.</p></li>
+<li><p>If you have multiple versions of <code>zstd</code> installed on your system,
+installation by building the C++ from source may fail with an undefined symbols
+error. Workarounds include (1) setting <code>LIBARROW_BINARY</code> to use a C++ binary; (2)
+setting <code>ARROW_WITH_ZSTD=OFF</code> to build without <code>zstd</code>; or (3) uninstalling
+the conflicting <code>zstd</code>.
+See discussion <a href="https://issues.apache.org/jira/browse/ARROW-8556">here</a>.</p></li>
+</ul>
+
 <h2>Summary of build environment variables</h2>
 
 <p>By default, these are all unset. All boolean variables are case-insensitive.</p>
@@ -479,7 +493,7 @@ environment variables to be set.</li>
 <li><code>ARROW_R_DEV</code>: If set to <code>true</code>, more verbose messaging will be printed
 in the build script. This variable also is needed if you&#39;re modifying <code>Rcpp</code>
 code in the package: see &ldquo;Editing Rcpp code&rdquo; in the README.</li>
-<li><code>DEBUG_DIR</code>: If the C++ library building from source fails (<code>cmake</code>),
+<li><code>LIBARROW_DEBUG_DIR</code>: If the C++ library building from source fails (<code>cmake</code>),
 there may be messages telling you to check some log file in the build directory.
 However, when the library is built during R package installation,
 that location is in a temp directory that is already deleted.

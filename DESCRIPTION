@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 0.17.1
+Version: 1.0.0
 Authors@R: c(
     person("Romain", "Fran\u00e7ois", email = "romain@rstudio.com", role = c("aut"), comment = c(ORCID = "0000-0002-2444-4226")),
     person("Jeroen", "Ooms", email = "jeroen@berkeley.edu", role = c("aut")),
@@ -26,21 +26,22 @@ Biarch: true
 LinkingTo: Rcpp (>= 1.0.1)
 Imports: assertthat, bit64, methods, purrr, R6, Rcpp (>= 1.0.1), rlang,
         tidyselect, utils, vctrs
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 VignetteBuilder: knitr
-Suggests: dplyr, hms, knitr, lubridate, pkgload, reticulate, rmarkdown,
-        testthat, tibble
+Suggests: decor, dplyr, hms, knitr, lubridate, pkgload, reticulate,
+        rmarkdown, testthat, tibble
 Collate: 'enums.R' 'arrow-package.R' 'type.R' 'array-data.R' 'array.R'
         'arrowExports.R' 'buffer.R' 'chunked-array.R' 'io.R'
-        'compression.R' 'compute.R' 'config.R' 'csv.R' 'dataset.R'
-        'filesystem.R' 'ipc_stream.R' 'deprecated.R' 'dictionary.R'
-        'record-batch.R' 'table.R' 'expression.R' 'dplyr.R' 'feather.R'
-        'field.R' 'install-arrow.R' 'json.R' 'list.R' 'memory-pool.R'
-        'message.R' 'parquet.R' 'python.R' 'record-batch-reader.R'
-        'record-batch-writer.R' 'reexports-bit64.R'
-        'reexports-tidyselect.R' 'schema.R' 'struct.R' 'util.R'
+        'compression.R' 'scalar.R' 'compute.R' 'config.R' 'csv.R'
+        'dataset.R' 'deprecated.R' 'dictionary.R' 'record-batch.R'
+        'table.R' 'expression.R' 'dplyr.R' 'feather.R' 'field.R'
+        'filesystem.R' 'install-arrow.R' 'ipc_stream.R' 'json.R'
+        'list.R' 'memory-pool.R' 'message.R' 'parquet.R' 'python.R'
+        'record-batch-reader.R' 'record-batch-writer.R'
+        'reexports-bit64.R' 'reexports-tidyselect.R' 'schema.R'
+        'struct.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2020-05-15 21:00:15 UTC; enpiar
+Packaged: 2020-07-24 21:32:42 UTC; enpiar
 Author: Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Jeroen Ooms [aut],
   Neal Richardson [aut, cre],
@@ -49,4 +50,4 @@ Author: Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2020-05-19 20:30:15 UTC
+Date/Publication: 2020-07-25 04:30:02 UTC

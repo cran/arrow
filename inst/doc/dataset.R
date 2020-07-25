@@ -16,7 +16,8 @@
 #      dir.create(file.path("nyc-taxi", year, month))
 #      download.file(
 #        paste(bucket, year, month, "data.parquet", sep = "/"),
-#        file.path("nyc-taxi", year, month, "data.parquet")
+#        file.path("nyc-taxi", year, month, "data.parquet"),
+#        mode = 'wb'
 #      )
 #    }
 #  }

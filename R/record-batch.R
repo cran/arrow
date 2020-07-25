@@ -38,11 +38,6 @@
 #' "Slice" method function even if there were a column in the table called
 #' "Slice".
 #'
-#' A caveat about the `[` method for row operations: only "slicing" is
-#' currently supported. That is, you can select a continuous range of rows
-#' from the table, but you can't filter with a `logical` vector or take an
-#' arbitrary selection of rows by integer indices.
-#'
 #' @section R6 Methods:
 #' In addition to the more R-friendly S3 methods, a `RecordBatch` object has
 #' the following R6 methods that map onto the underlying C++ methods:
@@ -71,6 +66,9 @@
 #' - `$num_columns`
 #' - `$num_rows`
 #' - `$schema`
+#' - `$metadata`: Returns the key-value metadata of the `Schema` as a named list.
+#'    Modify or replace by assigning in (`batch$metadata <- new_metadata`).
+#'    All list elements are coerced to string.
 #' - `$columns`: Returns a list of `Array`s
 #' @rdname RecordBatch
 #' @name RecordBatch
@@ -83,8 +81,7 @@ RecordBatch <- R6Class("RecordBatch", inherit = ArrowObject,
       inherits(other, "RecordBatch") && RecordBatch__Equals(self, other, isTRUE(check_metadata))
     },
     GetColumnByName = function(name) {
-      assert_is(name, "character")
-      assert_that(length(name) == 1)
+      assert_that(is.string(name))
       shared_ptr(Array, RecordBatch__GetColumnByName(self, name))
     },
     select = function(spec) {
@@ -117,14 +114,13 @@ RecordBatch <- R6Class("RecordBatch", inherit = ArrowObject,
         i <- Array$create(i)
       }
       assert_is(i, "Array")
-      shared_ptr(RecordBatch, RecordBatch__Take(self, i))
+      shared_ptr(RecordBatch, call_function("take", self, i))
     },
     Filter = function(i, keep_na = TRUE) {
       if (is.logical(i)) {
         i <- Array$create(i)
       }
-      assert_is(i, "Array")
-      shared_ptr(RecordBatch, RecordBatch__Filter(self, i, keep_na))
+      shared_ptr(RecordBatch, call_function("filter", self, i, options = list(keep_na = keep_na)))
     },
     serialize = function() ipc___SerializeRecordBatch__Raw(self),
     ToString = function() ToString_tabular(self),
@@ -141,6 +137,20 @@ RecordBatch <- R6Class("RecordBatch", inherit = ArrowObject,
     num_columns = function() RecordBatch__num_columns(self),
     num_rows = function() RecordBatch__num_rows(self),
     schema = function() shared_ptr(Schema, RecordBatch__schema(self)),
+    metadata = function(new) {
+      if (missing(new)) {
+        # Get the metadata (from the schema)
+        self$schema$metadata
+      } else {
+        # Set the metadata
+        new <- prepare_key_value_metadata(new)
+        out <- RecordBatch__ReplaceSchemaMetadata(self, new)
+        # ReplaceSchemaMetadata returns a new object but we're modifying in place,
+        # so swap in that new C++ object pointer into our R6 object
+        self$set_pointer(out)
+        self
+      }
+    },
     columns = function() map(RecordBatch__columns(self), shared_ptr, Array)
   )
 )
@@ -195,13 +205,15 @@ RecordBatch$from_message <- function(obj, schema) {
 record_batch <- RecordBatch$create
 
 #' @export
-names.RecordBatch <- function(x) {
-  x$names()
-}
+names.RecordBatch <- function(x) x$names()
 
 #' @importFrom methods as
 #' @export
 `[.RecordBatch` <- function(x, i, j, ..., drop = FALSE) {
+  if (nargs() == 2L) {
+    # List-like column extraction (x[i])
+    return(x[, i])
+  }
   if (!missing(j)) {
     # Selecting columns is cheaper than filtering rows, so do it first.
     # That way, if we're filtering too, we have fewer arrays to filter/slice/take
@@ -229,8 +241,7 @@ names.RecordBatch <- function(x) {
 
 #' @export
 `$.RecordBatch` <- function(x, name, ...) {
-  assert_is(name, "character")
-  assert_that(length(name) == 1L)
+  assert_that(is.string(name))
   if (name %in% ls(x)) {
     get(name, x)
   } else {
@@ -245,8 +256,50 @@ dim.RecordBatch <- function(x) {
 
 #' @export
 as.data.frame.RecordBatch <- function(x, row.names = NULL, optional = FALSE, ...) {
-  RecordBatch__to_dataframe(x, use_threads = option_use_threads())
+  df <- RecordBatch__to_dataframe(x, use_threads = option_use_threads())
+  if (!is.null(r_metadata <- x$metadata$r)) {
+    df <- apply_arrow_r_metadata(df, .unserialize_arrow_r_metadata(r_metadata))
+  }
+  df
 }
+
+.serialize_arrow_r_metadata <- function(x) {
+  rawToChar(serialize(x, NULL, ascii = TRUE))
+}
+
+.unserialize_arrow_r_metadata <- function(x) {
+  tryCatch(unserialize(charToRaw(x)), error = function(e) {
+    warning("Invalid metadata$r", call. = FALSE)
+    NULL
+  })
+}
+
+apply_arrow_r_metadata <- function(x, r_metadata) {
+  tryCatch({
+    if (!is.null(r_metadata$attributes)) {
+      attributes(x) <- r_metadata$attributes
+    }
+
+    columns_metadata <- r_metadata$columns
+    if (length(names(x)) && !is.null(columns_metadata)) {
+      for (name in intersect(names(columns_metadata), names(x))) {
+        x[[name]] <- apply_arrow_r_metadata(x[[name]], columns_metadata[[name]])
+      }
+    }
+  }, error = function(e) {
+    warning("Invalid metadata$r", call. = FALSE)
+  })
+  x
+}
+
+#' @export
+as.list.RecordBatch <- function(x, ...) as.list(as.data.frame(x, ...))
+
+#' @export
+row.names.RecordBatch <- function(x) as.character(seq_len(nrow(x)))
+
+#' @export
+dimnames.RecordBatch <- function(x) list(row.names(x), names(x))
 
 #' @export
 head.RecordBatch <- head.Array

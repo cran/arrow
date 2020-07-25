@@ -157,19 +157,42 @@ test_that("FeatherReader", {
   })
   write_feather(tib, v1, version = 1)
   write_feather(tib, v2)
-  reader1 <- FeatherReader$create(v1)
+  f1 <- make_readable_file(v1)
+  reader1 <- FeatherReader$create(f1)
+  f1$close()
   expect_identical(reader1$version, 1L)
-  reader2 <- FeatherReader$create(v2)
+  f2 <- make_readable_file(v2)
+  reader2 <- FeatherReader$create(f2)
   expect_identical(reader2$version, 2L)
+  f2$close()
+})
+
+test_that("read_feather requires RandomAccessFile and errors nicely otherwise (ARROW-8615)", {
+  skip_if_not_available("gzip")
+  expect_error(
+    read_feather(CompressedInputStream$create(feather_file)),
+    'file must be a "RandomAccessFile"'
+  )
 })
 
 test_that("read_feather closes connection to file", {
   tf <- tempfile()
+  on.exit(unlink(tf))
   write_feather(tib, sink = tf)
   expect_true(file.exists(tf))
   read_feather(tf)
   expect_error(file.remove(tf), NA)
   expect_false(file.exists(tf))
+})
+
+test_that("Character vectors > 2GB can write to feather", {
+  skip_on_cran()
+  skip_if_not_running_large_memory_tests()
+  df <- tibble::tibble(big = make_big_string())
+  tf <- tempfile()
+  on.exit(unlink(tf))
+  write_feather(df, tf)
+  expect_identical(read_feather(tf), df)
 })
 
 unlink(feather_file)

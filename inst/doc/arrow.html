@@ -3,7 +3,7 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-<title>Multi-file datasets</title>
+<title>Features</title>
 
 <script type="text/javascript">
 window.onload = function() {
@@ -203,12 +203,14 @@ hr {
 <body>
 <p>The Apache Arrow C++ library provides rich, powerful features for working with columnar data. The <code>arrow</code> R package provides both a low-level interface to the C++ library and some higher-level, R-flavored tools for working with it. This vignette provides an overview of how the pieces fit together, and it describes the conventions that the classes and methods follow in R.</p>
 
-<h1>Multi-file datasets</h1>
+<h1>Features</h1>
+
+<h2>Multi-file datasets</h2>
 
 <p>The <code>arrow</code> package lets you work efficiently with large, multi-file datasets
 using <code>dplyr</code> methods. See <code>vignette(&quot;dataset&quot;, package = &quot;arrow&quot;)</code> for an overview.</p>
 
-<h1>Reading and writing files</h1>
+<h2>Reading and writing files</h2>
 
 <p><code>arrow</code> provides some simple functions for using the Arrow C++ library to read and write files.
 These functions are designed to drop into your normal R workflow
@@ -219,26 +221,10 @@ The readers return <code>data.frame</code>s
 and the writers take <code>data.frame</code>s.</p>
 
 <p>Importantly, <code>arrow</code> provides basic read and write support for the <a href="https://parquet.apache.org/">Apache
-Parquet</a> columnar data file format, without having to set up a database.</p>
+Parquet</a> columnar data file format.</p>
 
 <pre><code class="r">library(arrow)
 df &lt;- read_parquet(&quot;path/to/file.parquet&quot;)
-</code></pre>
-
-<p>This function, along with the other readers in the package, takes an optional
-<code>col_select</code> argument, inspired by the
-<a href="https://vroom.r-lib.org/reference/vroom.html"><code>vroom</code></a> package.
-This argument lets you use the <a href="https://tidyselect.r-lib.org/reference/select_helpers.html">&ldquo;tidyselect&rdquo; helper functions</a>,
-as you can do in <code>dplyr::select()</code>, to specify that you only want to keep certain columns.
-You may also provide a character vector of column names to keep,
-as in the &ldquo;select&rdquo; argument to <code>data.table::fread()</code>.
-By narrowing your selection at read time, you can load a <code>data.frame</code> with less memory overhead.</p>
-
-<p>For example, suppose you had written the <code>iris</code> dataset to Parquet. You could
-read a <code>data.frame</code> with only the columns <code>c(&quot;Sepal.Length&quot;, &quot;Sepal.Width&quot;)</code> by
-doing</p>
-
-<pre><code class="r">df &lt;- read_parquet(&quot;iris.parquet&quot;, col_select = starts_with(&quot;Sepal&quot;))
 </code></pre>
 
 <p>Just as you can read, you can write Parquet files:</p>
@@ -251,23 +237,24 @@ doing</p>
 <code>write_feather()</code>. This implementation depends
 on the same underlying C++ library as the Python version does,
 resulting in more reliable and consistent behavior across the two languages, as
-well as <a href="https://wesmckinney.com/blog/feather-arrow-future/">improved performance</a>.</p>
+well as <a href="https://wesmckinney.com/blog/feather-arrow-future/">improved performance</a>.
+<code>arrow</code> also by default writes the Feather V2 format,
+which supports a wider range of data types, as well as compression.</p>
 
-<p>In addition to these readers and writers, the <code>arrow</code> package has wrappers for
-other readers in the C++ library; see <code>?read_csv_arrow</code> and
-<code>?read_json_arrow</code>. These readers are being developed to optimize for the
-memory layout of the Arrow columnar format and are not intended as a direct
-replacement for existing R CSV readers (<code>base::read.csv</code>, <code>readr::read_csv</code>,
-<code>data.table::fread</code>) that return an R <code>data.frame</code>.</p>
+<p>For CSV and line-delimited JSON, there are <code>read_csv_arrow()</code> and <code>read_json_arrow()</code>, respectively.
+While <code>read_csv_arrow()</code> currently has fewer parsing options for dealing with
+every CSV format variation in the wild, for the files it can read, it is
+often significantly faster than other R CSV readers, such as
+<code>base::read.csv</code>, <code>readr::read_csv</code>, and <code>data.table::fread</code>.</p>
 
-<h1>Working with Arrow data in Python</h1>
+<h2>Working with Arrow data in Python</h2>
 
 <p>Using <a href="https://rstudio.github.io/reticulate/"><code>reticulate</code></a>, <code>arrow</code> lets you
 share data between R and Python (<code>pyarrow</code>) efficiently, enabling you to take
 advantage of the vibrant ecosystem of Python packages that build on top of
 Apache Arrow. See <code>vignette(&quot;python&quot;, package = &quot;arrow&quot;)</code> for details.</p>
 
-<h1>Access to Arrow messages, buffers, and streams</h1>
+<h2>Access to Arrow messages, buffers, and streams</h2>
 
 <p>The <code>arrow</code> package also provides many lower-level bindings to the C++ library, which enable you
 to access and manipulate Arrow objects. You can use these to build connectors
@@ -276,7 +263,239 @@ to other applications and services that use Arrow. One example is Spark: the
 move data to and from Spark, yielding <a href="http://arrow.apache.org/blog/2019/01/25/r-spark-improvements/">significant performance
 gains</a>.</p>
 
-<h1>Class structure and package conventions</h1>
+<h1>Internals</h1>
+
+<h2>Mapping of R &lt;&ndash;&gt; Arrow types</h2>
+
+<p>Arrow has a rich data type system that includes direct parallels with R&#39;s data types and much more.</p>
+
+<p>In the tables, entries with a <code>-</code> are not currently implemented.</p>
+
+<h3>R to Arrow</h3>
+
+<table><thead>
+<tr>
+<th>R type</th>
+<th>Arrow type</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>logical</td>
+<td>boolean</td>
+</tr>
+<tr>
+<td>integer</td>
+<td>int32</td>
+</tr>
+<tr>
+<td>double (&ldquo;numeric&rdquo;)</td>
+<td>float64</td>
+</tr>
+<tr>
+<td>character</td>
+<td>utf8<sup>1^</sup></td>
+</tr>
+<tr>
+<td>factor</td>
+<td>dictionary</td>
+</tr>
+<tr>
+<td>raw</td>
+<td>uint8</td>
+</tr>
+<tr>
+<td>Date</td>
+<td>date32</td>
+</tr>
+<tr>
+<td>POSIXct</td>
+<td>timestamp</td>
+</tr>
+<tr>
+<td>POSIXlt</td>
+<td>struct</td>
+</tr>
+<tr>
+<td>data.frame</td>
+<td>struct</td>
+</tr>
+<tr>
+<td>list<sup>2^</sup></td>
+<td>list</td>
+</tr>
+<tr>
+<td>bit64::integer64</td>
+<td>int64</td>
+</tr>
+<tr>
+<td>difftime</td>
+<td>time32</td>
+</tr>
+<tr>
+<td>vctrs::vctrs_unspecified</td>
+<td>null</td>
+</tr>
+</tbody></table>
+
+<p><sup>1<sup>:</sup></sup> If the character vector exceeds 2GB of strings, it will be converted to a <code>large_utf8</code> Arrow type</p>
+
+<p><sup>2<sup>:</sup></sup> Only lists where all elements are the same type are able to be translated to Arrow list type (which is a &ldquo;list of&rdquo; some type).</p>
+
+<h3>Arrow to R</h3>
+
+<table><thead>
+<tr>
+<th>Arrow type</th>
+<th>R type</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>boolean</td>
+<td>logical</td>
+</tr>
+<tr>
+<td>int8</td>
+<td>integer</td>
+</tr>
+<tr>
+<td>int16</td>
+<td>integer</td>
+</tr>
+<tr>
+<td>int32</td>
+<td>integer</td>
+</tr>
+<tr>
+<td>int64</td>
+<td>integer<sup>3^</sup></td>
+</tr>
+<tr>
+<td>uint8</td>
+<td>integer</td>
+</tr>
+<tr>
+<td>uint16</td>
+<td>integer</td>
+</tr>
+<tr>
+<td>uint32</td>
+<td>integer<sup>3^</sup></td>
+</tr>
+<tr>
+<td>uint64</td>
+<td>integer<sup>3^</sup></td>
+</tr>
+<tr>
+<td>float16</td>
+<td>-</td>
+</tr>
+<tr>
+<td>float32</td>
+<td>double</td>
+</tr>
+<tr>
+<td>float64</td>
+<td>double</td>
+</tr>
+<tr>
+<td>utf8</td>
+<td>character</td>
+</tr>
+<tr>
+<td>binary</td>
+<td>arrow_binary <sup>5^</sup></td>
+</tr>
+<tr>
+<td>fixed_size_binary</td>
+<td>arrow_fixed_size_binary <sup>5^</sup></td>
+</tr>
+<tr>
+<td>date32</td>
+<td>Date</td>
+</tr>
+<tr>
+<td>date64</td>
+<td>POSIXct</td>
+</tr>
+<tr>
+<td>time32</td>
+<td>hms::difftime</td>
+</tr>
+<tr>
+<td>time64</td>
+<td>hms::difftime</td>
+</tr>
+<tr>
+<td>timestamp</td>
+<td>POSIXct</td>
+</tr>
+<tr>
+<td>duration</td>
+<td>-</td>
+</tr>
+<tr>
+<td>decimal</td>
+<td>double</td>
+</tr>
+<tr>
+<td>dictionary</td>
+<td>factor<sup>4^</sup></td>
+</tr>
+<tr>
+<td>list</td>
+<td>arrow_list <sup>6^</sup></td>
+</tr>
+<tr>
+<td>fixed_size_list</td>
+<td>arrow_fixed_size_list <sup>6^</sup></td>
+</tr>
+<tr>
+<td>struct</td>
+<td>data.frame</td>
+</tr>
+<tr>
+<td>null</td>
+<td>vctrs::vctrs_unspecified</td>
+</tr>
+<tr>
+<td>map</td>
+<td>-</td>
+</tr>
+<tr>
+<td>union</td>
+<td>-</td>
+</tr>
+<tr>
+<td>large_utf8</td>
+<td>character</td>
+</tr>
+<tr>
+<td>large_binary</td>
+<td>arrow_large_binary <sup>5^</sup></td>
+</tr>
+<tr>
+<td>large_list</td>
+<td>arrow_large_list <sup>6^</sup></td>
+</tr>
+</tbody></table>
+
+<p><sup>3<sup>:</sup></sup> These integer types may contain values that exceed the range of R&#39;s <code>integer</code> type (32-bit signed integer). When they do, <code>uint32</code> and <code>uint64</code> are converted to <code>double</code> (&ldquo;numeric&rdquo;) and <code>int64</code> is converted to <code>bit64::integer64</code>.</p>
+
+<p><sup>4<sup>:</sup></sup> Due to the limitation of R <code>factor</code>s, Arrow <code>dictionary</code> values are coerced to string when translated to R if they are not already strings.</p>
+
+<p><sup>5<sup>:</sup></sup> <code>arrow*_binary</code> classes are implemented as lists of raw vectors. </p>
+
+<p><sup>6<sup>:</sup></sup> <code>arrow*_list</code> classes are implemented as subclasses of <code>vctrs_list_of</code> with a <code>ptype</code> attribute set to what an empty Array of the value type converts to. </p>
+
+<h3>R object attributes</h3>
+
+<p>Arrow supports custom key-value metadata attached to Schemas. When we convert a <code>data.frame</code> to an Arrow Table or RecordBatch, the package stores any <code>attributes()</code> attached to the columns of the <code>data.frame</code> in the Arrow object&#39;s Schema. These attributes are stored under the &ldquo;r&rdquo; key; you can assign additional string metadata under any other key you wish, like <code>x$metadata$new_key &lt;- &quot;new value&quot;</code>.</p>
+
+<p>This metadata is preserved when writing the table to Feather or Parquet, and when reading those files into R, or when calling <code>as.data.frame()</code> on a Table/RecordBatch, the column attributes are restored to the columns of the resulting <code>data.frame</code>. This means that custom data types, including <code>haven::labelled</code>, <code>vctrs</code> annotations, and others, are preserved when doing a round-trip through Arrow.</p>
+
+<p>Note that the <code>attributes()</code> stored in <code>$metadata$r</code> are only understood by R. If you write a <code>data.frame</code> with <code>haven</code> columns to a Feather file and read that in Pandas, the <code>haven</code> metadata won&#39;t be recognized there. (Similarly, Pandas writes its own custom metadata, which the R package does not consume.) You are free, however, to define custom metadata conventions for your application and assign any (string) values you want to other metadata keys.</p>
+
+<h2>Class structure and package conventions</h2>
 
 <p>C++ is an object-oriented language, so the core logic of the Arrow library is encapsulated in classes and methods. In the R package, these classes are implemented as <code>R6</code> reference classes, most of which are exported from the namespace.</p>
 

@@ -122,8 +122,7 @@ write_feather <- function(x,
 #' This function reads both the original, limited specification of the format
 #' and the version 2 specification, which is the Apache Arrow IPC file format.
 #'
-#' @param file A character file path, a raw vector, or `InputStream`, passed to
-#' `FeatherReader$create()`.
+#' @inheritParams read_ipc_stream
 #' @inheritParams read_delim_arrow
 #' @param ... additional parameters, passed to [FeatherReader$create()][FeatherReader]
 #'
@@ -136,14 +135,14 @@ write_feather <- function(x,
 #' \donttest{
 #' tf <- tempfile()
 #' on.exit(unlink(tf))
-#' write_feather(iris, tf)
+#' write_feather(mtcars, tf)
 #' df <- read_feather(tf)
 #' dim(df)
 #' # Can select columns
-#' df <- read_feather(tf, col_select = starts_with("Sepal"))
+#' df <- read_feather(tf, col_select = starts_with("d"))
 #' }
 read_feather <- function(file, col_select = NULL, as_data_frame = TRUE, ...) {
-  if (is.string(file)) {
+  if (!inherits(file, "InputStream")) {
     file <- make_readable_file(file)
     on.exit(file$close())
   }
@@ -178,8 +177,7 @@ read_feather <- function(file, col_select = NULL, as_data_frame = TRUE, ...) {
 #' The `FeatherReader$create()` factory method instantiates the object and
 #' takes the following arguments:
 #'
-#' - `file` A character file name, raw vector, or Arrow file connection object
-#'    (e.g. `RandomAccessFile`).
+#' - `file` an Arrow file connection object inheriting from `RandomAccessFile`.
 #' - `mmap` Logical: whether to memory-map the file (default `TRUE`)
 #' - `...` Additional arguments, currently ignored
 #'
@@ -205,6 +203,6 @@ FeatherReader <- R6Class("FeatherReader", inherit = ArrowObject,
 )
 
 FeatherReader$create <- function(file, mmap = TRUE, ...) {
-  file <- make_readable_file(file, mmap)
+  assert_is(file, "RandomAccessFile")
   shared_ptr(FeatherReader, ipc___feather___Reader__Open(file))
 }

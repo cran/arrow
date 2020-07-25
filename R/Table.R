@@ -47,11 +47,6 @@
 #' "Slice" method function even if there were a column in the table called
 #' "Slice".
 #'
-#' A caveat about the `[` method for row operations: only "slicing" is
-#' currently supported. That is, you can select a continuous range of rows
-#' from the table, but you can't filter with a `logical` vector or take an
-#' arbitrary selection of rows by integer indices.
-#'
 #' @section R6 Methods:
 #' In addition to the more R-friendly S3 methods, a `Table` object has
 #' the following R6 methods that map onto the underlying C++ methods:
@@ -80,7 +75,9 @@
 #' - `$num_columns`
 #' - `$num_rows`
 #' - `$schema`
-#' - `$metadata`: Returns the key-value metadata of the `Schema`
+#' - `$metadata`: Returns the key-value metadata of the `Schema` as a named list.
+#'    Modify or replace by assigning in (`tab$metadata <- new_metadata`).
+#'    All list elements are coerced to string.
 #' - `$columns`: Returns a list of `ChunkedArray`s
 #' @rdname Table
 #' @name Table
@@ -144,21 +141,13 @@ Table <- R6Class("Table", inherit = ArrowObject,
       if (is.integer(i)) {
         i <- Array$create(i)
       }
-      if (inherits(i, "ChunkedArray")) {
-        return(shared_ptr(Table, Table__TakeChunked(self, i)))
-      }
-      assert_is(i, "Array")
-      shared_ptr(Table, Table__Take(self, i))
+      shared_ptr(Table, call_function("take", self, i))
     },
     Filter = function(i, keep_na = TRUE) {
       if (is.logical(i)) {
         i <- Array$create(i)
       }
-      if (inherits(i, "ChunkedArray")) {
-        return(shared_ptr(Table, Table__FilterChunked(self, i, keep_na)))
-      }
-      assert_is(i, "Array")
-      shared_ptr(Table, Table__Filter(self, i, keep_na))
+      shared_ptr(Table, call_function("filter", self, i, options = list(keep_na = keep_na)))
     },
 
     Equals = function(other, check_metadata = FALSE, ...) {
@@ -178,7 +167,20 @@ Table <- R6Class("Table", inherit = ArrowObject,
     num_columns = function() Table__num_columns(self),
     num_rows = function() Table__num_rows(self),
     schema = function() shared_ptr(Schema, Table__schema(self)),
-    metadata = function() self$schema$metadata,
+    metadata = function(new) {
+      if (missing(new)) {
+        # Get the metadata (from the schema)
+        self$schema$metadata
+      } else {
+        # Set the metadata
+        new <- prepare_key_value_metadata(new)
+        out <- Table__ReplaceSchemaMetadata(self, new)
+        # ReplaceSchemaMetadata returns a new object but we're modifying in place,
+        # so swap in that new C++ object pointer into our R6 object
+        self$set_pointer(out)
+        self
+      }
+    },
     columns = function() map(Table__columns(self), shared_ptr, class = ChunkedArray)
   )
 )
@@ -195,13 +197,24 @@ Table$create <- function(..., schema = NULL) {
 
 #' @export
 as.data.frame.Table <- function(x, row.names = NULL, optional = FALSE, ...) {
-  Table__to_dataframe(x, use_threads = option_use_threads())
+  df <- Table__to_dataframe(x, use_threads = option_use_threads())
+  if (!is.null(r_metadata <- x$metadata$r)) {
+    df <- apply_arrow_r_metadata(df, .unserialize_arrow_r_metadata(r_metadata))
+  }
+  df
 }
 
 #' @export
-dim.Table <- function(x) {
-  c(x$num_rows, x$num_columns)
-}
+as.list.Table <- as.list.RecordBatch
+
+#' @export
+row.names.Table <- row.names.RecordBatch
+
+#' @export
+dimnames.Table <- dimnames.RecordBatch
+
+#' @export
+dim.Table <- function(x) c(x$num_rows, x$num_columns)
 
 #' @export
 names.Table <- function(x) x$ColumnNames()

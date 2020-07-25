@@ -18,6 +18,10 @@
 #include "./arrow_types.h"
 
 #if defined(ARROW_R_WITH_ARROW)
+#include <arrow/ipc/reader.h>
+#include <arrow/ipc/writer.h>
+#include <arrow/type.h>
+#include <arrow/util/key_value_metadata.h>
 
 // [[arrow::export]]
 std::shared_ptr<arrow::Schema> schema_(Rcpp::List fields) {
@@ -68,9 +72,26 @@ bool Schema__HasMetadata(const std::shared_ptr<arrow::Schema>& schema) {
 }
 
 // [[arrow::export]]
-std::string Schema__metadata(const std::shared_ptr<arrow::Schema>& schema) {
-  // TODO: return a useful object, not just ToString?
-  return schema->metadata()->ToString();
+Rcpp::List Schema__metadata(const std::shared_ptr<arrow::Schema>& schema) {
+  auto meta = schema->metadata();
+  int64_t n = 0;
+  if (schema->HasMetadata()) {
+    n = meta->size();
+  }
+
+  Rcpp::List out(n);
+  std::vector<std::string> names_out(n);
+
+  for (int i = 0; i < n; i++) {
+    auto key = meta->key(i);
+    out[i] = meta->value(i);
+    if (key == "r") {
+      Rf_setAttrib(out[i], R_ClassSymbol, arrow::r::data::classes_metadata_r);
+    }
+    names_out[i] = key;
+  }
+  out.attr("names") = names_out;
+  return out;
 }
 
 // [[arrow::export]]
@@ -85,7 +106,7 @@ std::shared_ptr<arrow::Schema> Schema__WithMetadata(
 Rcpp::RawVector Schema__serialize(const std::shared_ptr<arrow::Schema>& schema) {
   arrow::ipc::DictionaryMemo empty_memo;
   std::shared_ptr<arrow::Buffer> out =
-      VALUE_OR_STOP(arrow::ipc::SerializeSchema(*schema, &empty_memo));
+      ValueOrStop(arrow::ipc::SerializeSchema(*schema, &empty_memo));
 
   auto n = out->size();
   Rcpp::RawVector vec(out->size());
@@ -103,7 +124,7 @@ bool Schema__Equals(const std::shared_ptr<arrow::Schema>& schema,
 // [[arrow::export]]
 std::shared_ptr<arrow::Schema> arrow__UnifySchemas(
     const std::vector<std::shared_ptr<arrow::Schema>>& schemas) {
-  return VALUE_OR_STOP(arrow::UnifySchemas(schemas));
+  return ValueOrStop(arrow::UnifySchemas(schemas));
 }
 
 #endif

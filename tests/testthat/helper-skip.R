@@ -16,8 +16,9 @@
 # under the License.
 
 skip_if_not_available <- function(feature) {
-  # This is currently for compression only but we can extend to other features
-  if (!codec_is_available(feature)) {
+  if (feature == "s3") {
+    skip_if_not(arrow_with_s3())
+  } else if (!codec_is_available(feature)) {
     skip(paste("Arrow C++ not built with support for", feature))
   }
 }
@@ -33,5 +34,12 @@ skip_if_not_dev_mode <- function() {
   skip_if_not(
     identical(tolower(Sys.getenv("ARROW_R_DEV")), "true"),
     "environment variable ARROW_R_DEV"
+  )
+}
+
+skip_if_not_running_large_memory_tests <- function() {
+  skip_if_not(
+    identical(tolower(Sys.getenv("ARROW_LARGE_MEMORY_TESTS")), "true"),
+    "environment variable ARROW_LARGE_MEMORY_TESTS"
   )
 }

@@ -37,13 +37,14 @@ binary_ok <- !identical(tolower(Sys.getenv("LIBARROW_BINARY", "false")), "false"
 quietly <- !env_is("ARROW_R_DEV", "true")
 
 try_download <- function(from_url, to_file) {
-  try(
+  status <- try(
     suppressWarnings(
       download.file(from_url, to_file, quiet = quietly)
     ),
     silent = quietly
   )
-  file.exists(to_file)
+  # Return whether the download was successful
+  !inherits(status, "try-error") && status == 0
 }
 
 download_binary <- function(os = identify_os()) {
@@ -80,44 +81,102 @@ identify_os <- function(os = Sys.getenv("LIBARROW_BINARY", Sys.getenv("LIBARROW_
     return(os)
   }
 
-  if (nzchar(Sys.which("lsb_release"))) {
-    distro <- tolower(system("lsb_release -is", intern = TRUE))
-    os_version <- system("lsb_release -rs", intern = TRUE)
-    # In the future, we may be able to do some mapping of distro-versions to
-    # versions we built for, since there's no way we'll build for everything.
-    os <- paste0(distro, "-", os_version)
-  } else if (file.exists("/etc/os-release")) {
-    os_release <- readLines("/etc/os-release")
-    vals <- sub("^.*=(.*)$", "\\1", os_release)
-    names(vals) <- sub("^(.*)=.*$", "\\1", os_release)
-    distro <- gsub('"', '', vals["ID"])
-    os_version <- "unknown" # default value
-    if ("VERSION_ID" %in% names(vals)) {
-      if (distro == "ubuntu") {
-        # Keep major.minor version
-        version_regex <- '^"?([0-9]+\\.[0-9]+).*"?.*$'
-      } else {
-        # Only major version number
-        version_regex <- '^"?([0-9]+).*"?.*$'
-      }
-      os_version <- sub(version_regex, "\\1", vals["VERSION_ID"])
-    } else if ("PRETTY_NAME" %in% names(vals) && grepl("bullseye", vals["PRETTY_NAME"])) {
-      # debian unstable doesn't include a number but we can map from pretty name
-      os_version <- "11"
-    }
-    os <- paste0(distro, "-", os_version)
-  } else if (file.exists("/etc/system-release")) {
-    # Something like "CentOS Linux release 7.7.1908 (Core)"
-    system_release <- tolower(utils::head(readLines("/etc/system-release"), 1))
-    # Extract from that the distro and the major version number
-    os <- sub("^([a-z]+) .* ([0-9]+).*$", "\\1-\\2", system_release)
-  } else {
+  linux <- distro()
+  if (is.null(linux)) {
     cat("*** Unable to identify current OS/version\n")
-    os <- NULL
+    return(NULL)
+  }
+  paste(linux$id, linux$short_version, sep = "-")
+}
+
+#### start distro ####
+
+distro <- function() {
+  out <- lsb_release()
+  if (is.null(out)) {
+    out <- os_release()
+    if (is.null(out)) {
+      out <- system_release()
+    }
+  }
+  if (is.null(out)) {
+    return(NULL)
   }
 
-  os
+  out$id <- tolower(out$id)
+  if (grepl("bullseye", out$codename)) {
+    # debian unstable doesn't include a number but we can map from pretty name
+    out$short_version <- "11"
+  } else if (out$id == "ubuntu") {
+    # Keep major.minor version
+    out$short_version <- sub('^"?([0-9]+\\.[0-9]+).*"?.*$', "\\1", out$version)
+  } else {
+    # Only major version number
+    out$short_version <- sub('^"?([0-9]+).*"?.*$', "\\1", out$version)
+  }
+  out
 }
+
+lsb_release <- function() {
+  if (have_lsb_release()) {
+    list(
+      id = call_lsb("-is"),
+      version = call_lsb("-rs"),
+      codename = call_lsb("-cs")
+    )
+  } else {
+    NULL
+  }
+}
+
+have_lsb_release <- function() nzchar(Sys.which("lsb_release"))
+call_lsb <- function(args) system(paste("lsb_release", args), intern = TRUE)
+
+os_release <- function() {
+  rel_data <- read_os_release()
+  if (!is.null(rel_data)) {
+    vals <- as.list(sub('^.*="?(.*?)"?$', "\\1", rel_data))
+    names(vals) <- sub("^(.*)=.*$", "\\1", rel_data)
+
+    out <- list(
+      id = vals[["ID"]],
+      version = vals[["VERSION_ID"]]
+    )
+    if ("VERSION_CODENAME" %in% names(vals)) {
+      out$codename <- vals[["VERSION_CODENAME"]]
+    } else {
+      # This probably isn't right, maybe could extract codename from pretty name?
+      out$codename = vals[["PRETTY_NAME"]]
+    }
+    out
+  } else {
+    NULL
+  }
+}
+
+read_os_release <- function() {
+  if (file.exists("/etc/os-release")) {
+    readLines("/etc/os-release")
+  }
+}
+
+system_release <- function() {
+  rel_data <- read_system_release()
+  if (!is.null(rel_data)) {
+    # Something like "CentOS Linux release 7.7.1908 (Core)"
+    list(
+      id = sub("^([a-zA-Z]+) .* ([0-9.]+).*$", "\\1", rel_data),
+      version = sub("^([a-zA-Z]+) .* ([0-9.]+).*$", "\\2", rel_data),
+      codename = NA
+    )
+  } else {
+    NULL
+  }
+}
+
+read_system_release <- function() utils::head(readLines("/etc/system-release"), 1)
+
+#### end distro ####
 
 find_available_binary <- function(os) {
   # Download a csv that maps one to the other, columns "actual" and "use_this"
@@ -214,23 +273,50 @@ build_libarrow <- function(src_dir, dst_dir) {
   # * cmake
   cmake <- ensure_cmake()
 
-  build_dir <- tempfile()
+  # Optionally build somewhere not in tmp so we can dissect the build if it fails
+  debug_dir <- Sys.getenv("LIBARROW_DEBUG_DIR")
+  if (nzchar(debug_dir)) {
+    build_dir <- debug_dir
+  } else {
+    # But normally we'll just build in a tmp dir
+    build_dir <- tempfile()
+  }
   options(.arrow.cleanup = c(getOption(".arrow.cleanup"), build_dir))
-  env_vars <- sprintf(
-    "SOURCE_DIR=%s BUILD_DIR=%s DEST_DIR=%s CMAKE=%s",
-    src_dir,       build_dir,   dst_dir,    cmake
+
+  R_CMD_config <- function(var) {
+    # cf. tools::Rcmd, introduced R 3.3
+    system2(file.path(R.home("bin"), "R"), c("CMD", "config", var), stdout = TRUE)
+  }
+  env_var_list <- c(
+    SOURCE_DIR = src_dir,
+    BUILD_DIR = build_dir,
+    DEST_DIR = dst_dir,
+    CMAKE = cmake,
+    # Make sure we build with the same compiler settings that R is using
+    CC = R_CMD_config("CC"),
+    CXX = paste(R_CMD_config("CXX11"), R_CMD_config("CXX11STD")),
+    # CXXFLAGS = R_CMD_config("CXX11FLAGS"), # We don't want the same debug symbols
+    LDFLAGS = R_CMD_config("LDFLAGS")
+  )
+  env_vars <- paste(
+    names(env_var_list), dQuote(env_var_list, FALSE),
+    sep = "=", collapse = " "
   )
   cat("**** arrow", ifelse(quietly, "", paste("with", env_vars)), "\n")
-  system(
+  status <- system(
     paste(env_vars, "inst/build_arrow_static.sh"),
     ignore.stdout = quietly, ignore.stderr = quietly
   )
+  if (status != 0) {
+    # It failed :(
+    cat("**** Error building Arrow C++. Re-run with ARROW_R_DEV=true for debug information.\n")
+  }
+  invisible(status)
 }
 
 ensure_cmake <- function() {
   cmake <- Sys.which("cmake")
-  # TODO: should check that cmake is of sufficient version
-  if (!nzchar(cmake)) {
+  if (!nzchar(cmake) || cmake_version() < 3.2) {
     # If not found, download it
     cat("**** cmake\n")
     CMAKE_VERSION <- Sys.getenv("CMAKE_VERSION", "3.16.2")
@@ -249,8 +335,23 @@ ensure_cmake <- function() {
       "/cmake-", CMAKE_VERSION, "-Linux-x86_64",
       "/bin/cmake"
     )
+  } else {
+    # Sys.which() returns a named vector, but that plays badly with c() later
+    names(cmake) <- NULL
   }
   cmake
+}
+
+cmake_version <- function() {
+  tryCatch(
+    {
+      raw_version <- system("cmake --version", intern = TRUE, ignore.stderr = TRUE)
+      pat <- ".*?([0-9]+\\.[0-9]+\\.[0-9]+).*"
+      which_line <- grep(pat, raw_version)
+      package_version(sub(pat, "\\1", raw_version[which_line]))
+    },
+    error = function(e) return(0)
+  )
 }
 
 #####

@@ -93,6 +93,10 @@ Array <- R6Class("Array",
         shared_ptr(StructArray, self$pointer())
       } else if (type_id == Type$LIST) {
         shared_ptr(ListArray, self$pointer())
+      } else if (type_id == Type$LARGE_LIST){
+        shared_ptr(LargeListArray, self$pointer())
+      } else if (type_id == Type$FIXED_SIZE_LIST){
+        shared_ptr(FixedSizeListArray, self$pointer())
       } else {
         self
       }
@@ -127,18 +131,20 @@ Array <- R6Class("Array",
       if (is.integer(i)) {
         i <- Array$create(i)
       }
+      # ARROW-9001: autoboxing in call_function
+      result <- call_function("take", self, i)
       if (inherits(i, "ChunkedArray")) {
-        return(shared_ptr(ChunkedArray, Array__TakeChunked(self, i)))
+        return(shared_ptr(ChunkedArray, result))
+      } else {
+        Array$create(result)
       }
-      assert_is(i, "Array")
-      Array$create(Array__Take(self, i))
     },
     Filter = function(i, keep_na = TRUE) {
       if (is.logical(i)) {
         i <- Array$create(i)
       }
       assert_is(i, "Array")
-      Array$create(Array__Filter(self, i, keep_na))
+      Array$create(call_function("filter", self, i, options = list(keep_na = keep_na)))
     },
     RangeEquals = function(other, start_idx, end_idx, other_start_idx = 0L) {
       assert_is(other, "Array")
@@ -225,6 +231,38 @@ ListArray <- R6Class("ListArray", inherit = Array,
   ),
   active = list(
     value_type = function() DataType$create(ListArray__value_type(self))
+  )
+)
+
+#' @rdname array
+#' @usage NULL
+#' @format NULL
+#' @export
+LargeListArray <- R6Class("LargeListArray", inherit = Array,
+  public = list(
+    values = function() Array$create(LargeListArray__values(self)),
+    value_length = function(i) LargeListArray__value_length(self, i),
+    value_offset = function(i) LargeListArray__value_offset(self, i),
+    raw_value_offsets = function() LargeListArray__raw_value_offsets(self)
+  ),
+  active = list(
+    value_type = function() DataType$create(LargeListArray__value_type(self))
+  )
+)
+
+#' @rdname array
+#' @usage NULL
+#' @format NULL
+#' @export
+FixedSizeListArray <- R6Class("FixedSizeListArray", inherit = Array,
+  public = list(
+    values = function() Array$create(FixedSizeListArray__values(self)),
+    value_length = function(i) FixedSizeListArray__value_length(self, i),
+    value_offset = function(i) FixedSizeListArray__value_offset(self, i)
+  ),
+  active = list(
+    value_type = function() DataType$create(FixedSizeListArray__value_type(self)),
+    list_size = function() self$type$list_size
   )
 )
 
@@ -339,3 +377,12 @@ is.Array <- function(x, type = NULL) {
   }
   is_it
 }
+
+#' @export
+as.double.Array <- function(x, ...) as.double(as.vector(x), ...)
+
+#' @export
+as.integer.Array <- function(x, ...) as.integer(as.vector(x), ...)
+
+#' @export
+as.character.Array <- function(x, ...) as.character(as.vector(x), ...)
