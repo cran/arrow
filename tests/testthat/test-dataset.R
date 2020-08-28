@@ -112,6 +112,12 @@ test_that("Simple interface for datasets", {
       filter(integer > 6) %>%
       summarize(mean = mean(integer))
   )
+
+  # Collecting virtual partition column works
+  expect_equal(
+    collect(ds) %>% pull(part),
+    c(rep(1, 10), rep(2, 10))
+  )
 })
 
 test_that("dim method returns the correct number of rows and columns",{
@@ -219,6 +225,12 @@ test_that("IPC/Feather format data", {
       filter(integer > 6) %>%
       summarize(mean = mean(integer))
   )
+
+  # Collecting virtual partition column works
+  expect_equal(
+    collect(ds) %>% pull(part),
+    c(rep(3, 10), rep(4, 10))
+  )
 })
 
 test_that("CSV dataset", {
@@ -238,6 +250,11 @@ test_that("CSV dataset", {
       select(string = chr, integer = int) %>%
       filter(integer > 6) %>%
       summarize(mean = mean(integer))
+  )
+  # Collecting virtual partition column works
+  expect_equal(
+    collect(ds) %>% pull(part),
+    c(rep(5, 10), rep(6, 10))
   )
 })
 
@@ -373,6 +390,16 @@ test_that("filter() with %in%", {
       filter(int %in% c(6, 4, 3, 103, 107), part == 1) %>%
       collect(),
     tibble(int = df1$int[c(3, 4, 6)], part = 1)
+  )
+
+# ARROW-9606: bug in %in% filter on partition column with >1 partition columns
+  ds <- open_dataset(hive_dir)
+  expect_equivalent(
+    ds %>%
+      filter(group %in% 2) %>%
+      select(names(df2)) %>%
+      collect(),
+    df2
   )
 })
 
