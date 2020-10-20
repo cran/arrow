@@ -28,7 +28,7 @@ expect_chunked_roundtrip <- function(x, type) {
     # TODO: revisit how missingness works with ListArrays
     # R list objects don't handle missingness the same way as other vectors.
     # Is there some vctrs thing we should do on the roundtrip back to R?
-    expect_identical(is.na(a), is.na(flat_x))
+    expect_identical(as.vector(is.na(a)), is.na(flat_x))
   }
   expect_equal(as.vector(a), flat_x)
   expect_equal(as.vector(a$chunk(0)), x[[1]])
@@ -39,7 +39,7 @@ expect_chunked_roundtrip <- function(x, type) {
     expect_type_equal(a_sliced$type, type)
     expect_identical(length(a_sliced), length(x_sliced))
     if (!inherits(type, "ListType")) {
-      expect_identical(is.na(a_sliced), is.na(x_sliced))
+      expect_identical(as.vector(is.na(a_sliced)), is.na(x_sliced))
     }
     expect_equal(as.vector(a_sliced), x_sliced)
   }
@@ -65,18 +65,18 @@ test_that("ChunkedArray", {
 
   # input validation
   expect_error(x$chunk(14), "subscript out of bounds")
-  expect_error(x$chunk("one"), class = "Rcpp::not_compatible")
+  expect_error(x$chunk("one"))
   expect_error(x$chunk(NA_integer_), "'i' cannot be NA")
   expect_error(x$chunk(-1), "subscript out of bounds")
 
-  expect_error(x$Slice("ten"), class = "Rcpp::not_compatible")
+  expect_error(x$Slice("ten"))
   expect_error(x$Slice(NA_integer_), "Slice 'offset' cannot be NA")
   expect_error(x$Slice(NA), "Slice 'offset' cannot be NA")
-  expect_error(x$Slice(10, "ten"), class = "Rcpp::not_compatible")
+  expect_error(x$Slice(10, "ten"))
   expect_error(x$Slice(10, NA_integer_), "Slice 'length' cannot be NA")
   expect_error(x$Slice(NA_integer_, NA_integer_), "Slice 'offset' cannot be NA")
-  expect_error(x$Slice(c(10, 10)), class = "Rcpp::not_compatible")
-  expect_error(x$Slice(10, c(10, 10)), class = "Rcpp::not_compatible")
+  expect_error(x$Slice(c(10, 10)))
+  expect_error(x$Slice(10, c(10, 10)))
   expect_error(x$Slice(1000), "Slice 'offset' greater than array length")
   expect_error(x$Slice(-1), "Slice 'offset' cannot be negative")
   expect_error(z$Slice(10, 10), "Slice 'offset' greater than array length")
@@ -117,10 +117,8 @@ test_that("ChunkedArray handles NA", {
   expect_equal(as.vector(x), c(1:10, c(NA, 2:10), c(1:3, NA, 5)))
 
   chunks <- x$chunks
-  expect_equal(is.na(chunks[[1]]), is.na(data[[1]]))
-  expect_equal(is.na(chunks[[2]]), is.na(data[[2]]))
-  expect_equal(is.na(chunks[[3]]), is.na(data[[3]]))
-  expect_equal(is.na(x), c(is.na(data[[1]]), is.na(data[[2]]), is.na(data[[3]])))
+  expect_equal(as.vector(is.na(chunks[[2]])), is.na(data[[2]]))
+  expect_equal(as.vector(is.na(x)), c(is.na(data[[1]]), is.na(data[[2]]), is.na(data[[3]])))
 })
 
 test_that("ChunkedArray supports logical vectors (ARROW-3341)", {
@@ -160,6 +158,13 @@ test_that("ChunkedArray supports POSIXct (ARROW-3716)", {
 test_that("ChunkedArray supports integer64 (ARROW-3716)", {
   x <- bit64::as.integer64(1:10) + MAX_INT
   expect_chunked_roundtrip(list(x, x), int64())
+  # Also with a first chunk that would downcast
+  zero <- Array$create(0L)$cast(int64())
+  expect_type_equal(zero, int64())
+  ca <- ChunkedArray$create(zero, x)
+  expect_type_equal(ca, int64())
+  expect_is(as.vector(ca), "integer64")
+  expect_identical(as.vector(ca), c(bit64::as.integer64(0L), x))
 })
 
 test_that("ChunkedArray supports difftime", {

@@ -230,7 +230,7 @@ release of the R package along with any C++ dependencies.</p>
 <p>Daily development builds, which are not official releases,
 can be installed from the Ursa Labs repository:</p>
 
-<pre><code class="r">install.packages(&quot;arrow&quot;, repos = &quot;https://dl.bintray.com/ursalabs/arrow-r&quot;)
+<pre><code class="r">install.packages(&quot;arrow&quot;, repos = &quot;https://arrow-r-nightly.s3.amazonaws.com&quot;)
 </code></pre>
 
 <p>There currently are no daily <code>conda</code> builds.</p>
@@ -279,6 +279,29 @@ while <code>install_arrow(nightly = TRUE)</code> will give you a development bui
 satisfy C++ dependencies.</p>
 
 <!-- TODO: does remotes::install_github("apache/arrow/r") work now? -->
+
+<h2>S3 support</h2>
+
+<p>The <code>arrow</code> package allows you to work with data in AWS S3 or in other cloud
+storage system that emulate S3. However, support for working with S3 is not
+enabled in the default build, and it has additional system requirements. To
+enable it, set the environment variable <code>LIBARROW_MINIMAL=false</code> or
+<code>NOT_CRAN=true</code> to choose the full-featured build, or more selectively set
+<code>ARROW_S3=ON</code>. You also need the following system dependencies:</p>
+
+<ul>
+<li><code>gcc</code> &gt;= 4.9 or <code>clang</code> &gt;= 3.3; note that the default compiler on CentOS 7 is gcc 4.8.5, which is not sufficient</li>
+<li>CURL: install <code>libcurl-devel</code> (rpm) or <code>libcurl4-openssl-dev</code> (deb)</li>
+<li>OpenSSL &gt;= 1.0.2: install <code>openssl-devel</code> (rpm) or <code>libssl-dev</code> (deb)</li>
+</ul>
+
+<p>The prebuilt C++ binaries come with S3 support enabled, so you will need to meet
+these system requirements in order to use them&ndash;the package will not install
+without them. If you&#39;re building everything from source, the install script
+will check for the presence of these dependencies and turn off S3 support in the
+build if the prerequisites are not met&ndash;installation will succeed but without
+S3 functionality. If afterwards you install the missing system requirements,
+you&#39;ll need to reinstall the package in order to enable S3 support.</p>
 
 <h1>How dependencies are resolved</h1>
 
@@ -491,8 +514,8 @@ complete and fast installation experience for users who already have
 <code>NOT_CRAN=true</code> as part of their workflow, without requiring additional
 environment variables to be set.</li>
 <li><code>ARROW_R_DEV</code>: If set to <code>true</code>, more verbose messaging will be printed
-in the build script. This variable also is needed if you&#39;re modifying <code>Rcpp</code>
-code in the package: see &ldquo;Editing Rcpp code&rdquo; in the README.</li>
+in the build script. This variable also is needed if you&#39;re modifying C++
+code in the package: see &ldquo;Editing C++ code&rdquo; in the README.</li>
 <li><code>LIBARROW_DEBUG_DIR</code>: If the C++ library building from source fails (<code>cmake</code>),
 there may be messages telling you to check some log file in the build directory.
 However, when the library is built during R package installation,

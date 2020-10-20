@@ -214,15 +214,36 @@ and what is on the immediate development roadmap.</p>
 <p>The <a href="https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page">New York City taxi trip record data</a>
 is widely used in big data exercises and competitions.
 For demonstration purposes, we have hosted a Parquet-formatted version
-of about 10 years of the trip data in a public S3 bucket.</p>
+of about 10 years of the trip data in a public AWS S3 bucket.</p>
 
 <p>The total file size is around 37 gigabytes, even in the efficient Parquet file format.
 That&#39;s bigger than memory on most people&#39;s computers,
 so we can&#39;t just read it all in and stack it into a single data frame.</p>
 
-<p>In a future release, you&#39;ll be able to point your R session at S3 and query
-the dataset from there. For now, datasets need to be on your local file system.
-To download the files,</p>
+<p>In Windows and macOS binary packages, S3 support is included.
+On Linux when installing from source, S3 support is not enabled by default,
+and it has additional system requirements.
+See <code>vignette(&quot;install&quot;, package = &quot;arrow&quot;)</code> for details.
+To see if your <code>arrow</code> installation has S3 support, run</p>
+
+<pre><code class="r">arrow::arrow_with_s3()
+</code></pre>
+
+<pre><code>## [1] TRUE
+</code></pre>
+
+<p>Even with S3 support enabled network, speed will be a bottleneck unless your
+machine is located in the same AWS region as the data. So, for this vignette,
+we assume that the NYC taxi dataset has been downloaded locally in a &ldquo;nyc-taxi&rdquo;
+directory.</p>
+
+<p>If your <code>arrow</code> build has S3 support, you can sync the data locally with:</p>
+
+<pre><code class="r">arrow::copy_files(&quot;s3://ursa-labs-taxi-data&quot;, &quot;nyc-taxi&quot;)
+</code></pre>
+
+<p>If your <code>arrow</code> build doesn&#39;t have S3 support, you can download the files
+with some additional code:</p>
 
 <pre><code class="r">bucket &lt;- &quot;https://ursa-labs-taxi-data.s3.us-east-2.amazonaws.com&quot;
 dir.create(&quot;nyc-taxi&quot;)
@@ -248,7 +269,7 @@ for (year in 2009:2019) {
 }
 </code></pre>
 
-<p>Note that the vignette will not execute that code chunk: if you want to run
+<p>Note that these download steps in the vignette are not executed: if you want to run
 with live data, you&#39;ll have to do it yourself separately.
 Given the size, if you&#39;re running this locally and don&#39;t have a fast connection,
 feel free to grab only a year or two of data.</p>
@@ -273,6 +294,10 @@ we need to load both <code>arrow</code> and <code>dplyr</code>.</p>
 library(dplyr, warn.conflicts = FALSE)
 </code></pre>
 
+<pre><code>## Warning: replacing previous import &#39;vctrs::data_frame&#39; by &#39;tibble::data_frame&#39;
+## when loading &#39;dplyr&#39;
+</code></pre>
+
 <p>The first step is to create our Dataset object, pointing at the directory of data.</p>
 
 <pre><code class="r">ds &lt;- open_dataset(&quot;nyc-taxi&quot;, partitioning = c(&quot;year&quot;, &quot;month&quot;))
@@ -280,8 +305,11 @@ library(dplyr, warn.conflicts = FALSE)
 
 <p>The default file format for <code>open_dataset()</code> is Parquet; if we had a directory
 of Arrow format files, we could include <code>format = &quot;arrow&quot;</code> in the call.
-Future versions will support more file formats, including CSV/delimited text data
-and JSON.</p>
+Other supported formats include: &ldquo;feather&rdquo; (an alias for &ldquo;arrow&rdquo;, as Feather v2
+is the Arrow file format), &ldquo;csv&rdquo;, &ldquo;tsv&rdquo; (for tab-delimited), and &ldquo;text&rdquo; for
+generic text-delimited files. For text files, you can pass any parsing options
+(&ldquo;delim&rdquo;, &ldquo;quote&rdquo;, etc.) to <code>open_dataset()</code> that you would otherwise pass to
+<code>read_csv_arrow()</code>.</p>
 
 <p>The <code>partitioning</code> argument lets us specify how the file paths provide information
 about how the dataset is chunked into different files. Our files in this example
@@ -440,7 +468,7 @@ rows match the filter. Relatedly, since Parquet files contain row groups with
 statistics on the data within, there may be entire chunks of data we can
 avoid scanning because they have no rows where <code>total_amount &gt; 100</code>.</p>
 
-<h2>Going farther</h2>
+<h2>More dataset options</h2>
 
 <p>There are a few ways you can control the Dataset creation to adapt to special use cases.
 For one, you can specify a <code>schema</code> argument to declare the columns and their data types.
@@ -459,11 +487,88 @@ This would be useful, in our taxi dataset example, if you wanted to keep
 <p>Another feature of Datasets is that they can be composed of multiple data sources.
 That is, you may have a directory of partitioned Parquet files in one location,
 and in another directory, files that haven&#39;t been partitioned.
-In the future, when there is support for cloud storage and other file formats,
-this would mean you could point to an S3 bucked of Parquet data and a directory
+Or, you could point to an S3 bucket of Parquet data and a directory
 of CSVs on the local file system and query them together as a single dataset.
 To create a multi-source dataset, provide a list of datasets to <code>open_dataset()</code>
 instead of a file path, or simply concatenate them like <code>big_dataset &lt;- c(ds1, ds2)</code>.</p>
+
+<h2>Writing datasets</h2>
+
+<p>As you can see, querying a large dataset can be made quite fast by storage in an
+efficient binary columnar format like Parquet or Feather and partitioning based on
+columns commonly used for filtering. However, we don&#39;t always get our data delivered
+to us that way. Sometimes we start with one giant CSV. Our first step in analyzing data
+is cleaning is up and reshaping it into a more usable form.</p>
+
+<p>The <code>write_dataset()</code> function allows you to take a Dataset or other tabular data object&mdash;an Arrow <code>Table</code> or <code>RecordBatch</code>, or an R <code>data.frame</code>&mdash;and write it to a different file format, partitioned into multiple files.</p>
+
+<p>Assume we have a version of the NYC Taxi data as CSV:</p>
+
+<pre><code class="r">ds &lt;- open_dataset(&quot;nyc-taxi/csv/&quot;, format = &quot;csv&quot;)
+</code></pre>
+
+<p>We can write it to a new location and translate the files to the Feather format
+by calling <code>write_dataset()</code> on it:</p>
+
+<pre><code class="r">write_dataset(ds, &quot;nyc-taxi/feather&quot;, format = &quot;feather&quot;)
+</code></pre>
+
+<p>Next, let&#39;s imagine that the &ldquo;payment_type&rdquo; column is something we often filter on,
+so we want to partition the data by that variable. By doing so we ensure that a filter like
+<code>payment_type == 3</code> will touch only a subset of files where payment_type is always 3.</p>
+
+<p>One natural way to express the columns you want to partition on is to use the
+<code>group_by()</code> method:</p>
+
+<pre><code class="r">ds %&gt;%
+  group_by(payment_type) %&gt;%
+  write_dataset(&quot;nyc-taxi/feather&quot;, format = &quot;feather&quot;)
+</code></pre>
+
+<p>This will write files to a directory tree that looks like this:</p>
+
+<pre><code class="r">system(&quot;tree nyc-taxi/feather&quot;)
+
+# feather
+# ├── payment_type=1
+# │   └── part-5.feather
+# ├── payment_type=2
+# │   └── part-0.feather
+# ...
+# └── payment_type=5
+#     └── part-2.feather
+#
+# 5 directories, 25 files
+</code></pre>
+
+<p>Note that the directory names are <code>payment_type=1</code> and similar:
+this is the Hive-style partitioning described above. This means that when
+we call <code>open_dataset()</code> on this directory, we don&#39;t have to declare what the
+partitions are because they can be read from the file paths.
+(To instead write bare values for partition segments,
+i.e. <code>1</code> rather than <code>payment_type=1</code>, call <code>write_dataset()</code> with <code>hive_style = FALSE</code>.)</p>
+
+<p>Perhaps, though, <code>payment_type == 3</code> is the only data we ever care about,
+and we just want to drop the rest and have a smaller working set.
+For this, we can <code>filter()</code> them out when writing:</p>
+
+<pre><code class="r">ds %&gt;%
+  filter(payment_type == 3) %&gt;%
+  write_dataset(&quot;nyc-taxi/feather&quot;, format = &quot;feather&quot;)
+</code></pre>
+
+<p>The other thing we can do when writing datasets is select a subset of and/or reorder
+columns. Suppose we never care about <code>vendor_id</code>, and being a string column,
+it can take up a lot of space when we read it in, so let&#39;s drop it:</p>
+
+<pre><code class="r">ds %&gt;%
+  group_by(payment_type) %&gt;%
+  select(-vendor_id) %&gt;%
+  write_dataset(&quot;nyc-taxi/feather&quot;, format = &quot;feather&quot;)
+</code></pre>
+
+<p>Note that while you can select a subset of columns,
+you cannot currently rename columns when writing.</p>
 
 </body>
 

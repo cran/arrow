@@ -1,3 +1,9 @@
+## -----------------------------------------------------------------------------
+arrow::arrow_with_s3()
+
+## ---- eval = FALSE------------------------------------------------------------
+#  arrow::copy_files("s3://ursa-labs-taxi-data", "nyc-taxi")
+
 ## ---- eval = FALSE------------------------------------------------------------
 #  bucket <- "https://ursa-labs-taxi-data.s3.us-east-2.amazonaws.com"
 #  dir.create("nyc-taxi")
