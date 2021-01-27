@@ -493,7 +493,7 @@ gains</a>.</p>
 
 <p>This metadata is preserved when writing the table to Feather or Parquet, and when reading those files into R, or when calling <code>as.data.frame()</code> on a Table/RecordBatch, the column attributes are restored to the columns of the resulting <code>data.frame</code>. This means that custom data types, including <code>haven::labelled</code>, <code>vctrs</code> annotations, and others, are preserved when doing a round-trip through Arrow.</p>
 
-<p>Note that the <code>attributes()</code> stored in <code>$metadata$r</code> are only understood by R. If you write a <code>data.frame</code> with <code>haven</code> columns to a Feather file and read that in Pandas, the <code>haven</code> metadata won&#39;t be recognized there. (Similarly, Pandas writes its own custom metadata, which the R package does not consume.) You are free, however, to define custom metadata conventions for your application and assign any (string) values you want to other metadata keys.</p>
+<p>Note that the <code>attributes()</code> stored in <code>$metadata$r</code> are only understood by R. If you write a <code>data.frame</code> with <code>haven</code> columns to a Feather file and read that in Pandas, the <code>haven</code> metadata won&#39;t be recognized there. (Similarly, Pandas writes its own custom metadata, which the R package does not consume.) You are free, however, to define custom metadata conventions for your application and assign any (string) values you want to other metadata keys. For more details, see the documentation for <code>schema()</code>.</p>
 
 <h2>Class structure and package conventions</h2>
 

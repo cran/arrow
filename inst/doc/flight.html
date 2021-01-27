@@ -242,7 +242,7 @@ server$serve()
 <pre><code class="r">library(arrow)
 client &lt;- flight_connect(port = 8089)
 # Upload some data to our server so there&#39;s something to demo
-push_data(client, iris, path = &quot;test_data/iris&quot;)
+flight_put(client, iris, path = &quot;test_data/iris&quot;)
 </code></pre>
 
 <p>Now, in a new R process, let&#39;s connect to the server and pull the data we

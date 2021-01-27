@@ -46,9 +46,10 @@
 #' - `$column(i)`: Extract an `Array` by integer position from the batch
 #' - `$column_name(i)`: Get a column's name by integer position
 #' - `$names()`: Get all column names (called by `names(batch)`)
+#' - `$RenameColumns(value)`: Set all column names (called by `names(batch) <- value`)
 #' - `$GetColumnByName(name)`: Extract an `Array` by string name
 #' - `$RemoveColumn(i)`: Drops a column from the batch by integer position
-#' - `$selectColumns(indices)`: Return a new record batch with a selection of columns, expressed as 0-based integers.
+#' - `$SelectColumns(indices)`: Return a new record batch with a selection of columns, expressed as 0-based integers.
 #' - `$Slice(offset, length = NULL)`: Create a zero-copy view starting at the
 #'    indicated integer offset and going for the given length, or to the end
 #'    of the table if `NULL`, the default.
@@ -66,33 +67,34 @@
 #' - `$schema`
 #' - `$metadata`: Returns the key-value metadata of the `Schema` as a named list.
 #'    Modify or replace by assigning in (`batch$metadata <- new_metadata`).
-#'    All list elements are coerced to string.
+#'    All list elements are coerced to string. See `schema()` for more information.
 #' - `$columns`: Returns a list of `Array`s
 #' @rdname RecordBatch
 #' @name RecordBatch
 RecordBatch <- R6Class("RecordBatch", inherit = ArrowObject,
   public = list(
-    column = function(i) shared_ptr(Array, RecordBatch__column(self, i)),
+    column = function(i) RecordBatch__column(self, i),
     column_name = function(i) RecordBatch__column_name(self, i),
     names = function() RecordBatch__names(self),
+    RenameColumns = function(value) RecordBatch__RenameColumns(self, value),
     Equals = function(other, check_metadata = FALSE, ...) {
       inherits(other, "RecordBatch") && RecordBatch__Equals(self, other, isTRUE(check_metadata))
     },
     GetColumnByName = function(name) {
       assert_that(is.string(name))
-      shared_ptr(Array, RecordBatch__GetColumnByName(self, name))
+      RecordBatch__GetColumnByName(self, name)
     },
     SelectColumns = function(indices) {
-      shared_ptr(RecordBatch, RecordBatch__SelectColumns(self, indices))
+      RecordBatch__SelectColumns(self, indices)
     },
     RemoveColumn = function(i){
-      shared_ptr(RecordBatch, RecordBatch__RemoveColumn(self, i))
+      RecordBatch__RemoveColumn(self, i)
     },
     Slice = function(offset, length = NULL) {
       if (is.null(length)) {
-        shared_ptr(RecordBatch, RecordBatch__Slice1(self, offset))
+        RecordBatch__Slice1(self, offset)
       } else {
-        shared_ptr(RecordBatch, RecordBatch__Slice2(self, offset, length))
+        RecordBatch__Slice2(self, offset, length)
       }
     },
     Take = function(i) {
@@ -103,14 +105,14 @@ RecordBatch <- R6Class("RecordBatch", inherit = ArrowObject,
         i <- Array$create(i)
       }
       assert_is(i, "Array")
-      shared_ptr(RecordBatch, call_function("take", self, i))
+      call_function("take", self, i)
     },
     Filter = function(i, keep_na = TRUE) {
       if (is.logical(i)) {
         i <- Array$create(i)
       }
       assert_that(is.Array(i, "bool"))
-      shared_ptr(RecordBatch, call_function("filter", self, i, options = list(keep_na = keep_na)))
+      call_function("filter", self, i, options = list(keep_na = keep_na))
     },
     serialize = function() ipc___SerializeRecordBatch__Raw(self),
     ToString = function() ToString_tabular(self),
@@ -119,14 +121,20 @@ RecordBatch <- R6Class("RecordBatch", inherit = ArrowObject,
       assert_is(target_schema, "Schema")
       assert_is(options, "CastOptions")
       assert_that(identical(self$schema$names, target_schema$names), msg = "incompatible schemas")
-      shared_ptr(RecordBatch, RecordBatch__cast(self, target_schema, options))
+
+      RecordBatch__cast(self, target_schema, options)
+    },
+
+    invalidate = function() {
+      .Call(`_arrow_RecordBatch__Reset`, self)
+      super$invalidate()
     }
   ),
 
   active = list(
     num_columns = function() RecordBatch__num_columns(self),
     num_rows = function() RecordBatch__num_rows(self),
-    schema = function() shared_ptr(Schema, RecordBatch__schema(self)),
+    schema = function() RecordBatch__schema(self),
     metadata = function(new) {
       if (missing(new)) {
         # Get the metadata (from the schema)
@@ -137,11 +145,11 @@ RecordBatch <- R6Class("RecordBatch", inherit = ArrowObject,
         out <- RecordBatch__ReplaceSchemaMetadata(self, new)
         # ReplaceSchemaMetadata returns a new object but we're modifying in place,
         # so swap in that new C++ object pointer into our R6 object
-        self$set_pointer(out)
+        self$set_pointer(out$pointer())
         self
       }
     },
-    columns = function() map(RecordBatch__columns(self), shared_ptr, Array)
+    columns = function() RecordBatch__columns(self)
   )
 )
 
@@ -156,8 +164,9 @@ RecordBatch$create <- function(..., schema = NULL) {
     names(arrays) <- rep_len("", length(arrays))
   }
   stopifnot(length(arrays) > 0)
+
   # TODO: should this also assert that they're all Arrays?
-  shared_ptr(RecordBatch, RecordBatch__from_arrays(schema, arrays))
+  RecordBatch__from_arrays(schema, arrays)
 }
 
 RecordBatch$from_message <- function(obj, schema) {
@@ -168,9 +177,9 @@ RecordBatch$from_message <- function(obj, schema) {
     on.exit(obj$close())
   }
   if (inherits(obj, "InputStream")) {
-    shared_ptr(RecordBatch, ipc___ReadRecordBatch__InputStream__Schema(obj, schema))
+    ipc___ReadRecordBatch__InputStream__Schema(obj, schema)
   } else {
-    shared_ptr(RecordBatch, ipc___ReadRecordBatch__Message__Schema(obj, schema))
+    ipc___ReadRecordBatch__Message__Schema(obj, schema)
   }
 }
 
@@ -196,6 +205,9 @@ record_batch <- RecordBatch$create
 
 #' @export
 names.RecordBatch <- function(x) x$names()
+
+#' @export
+`names<-.RecordBatch` <- function(x, value) x$RenameColumns(value)
 
 #' @importFrom methods as
 #' @export
@@ -262,12 +274,36 @@ as.data.frame.RecordBatch <- function(x, row.names = NULL, optional = FALSE, ...
   df
 }
 
+#' @importFrom utils object.size
 .serialize_arrow_r_metadata <- function(x) {
-  rawToChar(serialize(x, NULL, ascii = TRUE))
+  assert_is(x, "list")
+
+  # drop problems attributes (most likely from readr)
+  x[["attributes"]][["problems"]] <- NULL
+
+  out <- serialize(x, NULL, ascii = TRUE)
+
+  # if the metadata is over 100 kB, compress
+  if (option_compress_metadata() && object.size(out) > 100000) {
+    out_comp <- serialize(memCompress(out, type = "gzip"), NULL, ascii = TRUE)
+
+    # but ensure that the compression+serialization is effective.
+    if (object.size(out) > object.size(out_comp)) out <- out_comp
+  }
+
+  rawToChar(out)
 }
 
 .unserialize_arrow_r_metadata <- function(x) {
-  tryCatch(unserialize(charToRaw(x)), error = function(e) {
+  tryCatch({
+    out <- unserialize(charToRaw(x))
+
+    # if this is still raw, try decompressing
+    if (is.raw(out)) {
+      out <- unserialize(memDecompress(out, type = "gzip"))
+    }
+    out
+  }, error = function(e) {
     warning("Invalid metadata$r", call. = FALSE)
     NULL
   })
@@ -275,6 +311,20 @@ as.data.frame.RecordBatch <- function(x, row.names = NULL, optional = FALSE, ...
 
 apply_arrow_r_metadata <- function(x, r_metadata) {
   tryCatch({
+    columns_metadata <- r_metadata$columns
+    if (is.data.frame(x)) {
+      if (length(names(x)) && !is.null(columns_metadata)) {
+        for (name in intersect(names(columns_metadata), names(x))) {
+          x[[name]] <- apply_arrow_r_metadata(x[[name]], columns_metadata[[name]])
+        }
+      }
+    } else if(is.list(x) && !inherits(x, "POSIXlt") && !is.null(columns_metadata)) {
+      x <- map2(x, columns_metadata, function(.x, .y) {
+        apply_arrow_r_metadata(.x, .y)
+      })
+      x
+    }
+
     if (!is.null(r_metadata$attributes)) {
       attributes(x)[names(r_metadata$attributes)] <- r_metadata$attributes
       if (inherits(x, "POSIXlt")) {
@@ -286,12 +336,6 @@ apply_arrow_r_metadata <- function(x, r_metadata) {
       }
     }
 
-    columns_metadata <- r_metadata$columns
-    if (length(names(x)) && !is.null(columns_metadata)) {
-      for (name in intersect(names(columns_metadata), names(x))) {
-        x[[name]] <- apply_arrow_r_metadata(x[[name]], columns_metadata[[name]])
-      }
-    }
   }, error = function(e) {
     warning("Invalid metadata$r", call. = FALSE)
   })

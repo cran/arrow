@@ -23,6 +23,11 @@
 #include <arrow/record_batch.h>
 #include <arrow/table.h>
 
+arrow::compute::ExecContext* gc_context() {
+  static arrow::compute::ExecContext context(gc_memory_pool());
+  return &context;
+}
+
 // [[arrow::export]]
 std::shared_ptr<arrow::compute::CastOptions> compute___CastOptions__initialize(
     bool allow_int_overflow, bool allow_time_truncate, bool allow_float_truncate) {
@@ -38,7 +43,7 @@ std::shared_ptr<arrow::Array> Array__cast(
     const std::shared_ptr<arrow::Array>& array,
     const std::shared_ptr<arrow::DataType>& target_type,
     const std::shared_ptr<arrow::compute::CastOptions>& options) {
-  return ValueOrStop(arrow::compute::Cast(*array, target_type, *options));
+  return ValueOrStop(arrow::compute::Cast(*array, target_type, *options, gc_context()));
 }
 
 // [[arrow::export]]
@@ -47,7 +52,8 @@ std::shared_ptr<arrow::ChunkedArray> ChunkedArray__cast(
     const std::shared_ptr<arrow::DataType>& target_type,
     const std::shared_ptr<arrow::compute::CastOptions>& options) {
   arrow::Datum value(chunked_array);
-  arrow::Datum out = ValueOrStop(arrow::compute::Cast(value, target_type, *options));
+  arrow::Datum out =
+      ValueOrStop(arrow::compute::Cast(value, target_type, *options, gc_context()));
   return out.chunked_array();
 }
 
@@ -60,7 +66,8 @@ std::shared_ptr<arrow::RecordBatch> RecordBatch__cast(
 
   arrow::ArrayVector columns(nc);
   for (int i = 0; i < nc; i++) {
-    columns[i] = Array__cast(batch->column(i), schema->field(i)->type(), options);
+    columns[i] = ValueOrStop(
+        arrow::compute::Cast(*batch->column(i), schema->field(i)->type(), *options));
   }
 
   return arrow::RecordBatch::Make(schema, batch->num_rows(), std::move(columns));
@@ -76,7 +83,10 @@ std::shared_ptr<arrow::Table> Table__cast(
   using ColumnVector = std::vector<std::shared_ptr<arrow::ChunkedArray>>;
   ColumnVector columns(nc);
   for (int i = 0; i < nc; i++) {
-    columns[i] = ChunkedArray__cast(table->column(i), schema->field(i)->type(), options);
+    arrow::Datum value(table->column(i));
+    arrow::Datum out =
+        ValueOrStop(arrow::compute::Cast(value, schema->field(i)->type(), *options));
+    columns[i] = out.chunked_array();
   }
   return arrow::Table::Make(schema, std::move(columns), table->num_rows());
 }
@@ -116,34 +126,31 @@ arrow::Datum as_cpp<arrow::Datum>(SEXP x) {
   // This assumes that R objects have already been converted to Arrow objects;
   // that seems right but should we do the wrapping here too/instead?
   cpp11::stop("to_datum: Not implemented for type %s", Rf_type2char(TYPEOF(x)));
-  return arrow::Datum();
 }
 }  // namespace cpp11
 
 SEXP from_datum(arrow::Datum datum) {
   switch (datum.kind()) {
     case arrow::Datum::SCALAR:
-      return cpp11::as_sexp(datum.scalar());
+      return cpp11::to_r6(datum.scalar());
 
     case arrow::Datum::ARRAY:
-      return cpp11::as_sexp(datum.make_array());
+      return cpp11::to_r6(datum.make_array());
 
     case arrow::Datum::CHUNKED_ARRAY:
-      return cpp11::as_sexp(datum.chunked_array());
+      return cpp11::to_r6(datum.chunked_array());
 
     case arrow::Datum::RECORD_BATCH:
-      return cpp11::as_sexp(datum.record_batch());
+      return cpp11::to_r6(datum.record_batch());
 
     case arrow::Datum::TABLE:
-      return cpp11::as_sexp(datum.table());
+      return cpp11::to_r6(datum.table());
 
     default:
       break;
   }
 
-  auto str = datum.ToString();
-  cpp11::stop("from_datum: Not implemented for Datum %s", str.c_str());
-  return R_NilValue;
+  cpp11::stop("from_datum: Not implemented for Datum %s", datum.ToString().c_str());
 }
 
 std::shared_ptr<arrow::compute::FunctionOptions> make_compute_options(
@@ -172,6 +179,39 @@ std::shared_ptr<arrow::compute::FunctionOptions> make_compute_options(
     return out;
   }
 
+  if (func_name == "is_in" || func_name == "index_in") {
+    using Options = arrow::compute::SetLookupOptions;
+    return std::make_shared<Options>(cpp11::as_cpp<arrow::Datum>(options["value_set"]),
+                                     cpp11::as_cpp<bool>(options["skip_nulls"]));
+  }
+
+  // hacky attempt to pass through to_type and other options
+  if (func_name == "cast") {
+    using Options = arrow::compute::CastOptions;
+    auto out = std::make_shared<Options>(true);
+    SEXP to_type = options["to_type"];
+    if (!Rf_isNull(to_type) && cpp11::as_cpp<std::shared_ptr<arrow::DataType>>(to_type)) {
+      out->to_type = cpp11::as_cpp<std::shared_ptr<arrow::DataType>>(to_type);
+    }
+
+    SEXP allow_float_truncate = options["allow_float_truncate"];
+    if (!Rf_isNull(allow_float_truncate) && cpp11::as_cpp<bool>(allow_float_truncate)) {
+      out->allow_float_truncate = cpp11::as_cpp<bool>(allow_float_truncate);
+    }
+
+    SEXP allow_time_truncate = options["allow_time_truncate"];
+    if (!Rf_isNull(allow_time_truncate) && cpp11::as_cpp<bool>(allow_time_truncate)) {
+      out->allow_time_truncate = cpp11::as_cpp<bool>(allow_time_truncate);
+    }
+
+    SEXP allow_int_overflow = options["allow_int_overflow"];
+    if (!Rf_isNull(allow_int_overflow) && cpp11::as_cpp<bool>(allow_int_overflow)) {
+      out->allow_int_overflow = cpp11::as_cpp<bool>(allow_int_overflow);
+    }
+
+    return out;
+  }
+
   return nullptr;
 }
 
@@ -179,8 +219,9 @@ std::shared_ptr<arrow::compute::FunctionOptions> make_compute_options(
 SEXP compute__CallFunction(std::string func_name, cpp11::list args, cpp11::list options) {
   auto opts = make_compute_options(func_name, options);
   auto datum_args = arrow::r::from_r_list<arrow::Datum>(args);
-  auto out = ValueOrStop(arrow::compute::CallFunction(func_name, datum_args, opts.get()));
-  return from_datum(out);
+  auto out = ValueOrStop(
+      arrow::compute::CallFunction(func_name, datum_args, opts.get(), gc_context()));
+  return from_datum(std::move(out));
 }
 
 #endif

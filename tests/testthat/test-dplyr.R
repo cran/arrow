@@ -27,6 +27,8 @@ expect_dplyr_equal <- function(expr, # A dplyr pipeline with `input` as its star
   expr <- rlang::enquo(expr)
   expected <- rlang::eval_tidy(expr, rlang::new_data_mask(rlang::env(input = tbl)))
 
+  skip_msg <- NULL
+
   if (is.null(skip_record_batch)) {
     via_batch <- rlang::eval_tidy(
       expr,
@@ -34,7 +36,7 @@ expect_dplyr_equal <- function(expr, # A dplyr pipeline with `input` as its star
     )
     expect_equivalent(via_batch, expected, ...)
   } else {
-    skip(skip_record_batch)
+    skip_msg <- c(skip_msg, skip_record_batch)
   }
 
   if (is.null(skip_table)) {
@@ -44,7 +46,11 @@ expect_dplyr_equal <- function(expr, # A dplyr pipeline with `input` as its star
     )
     expect_equivalent(via_table, expected, ...)
   } else {
-    skip(skip_table)
+    skip_msg <- c(skip_msg, skip_table)
+  }
+
+  if (!is.null(skip_msg)) {
+    skip(paste(skip_msg, collpase = "\n"))
   }
 }
 
@@ -133,6 +139,74 @@ test_that("filtering with expression", {
   )
 })
 
+test_that("filtering with arithmetic", {
+  expect_dplyr_equal(
+    input %>%
+      filter(dbl + 1 > 3) %>%
+      select(string = chr, int, dbl) %>%
+      collect(),
+    tbl
+  )
+
+  expect_dplyr_equal(
+    input %>%
+      filter(dbl / 2 > 3) %>%
+      select(string = chr, int, dbl) %>%
+      collect(),
+    tbl
+  )
+
+  expect_dplyr_equal(
+    input %>%
+      filter(dbl / 2L > 3) %>%
+      select(string = chr, int, dbl) %>%
+      collect(),
+    tbl
+  )
+
+  expect_dplyr_equal(
+    input %>%
+      filter(int / 2 > 3) %>%
+      select(string = chr, int, dbl) %>%
+      collect(),
+    tbl
+  )
+
+  expect_dplyr_equal(
+    input %>%
+      filter(int / 2L > 3) %>%
+      select(string = chr, int, dbl) %>%
+      collect(),
+    tbl
+  )
+
+  expect_dplyr_equal(
+    input %>%
+      filter(dbl %/% 2 > 3) %>%
+      select(string = chr, int, dbl) %>%
+      collect(),
+    tbl
+  )
+})
+
+test_that("filtering with expression + autocasting", {
+  expect_dplyr_equal(
+    input %>%
+      filter(dbl + 1 > 3L) %>% # test autocasting with comparison to 3L
+      select(string = chr, int, dbl) %>%
+      collect(),
+    tbl
+  )
+
+  expect_dplyr_equal(
+    input %>%
+      filter(int + 1 > 3) %>%
+      select(string = chr, int, dbl) %>%
+      collect(),
+    tbl
+  )
+})
+
 test_that("More complex select/filter", {
   expect_dplyr_equal(
     input %>%
@@ -167,7 +241,7 @@ test_that("Print method", {
 int: int32
 chr: string
 
-* Filter: and(and(greater(<Array>, 2), or(equal(<Array>, "d"), equal(<Array>, "f"))), less(<Array>, 5L))
+* Filter: and(and(greater(<Array>, 2), or(equal(<Array>, "d"), equal(<Array>, "f"))), less(<Array>, 5))
 See $.data for the source Arrow object',
   fixed = TRUE
   )
@@ -232,12 +306,56 @@ test_that("Filtering with a function that doesn't have an Array/expr method stil
   )
 })
 
+test_that("filter() with .data pronoun", {
+  expect_dplyr_equal(
+    input %>%
+      filter(.data$dbl > 4) %>%
+      select(.data$chr, .data$int, .data$lgl) %>%
+      collect(),
+    tbl
+  )
+
+  expect_dplyr_equal(
+    input %>%
+      filter(is.na(.data$lgl)) %>%
+      select(.data$chr, .data$int, .data$lgl) %>%
+      collect(),
+    tbl
+  )
+
+  # and the .env pronoun too!
+  chr <- 4
+  expect_dplyr_equal(
+    input %>%
+      filter(.data$dbl > .env$chr) %>%
+      select(.data$chr, .data$int, .data$lgl) %>%
+      collect(),
+    tbl
+  )
+
+  # but there is an error if we don't override the masking with `.env`
+  expect_dplyr_error(
+    tbl %>%
+      filter(.data$dbl > chr) %>%
+      select(.data$chr, .data$int, .data$lgl) %>%
+      collect()
+  )
+})
+
 test_that("summarize", {
   expect_dplyr_equal(
     input %>%
       select(int, chr) %>%
       filter(int > 5) %>%
       summarize(min_int = min(int)),
+    tbl
+  )
+
+  expect_dplyr_equal(
+    input %>%
+      select(int, chr) %>%
+      filter(int > 5) %>%
+      summarize(min_int = min(int) / 2),
     tbl
   )
 })

@@ -24,6 +24,20 @@
 #include <parquet/arrow/writer.h>
 #include <parquet/exception.h>
 
+namespace parquet {
+
+class WriterPropertiesBuilder : public WriterProperties::Builder {
+ public:
+  using WriterProperties::Builder::Builder;
+};
+
+class ArrowWriterPropertiesBuilder : public ArrowWriterProperties::Builder {
+ public:
+  using ArrowWriterProperties::Builder::Builder;
+};
+
+}  // namespace parquet
+
 // [[arrow::export]]
 std::shared_ptr<parquet::ArrowReaderProperties>
 parquet___arrow___ArrowReaderProperties__Make(bool use_threads) {
@@ -62,7 +76,8 @@ std::shared_ptr<parquet::arrow::FileReader> parquet___arrow___FileReader__OpenFi
   std::unique_ptr<parquet::arrow::FileReader> reader;
   parquet::arrow::FileReaderBuilder builder;
   PARQUET_THROW_NOT_OK(builder.Open(file));
-  PARQUET_THROW_NOT_OK(builder.properties(*props)->Build(&reader));
+  PARQUET_THROW_NOT_OK(
+      builder.memory_pool(gc_memory_pool())->properties(*props)->Build(&reader));
   return std::move(reader);
 }
 
@@ -143,20 +158,6 @@ std::shared_ptr<arrow::ChunkedArray> parquet___arrow___FileReader__ReadColumn(
   PARQUET_THROW_NOT_OK(reader->ReadColumn(i - 1, &array));
   return array;
 }
-
-namespace parquet {
-
-class WriterPropertiesBuilder : public WriterProperties::Builder {
- public:
-  using WriterProperties::Builder::Builder;
-};
-
-class ArrowWriterPropertiesBuilder : public ArrowWriterProperties::Builder {
- public:
-  using ArrowWriterProperties::Builder::Builder;
-};
-
-}  // namespace parquet
 
 // [[arrow::export]]
 std::shared_ptr<parquet::ArrowWriterProperties> parquet___ArrowWriterProperties___create(
@@ -286,9 +287,8 @@ std::shared_ptr<parquet::arrow::FileWriter> parquet___arrow___ParquetFileWriter_
     const std::shared_ptr<parquet::WriterProperties>& properties,
     const std::shared_ptr<parquet::ArrowWriterProperties>& arrow_properties) {
   std::unique_ptr<parquet::arrow::FileWriter> writer;
-  PARQUET_THROW_NOT_OK(
-      parquet::arrow::FileWriter::Open(*schema, arrow::default_memory_pool(), sink,
-                                       properties, arrow_properties, &writer));
+  PARQUET_THROW_NOT_OK(parquet::arrow::FileWriter::Open(
+      *schema, gc_memory_pool(), sink, properties, arrow_properties, &writer));
   return std::move(writer);
 }
 
@@ -311,9 +311,8 @@ void parquet___arrow___WriteTable(
     const std::shared_ptr<arrow::io::OutputStream>& sink,
     const std::shared_ptr<parquet::WriterProperties>& properties,
     const std::shared_ptr<parquet::ArrowWriterProperties>& arrow_properties) {
-  PARQUET_THROW_NOT_OK(parquet::arrow::WriteTable(*table, arrow::default_memory_pool(),
-                                                  sink, table->num_rows(), properties,
-                                                  arrow_properties));
+  PARQUET_THROW_NOT_OK(parquet::arrow::WriteTable(
+      *table, gc_memory_pool(), sink, table->num_rows(), properties, arrow_properties));
 }
 
 // [[arrow::export]]

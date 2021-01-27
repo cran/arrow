@@ -246,25 +246,20 @@ directory.</p>
 with some additional code:</p>
 
 <pre><code class="r">bucket &lt;- &quot;https://ursa-labs-taxi-data.s3.us-east-2.amazonaws.com&quot;
-dir.create(&quot;nyc-taxi&quot;)
 for (year in 2009:2019) {
-  dir.create(file.path(&quot;nyc-taxi&quot;, year))
   if (year == 2019) {
     # We only have through June 2019 there
     months &lt;- 1:6
   } else {
     months &lt;- 1:12
   }
-  for (month in months) {
-    if (month &lt; 10) {
-      month &lt;- paste0(&quot;0&quot;, month)
-    }
-    dir.create(file.path(&quot;nyc-taxi&quot;, year, month))
-    download.file(
+  for (month in sprintf(&quot;%02d&quot;, months)) {
+    dir.create(file.path(&quot;nyc-taxi&quot;, year, month), recursive = TRUE)
+    try(download.file(
       paste(bucket, year, month, &quot;data.parquet&quot;, sep = &quot;/&quot;),
       file.path(&quot;nyc-taxi&quot;, year, month, &quot;data.parquet&quot;),
-      mode = &#39;wb&#39;
-    )
+      mode = &quot;wb&quot;
+    ), silent = TRUE)
   }
 }
 </code></pre>
@@ -292,10 +287,6 @@ we need to load both <code>arrow</code> and <code>dplyr</code>.</p>
 
 <pre><code class="r">library(arrow, warn.conflicts = FALSE)
 library(dplyr, warn.conflicts = FALSE)
-</code></pre>
-
-<pre><code>## Warning: replacing previous import &#39;vctrs::data_frame&#39; by &#39;tibble::data_frame&#39;
-## when loading &#39;dplyr&#39;
 </code></pre>
 
 <p>The first step is to create our Dataset object, pointing at the directory of data.</p>
@@ -332,31 +323,31 @@ in every file, there are also columns &ldquo;year&rdquo; and &ldquo;month&rdquo;
 </code></pre>
 
 <pre><code>## 
-## ## FileSystemDataset with 125 Parquet files
-## ## vendor_id: string
-## ## pickup_at: timestamp[us]
-## ## dropoff_at: timestamp[us]
-## ## passenger_count: int8
-## ## trip_distance: float
-## ## pickup_longitude: float
-## ## pickup_latitude: float
-## ## rate_code_id: string
-## ## store_and_fwd_flag: string
-## ## dropoff_longitude: float
-## ## dropoff_latitude: float
-## ## payment_type: string
-## ## fare_amount: float
-## ## extra: float
-## ## mta_tax: float
-## ## tip_amount: float
-## ## tolls_amount: float
-## ## total_amount: float
-## ## improvement_surcharge: float
-## ## pickup_location_id: int32
-## ## dropoff_location_id: int32
-## ## congestion_surcharge: float
-## ## year: int32
-## ## month: int32
+## FileSystemDataset with 125 Parquet files
+## vendor_id: string
+## pickup_at: timestamp[us]
+## dropoff_at: timestamp[us]
+## passenger_count: int8
+## trip_distance: float
+## pickup_longitude: float
+## pickup_latitude: float
+## rate_code_id: string
+## store_and_fwd_flag: string
+## dropoff_longitude: float
+## dropoff_latitude: float
+## payment_type: string
+## fare_amount: float
+## extra: float
+## mta_tax: float
+## tip_amount: float
+## tolls_amount: float
+## total_amount: float
+## improvement_surcharge: float
+## pickup_location_id: int32
+## dropoff_location_id: int32
+## congestion_surcharge: float
+## year: int32
+## month: int32
 ## 
 ## See $metadata for additional Schema metadata
 </code></pre>
@@ -409,22 +400,22 @@ fares greater than $100 in 2015, broken down by the number of passengers:</p>
 </code></pre>
 
 <pre><code>## 
-## ## # A tibble: 10 x 3
-## ##    passenger_count tip_pct      n
-## ##              &lt;int&gt;   &lt;dbl&gt;  &lt;int&gt;
-## ##  1               0    9.84    380
-## ##  2               1   16.7  143087
-## ##  3               2   16.6   34418
-## ##  4               3   14.4    8922
-## ##  5               4   11.4    4771
-## ##  6               5   16.7    5806
-## ##  7               6   16.7    3338
-## ##  8               7   16.7      11
-## ##  9               8   16.7      32
-## ## 10               9   16.7      42
-## ##
-## ##    user  system elapsed
-## ##   4.436   1.012   1.402
+## # A tibble: 10 x 3
+##    passenger_count tip_pct      n
+##              &lt;int&gt;   &lt;dbl&gt;  &lt;int&gt;
+##  1               0    9.84    380
+##  2               1   16.7  143087
+##  3               2   16.6   34418
+##  4               3   14.4    8922
+##  5               4   11.4    4771
+##  6               5   16.7    5806
+##  7               6   16.7    3338
+##  8               7   16.7      11
+##  9               8   16.7      32
+## 10               9   16.7      42
+## 
+##    user  system elapsed
+##   4.436   1.012   1.402
 </code></pre>
 
 <p>We just selected a window out of a dataset with around 2 billion rows
@@ -440,14 +431,14 @@ record their actions but don&#39;t evaluate on the data until you run <code>coll
 </code></pre>
 
 <pre><code>## 
-## ## FileSystemDataset (query)
-## ## tip_amount: float
-## ## total_amount: float
-## ## passenger_count: int8
-## ##
-## ## * Filter: ((total_amount &gt; 100:double) and (year == 2015:double))
-## ## * Grouped by passenger_count
-## ## See $.data for the source Arrow object
+## FileSystemDataset (query)
+## tip_amount: float
+## total_amount: float
+## passenger_count: int8
+## 
+## * Filter: ((total_amount &gt; 100:double) and (year == 2015:double))
+## * Grouped by passenger_count
+## See $.data for the source Arrow object
 </code></pre>
 
 <p>This returns instantly and shows the window selection you&#39;ve made, without
