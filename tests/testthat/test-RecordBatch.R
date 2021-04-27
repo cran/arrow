@@ -147,6 +147,11 @@ test_that("[ on RecordBatch", {
   expect_data_frame(batch[batch$lgl,], tbl[tbl$lgl,])
   # int Array
   expect_data_frame(batch[Array$create(5:6), 2:4], tbl[6:7, 2:4])
+
+  # input validation
+  expect_error(batch[, c("dbl", "NOTACOLUMN")], 'Column not found: "NOTACOLUMN"')
+  expect_error(batch[, c(6, NA)], 'Column indices cannot be NA')
+  expect_error(batch[, c(2, -2)], 'Invalid column index')
 })
 
 test_that("[[ and $ on RecordBatch", {
@@ -161,7 +166,81 @@ test_that("[[ and $ on RecordBatch", {
   expect_error(batch[[c("asdf", "jkl;")]], 'name is not a string', fixed = TRUE)
 })
 
+test_that("[[<- assignment", {
+  tbl <- tibble::tibble(
+    int = 1:10,
+    dbl = as.numeric(1:10),
+    lgl = sample(c(TRUE, FALSE, NA), 10, replace = TRUE),
+    chr = letters[1:10],
+    fct = factor(letters[1:10])
+  )
+  batch <- RecordBatch$create(tbl)
+
+  # can remove a column
+  batch[["chr"]] <- NULL
+  expect_data_frame(batch, tbl[-4])
+
+  # can remove a column by index
+  batch[[4]] <- NULL
+  expect_data_frame(batch, tbl[1:3])
+
+  # can add a named column
+  batch[["new"]] <- letters[10:1]
+  expect_data_frame(batch, dplyr::bind_cols(tbl[1:3], new = letters[10:1]))
+
+  # can replace a column by index
+  batch[[2]] <- as.numeric(10:1)
+  expect_vector(batch[[2]], as.numeric(10:1))
+
+  # can add a column by index
+  batch[[5]] <- as.numeric(10:1)
+  expect_vector(batch[[5]], as.numeric(10:1))
+  expect_vector(batch[["5"]], as.numeric(10:1))
+
+  # can replace a column
+  batch[["int"]] <- 10:1
+  expect_vector(batch[["int"]], 10:1)
+
+  # can use $
+  batch$new <- NULL
+  expect_null(as.vector(batch$new))
+  expect_identical(dim(batch), c(10L, 4L))
+
+  batch$int <- 1:10
+  expect_vector(batch$int, 1:10)
+
+  # recycling
+  batch[["atom"]] <- 1L
+  expect_vector(batch[["atom"]], rep(1L, 10))
+
+  expect_error(
+    batch[["atom"]] <- 1:6,
+    "Can't recycle input of size 6 to size 10."
+  )
+
+  # assign Arrow array
+  array <- Array$create(c(10:1))
+  batch$array <- array
+  expect_vector(batch$array, 10:1)
+
+  # nonsense indexes
+  expect_error(batch[[NA]] <- letters[10:1], "'i' must be character or numeric, not logical")
+  expect_error(batch[[NULL]] <- letters[10:1], "'i' must be character or numeric, not NULL")
+  expect_error(batch[[NA_integer_]] <- letters[10:1], "!is.na(i) is not TRUE", fixed = TRUE)
+  expect_error(batch[[NA_real_]] <- letters[10:1], "!is.na(i) is not TRUE", fixed = TRUE)
+  expect_error(batch[[NA_character_]] <- letters[10:1], "!is.na(i) is not TRUE", fixed = TRUE)
+  expect_error(batch[[c(1, 4)]] <- letters[10:1], "length(i) not equal to 1", fixed = TRUE)
+})
+
 test_that("head and tail on RecordBatch", {
+  tbl <- tibble::tibble(
+    int = 1:10,
+    dbl = as.numeric(1:10),
+    lgl = sample(c(TRUE, FALSE, NA), 10, replace = TRUE),
+    chr = letters[1:10],
+    fct = factor(letters[1:10])
+  )
+  batch <- RecordBatch$create(tbl)
   expect_data_frame(head(batch), head(tbl))
   expect_data_frame(head(batch, 4), head(tbl, 4))
   expect_data_frame(head(batch, 40), head(tbl, 40))
@@ -337,6 +416,14 @@ test_that("record_batch() handles null type (ARROW-7064)", {
   expect_equivalent(batch$schema,  schema(a = int32(), n = null()))
 })
 
+test_that("record_batch() scalar recycling", {
+  skip("Not implemented (ARROW-11705)")
+  expect_data_frame(
+    record_batch(a = 1:10, b = 5),
+    tibble::tibble(a = 1:10, b = 5)
+  )
+})
+
 test_that("RecordBatch$Equals", {
   df <- tibble::tibble(x = 1:10, y = letters[1:10])
   a <- record_batch(df)
@@ -351,8 +438,8 @@ test_that("RecordBatch$Equals(check_metadata)", {
   rb1 <- record_batch(df)
   rb2 <- record_batch(df, schema = rb1$schema$WithMetadata(list(some="metadata")))
 
-  expect_is(rb1, "RecordBatch")
-  expect_is(rb2, "RecordBatch")
+  expect_r6_class(rb1, "RecordBatch")
+  expect_r6_class(rb2, "RecordBatch")
   expect_false(rb1$schema$HasMetadata)
   expect_true(rb2$schema$HasMetadata)
   expect_identical(rb2$schema$metadata, list(some = "metadata"))
@@ -377,4 +464,38 @@ test_that("RecordBatch name assignment", {
   expect_error(names(rb) <- character(0))
   expect_error(names(rb) <- NULL)
   expect_error(names(rb) <- c(TRUE, FALSE))
+})
+
+test_that("record_batch() with different length arrays", {
+  msg <- "All arrays must have the same length"
+  expect_error(record_batch(a=1:5, b = 42), msg)
+  expect_error(record_batch(a=1:5, b = 1:6), msg)
+})
+
+test_that("Handling string data with embedded nuls", {
+  raws <- structure(list(
+    as.raw(c(0x70, 0x65, 0x72, 0x73, 0x6f, 0x6e)),
+    as.raw(c(0x77, 0x6f, 0x6d, 0x61, 0x6e)),
+    as.raw(c(0x6d, 0x61, 0x00, 0x6e)), # <-- there's your nul, 0x00
+    as.raw(c(0x63, 0x61, 0x6d, 0x65, 0x72, 0x61)),
+    as.raw(c(0x74, 0x76))),
+    class = c("arrow_binary", "vctrs_vctr", "list"))
+  batch_with_nul <- record_batch(a = 1:5, b = raws)
+  batch_with_nul$b <- batch_with_nul$b$cast(utf8())
+  expect_error(
+    as.data.frame(batch_with_nul),
+    "embedded nul in string: 'ma\\0n'; to strip nuls when converting from Arrow to R, set options(arrow.skip_nul = TRUE)",
+    fixed = TRUE
+  )
+
+  withr::with_options(list(arrow.skip_nul = TRUE), {
+    expect_warning(
+      expect_equivalent(
+        as.data.frame(batch_with_nul)$b,
+        c("person", "woman", "man", "camera", "tv")
+      ),
+      "Stripping '\\0' (nul) from character vector",
+      fixed = TRUE
+    )
+  })
 })

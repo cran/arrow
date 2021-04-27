@@ -291,8 +291,6 @@ satisfy C++ dependencies.</p>
 <p>Note that, unlike packages like <code>tensorflow</code>, <code>blogdown</code>, and others that require external dependencies, you do not need to run <code>install_arrow()</code> after a successful <code>arrow</code> installation.</p>
 </blockquote>
 
-<!-- TODO: does remotes::install_github("apache/arrow/r") work now? -->
-
 <h2>S3 support</h2>
 
 <p>The <code>arrow</code> package allows you to work with data in AWS S3 or in other cloud
@@ -359,7 +357,7 @@ run <code>install.packages(&quot;arrow&quot;)</code> or <code>R CMD INSTALL</cod
 unless you&#39;ve set the <code>NOT_CRAN=true</code> environment variable.</p>
 
 <p>For the mechanics of how all this works, see the R package <code>configure</code> script,
-which calls <code>tools/linuxlibs.R</code>.
+which calls <code>tools/nixlibs.R</code>.
 If the C++ library is built from source, <code>inst/build_arrow_static.sh</code> is executed.
 This build script is also what is used to generate the prebuilt binaries.</p>
 
@@ -412,29 +410,6 @@ if you update your system Arrow, you&#39;ll need to reinstall the R package to m
 Similarly, if you&#39;re using Arrow system libraries, running <code>update.packages()</code>
 after a new release of the <code>arrow</code> package will likely fail unless you first
 update the system packages.</p>
-
-<h2>Using a local Arrow C++ build</h2>
-
-<p>If you&#39;ve built the Arrow C++ libraries locally from source
-but haven&#39;t installed them where <code>pkg-config</code> will find them,
-there are a few options for telling the R package how to locate them.
-You can set <code>PKG_CONFIG_PATH</code> to <code>/path/to/your/installation/pkgconfig</code>
-(that is, <code>PKG_CONFIG_PATH=${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/pkgconfig</code>,
-if you&#39;ve set those variables).
-Alternatively, you can set the <code>INCLUDE_DIR</code> and <code>LIB_DIR</code> environment variables
-to point to their location.</p>
-
-<p>If the package fails to install/load with an error like this:</p>
-
-<pre><code>** testing if installed package can be loaded from temporary location
-Error: package or namespace load failed for &#39;arrow&#39; in dyn.load(file, DLLpath = DLLpath, ...):
-unable to load shared object &#39;/Users/you/R/00LOCK-r/00new/arrow/libs/arrow.so&#39;:
-dlopen(/Users/you/R/00LOCK-r/00new/arrow/libs/arrow.so, 6): Library not loaded: @rpath/libarrow.14.dylib
-</code></pre>
-
-<p>try setting the environment variable <code>R_LD_LIBRARY_PATH</code> to wherever Arrow C++
-was put in <code>make install</code>, e.g. <code>export R_LD_LIBRARY_PATH=/usr/local/lib</code>, and
-retry installing the R package.</p>
 
 <h2>Using prebuilt binaries</h2>
 
@@ -504,7 +479,20 @@ See discussion <a href="https://issues.apache.org/jira/browse/ARROW-8556">here</
 
 <h2>Summary of build environment variables</h2>
 
-<p>By default, these are all unset. All boolean variables are case-insensitive.</p>
+<p>Some features are optional when you build Arrow from source. With the exception of <code>ARROW_S3</code>, these are all <code>ON</code> by default in the bundled C++ build, but you can set them to <code>OFF</code> to disable them.</p>
+
+<ul>
+<li><code>ARROW_S3</code>: If set to <code>ON</code> S3 support will be built as long as the 
+dependencies are met; if they are not met, the build script will turn this <code>OFF</code> </li>
+<li><code>ARROW_JEMALLOC</code> for the <code>jemalloc</code> memory allocator</li>
+<li><code>ARROW_PARQUET</code></li>
+<li><code>ARROW_DATASET</code></li>
+<li><code>ARROW_WITH_RE2</code> for the RE2 regular expression library, used in some string compute functions</li>
+<li><code>ARROW_WITH_UTF8PROC</code> for the UTF8Proc string library, used in many other string compute functions</li>
+</ul>
+
+<p>There are a number of other variables that affect the <code>configure</code> script and the bundled build script.
+By default, these are all unset. All boolean variables are case-insensitive.</p>
 
 <ul>
 <li><code>ARROW_USE_PKG_CONFIG</code>: If set to <code>false</code>, the configure script
@@ -527,7 +515,7 @@ a working <code>arrow</code> R package if a prebuilt binary is found.
 Use this if you want to avoid compiling the C++ library, which may be slow
 and resource-intensive, and ensure that you only use a prebuilt binary.</li>
 <li><code>LIBARROW_MINIMAL</code>: If set to <code>false</code>, the build script
-will enable some optional features, including compression libraries, S3 
+will enable some optional features, including compression libraries, S3
 support, and additional alternative memory allocators. This will increase the
 source build time but results in a more fully functional library.</li>
 <li><code>NOT_CRAN</code>: If this variable is set to <code>true</code>, as the <code>devtools</code> package does,

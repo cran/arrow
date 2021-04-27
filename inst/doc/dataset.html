@@ -214,11 +214,11 @@ and what is on the immediate development roadmap.</p>
 <p>The <a href="https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page">New York City taxi trip record data</a>
 is widely used in big data exercises and competitions.
 For demonstration purposes, we have hosted a Parquet-formatted version
-of about 10 years of the trip data in a public AWS S3 bucket.</p>
+of about 10 years of the trip data in a public Amazon S3 bucket.</p>
 
-<p>The total file size is around 37 gigabytes, even in the efficient Parquet file format.
-That&#39;s bigger than memory on most people&#39;s computers,
-so we can&#39;t just read it all in and stack it into a single data frame.</p>
+<p>The total file size is around 37 gigabytes, even in the efficient Parquet file
+format. That&#39;s bigger than memory on most people&#39;s computers, so we can&#39;t just
+read it all in and stack it into a single data frame.</p>
 
 <p>In Windows and macOS binary packages, S3 support is included.
 On Linux when installing from source, S3 support is not enabled by default,
@@ -296,11 +296,11 @@ library(dplyr, warn.conflicts = FALSE)
 
 <p>The default file format for <code>open_dataset()</code> is Parquet; if we had a directory
 of Arrow format files, we could include <code>format = &quot;arrow&quot;</code> in the call.
-Other supported formats include: &ldquo;feather&rdquo; (an alias for &ldquo;arrow&rdquo;, as Feather v2
-is the Arrow file format), &ldquo;csv&rdquo;, &ldquo;tsv&rdquo; (for tab-delimited), and &ldquo;text&rdquo; for
-generic text-delimited files. For text files, you can pass any parsing options
-(&ldquo;delim&rdquo;, &ldquo;quote&rdquo;, etc.) to <code>open_dataset()</code> that you would otherwise pass to
-<code>read_csv_arrow()</code>.</p>
+Other supported formats include: <code>&quot;feather&quot;</code> (an alias for <code>&quot;arrow&quot;</code>, as Feather
+v2 is the Arrow file format), <code>&quot;csv&quot;</code>, <code>&quot;tsv&quot;</code> (for tab-delimited), and <code>&quot;text&quot;</code>
+for generic text-delimited files. For text files, you can pass any parsing
+options (<code>delim</code>, <code>quote</code>, etc.) to <code>open_dataset()</code> that you would otherwise
+pass to <code>read_csv_arrow()</code>.</p>
 
 <p>The <code>partitioning</code> argument lets us specify how the file paths provide information
 about how the dataset is chunked into different files. Our files in this example
@@ -312,12 +312,12 @@ have file paths like</p>
 </code></pre>
 
 <p>By providing a character vector to <code>partitioning</code>, we&#39;re saying that the first
-path segment gives the value for &ldquo;year&rdquo; and the second segment is &ldquo;month&rdquo;.
-Every row in <code>2009/01/data.parquet</code> has a value of 2009 for &ldquo;year&rdquo;
-and 1 for &ldquo;month&rdquo;, even though those columns may not actually be present in the file.</p>
+path segment gives the value for <code>year</code> and the second segment is <code>month</code>.
+Every row in <code>2009/01/data.parquet</code> has a value of 2009 for <code>year</code>
+and 1 for <code>month</code>, even though those columns may not actually be present in the file.</p>
 
 <p>Indeed, when we look at the dataset, we see that in addition to the columns present
-in every file, there are also columns &ldquo;year&rdquo; and &ldquo;month&rdquo;.</p>
+in every file, there are also columns <code>year</code> and <code>month</code>.</p>
 
 <pre><code class="r">ds
 </code></pre>
@@ -331,7 +331,7 @@ in every file, there are also columns &ldquo;year&rdquo; and &ldquo;month&rdquo;
 ## trip_distance: float
 ## pickup_longitude: float
 ## pickup_latitude: float
-## rate_code_id: string
+## rate_code_id: null
 ## store_and_fwd_flag: string
 ## dropoff_longitude: float
 ## dropoff_latitude: float
@@ -342,10 +342,6 @@ in every file, there are also columns &ldquo;year&rdquo; and &ldquo;month&rdquo;
 ## tip_amount: float
 ## tolls_amount: float
 ## total_amount: float
-## improvement_surcharge: float
-## pickup_location_id: int32
-## dropoff_location_id: int32
-## congestion_surcharge: float
 ## year: int32
 ## month: int32
 ## 
@@ -372,16 +368,16 @@ files, we&#39;ve parsed file paths to identify partitions, and we&#39;ve read th
 headers of the Parquet files to inspect their schemas so that we can make sure
 they all line up.</p>
 
-<p>In the current release, <code>arrow</code> supports methods for selecting a window of data:
-<code>select()</code>, <code>rename()</code>, and <code>filter()</code>. Aggregation is not yet supported,
-nor is deriving or projecting new columns, so before you call <code>summarize()</code> or
-<code>mutate()</code>, you&#39;ll need to <code>collect()</code> the data first,
-which pulls your selected window of data into an in-memory R data frame.
-While we could have made those methods <code>collect()</code> the data they needed
-automatically and invisibly to the end user,
-we thought it best to make it explicit when you&#39;re pulling data into memory
-so that you can construct your queries most efficiently
-and not be surprised when some query consumes way more resources than expected.</p>
+<p>In the current release, <code>arrow</code> supports the dplyr verbs <code>mutate()</code>, 
+<code>transmute()</code>, <code>select()</code>, <code>rename()</code>, <code>relocate()</code>, <code>filter()</code>, and 
+<code>arrange()</code>. Aggregation is not yet supported, so before you call <code>summarise()</code>
+or other verbs with aggregate functions, use <code>collect()</code> to pull the selected
+subset of the data into an in-memory R data frame.</p>
+
+<p>If you attempt to call unsupported <code>dplyr</code> verbs or unimplemented functions in
+your query on an Arrow Dataset, the <code>arrow</code> package raises an error. However,
+for <code>dplyr</code> queries on <code>Table</code> objects (which are typically smaller in size) the
+package automatically calls <code>collect()</code> before processing that <code>dplyr</code> verb.</p>
 
 <p>Here&#39;s an example. Suppose I was curious about tipping behavior among the
 longest taxi rides. Let&#39;s find the median tip percentage for rides with
@@ -390,10 +386,11 @@ fares greater than $100 in 2015, broken down by the number of passengers:</p>
 <pre><code class="r">system.time(ds %&gt;%
   filter(total_amount &gt; 100, year == 2015) %&gt;%
   select(tip_amount, total_amount, passenger_count) %&gt;%
+  mutate(tip_pct = 100 * tip_amount / total_amount) %&gt;%
   group_by(passenger_count) %&gt;%
   collect() %&gt;%
-  summarize(
-    tip_pct = median(100 * tip_amount / total_amount),
+  summarise(
+    median_tip_pct = median(tip_pct),
     n = n()
   ) %&gt;%
   print())
@@ -401,32 +398,36 @@ fares greater than $100 in 2015, broken down by the number of passengers:</p>
 
 <pre><code>## 
 ## # A tibble: 10 x 3
-##    passenger_count tip_pct      n
-##              &lt;int&gt;   &lt;dbl&gt;  &lt;int&gt;
-##  1               0    9.84    380
-##  2               1   16.7  143087
-##  3               2   16.6   34418
-##  4               3   14.4    8922
-##  5               4   11.4    4771
-##  6               5   16.7    5806
-##  7               6   16.7    3338
-##  8               7   16.7      11
-##  9               8   16.7      32
-## 10               9   16.7      42
+##    passenger_count median_tip_pct      n
+##              &lt;int&gt;          &lt;dbl&gt;  &lt;int&gt;
+##  1               0           9.84    380
+##  2               1          16.7  143087
+##  3               2          16.6   34418
+##  4               3          14.4    8922
+##  5               4          11.4    4771
+##  6               5          16.7    5806
+##  7               6          16.7    3338
+##  8               7          16.7      11
+##  9               8          16.7      32
+## 10               9          16.7      42
 ## 
 ##    user  system elapsed
 ##   4.436   1.012   1.402
 </code></pre>
 
-<p>We just selected a window out of a dataset with around 2 billion rows
-and aggregated on it in under 2 seconds on my laptop. How does this work?</p>
+<p>We just selected a subset out of a dataset with around 2 billion rows, computed
+a new column, and aggregated on it in under 2 seconds on my laptop. How does
+this work?</p>
 
-<p>First, <code>select()</code>/<code>rename()</code>, <code>filter()</code>, and <code>group_by()</code>
-record their actions but don&#39;t evaluate on the data until you run <code>collect()</code>.</p>
+<p>First, 
+<code>mutate()</code>/<code>transmute()</code>, <code>select()</code>/<code>rename()</code>/<code>relocate()</code>, <code>filter()</code>, 
+<code>group_by()</code>, and <code>arrange()</code> record their actions but don&#39;t evaluate on the
+data until you run <code>collect()</code>.</p>
 
 <pre><code class="r">ds %&gt;%
   filter(total_amount &gt; 100, year == 2015) %&gt;%
   select(tip_amount, total_amount, passenger_count) %&gt;%
+  mutate(tip_pct = 100 * tip_amount / total_amount) %&gt;%
   group_by(passenger_count)
 </code></pre>
 
@@ -435,20 +436,21 @@ record their actions but don&#39;t evaluate on the data until you run <code>coll
 ## tip_amount: float
 ## total_amount: float
 ## passenger_count: int8
+## tip_pct: expr
 ## 
-## * Filter: ((total_amount &gt; 100:double) and (year == 2015:double))
+## * Filter: ((total_amount &gt; 100) and (year == 2015))
 ## * Grouped by passenger_count
 ## See $.data for the source Arrow object
 </code></pre>
 
-<p>This returns instantly and shows the window selection you&#39;ve made, without
+<p>This returns instantly and shows the manipulations you&#39;ve made, without
 loading data from the files. Because the evaluation of these queries is deferred,
-you can build up a query that selects down to a small window without generating
+you can build up a query that selects down to a small subset without generating
 intermediate datasets that would potentially be large.</p>
 
 <p>Second, all work is pushed down to the individual data files,
 and depending on the file format, chunks of data within the files. As a result,
-we can select a window of data from a much larger dataset by collecting the
+we can select a subset of data from a much larger dataset by collecting the
 smaller slices from each file&ndash;we don&#39;t have to load the whole dataset in memory
 in order to slice from it.</p>
 
@@ -462,9 +464,17 @@ avoid scanning because they have no rows where <code>total_amount &gt; 100</code
 <h2>More dataset options</h2>
 
 <p>There are a few ways you can control the Dataset creation to adapt to special use cases.
-For one, you can specify a <code>schema</code> argument to declare the columns and their data types.
-This is useful if you have data files that have different storage schema
-(for example, a column could be <code>int32</code> in one and <code>int8</code> in another)
+For one, if you are working with a single file or a set of files that are not
+all in the same directory, you can provide a file path or a vector of multiple
+file paths to <code>open_dataset()</code>. This is useful if, for example, you have a
+single CSV file that is too big to read into memory. You could pass the file
+path to <code>open_dataset()</code>, use <code>group_by()</code> to partition the Dataset into
+manageable chunks, then use <code>write_dataset()</code> to write each chunk to a separate
+Parquet file&mdash;all without needing to read the full CSV file into R.</p>
+
+<p>You can specify a <code>schema</code> argument to <code>open_dataset()</code> to declare the columns
+and their data types. This is useful if you have data files that have different
+storage schema (for example, a column could be <code>int32</code> in one and <code>int8</code> in another)
 and you want to ensure that the resulting Dataset has a specific type.
 To be clear, it&#39;s not necessary to specify a schema, even in this example of
 mixed integer types, because the Dataset constructor will reconcile differences like these.
@@ -473,7 +483,7 @@ The schema specification just lets you declare what you want the result to be.</
 <p>Similarly, you can provide a Schema in the <code>partitioning</code> argument of <code>open_dataset()</code>
 in order to declare the types of the virtual columns that define the partitions.
 This would be useful, in our taxi dataset example, if you wanted to keep
-&ldquo;month&rdquo; as a string instead of an integer for some reason.</p>
+<code>month</code> as a string instead of an integer for some reason.</p>
 
 <p>Another feature of Datasets is that they can be composed of multiple data sources.
 That is, you may have a directory of partitioned Parquet files in one location,
@@ -504,9 +514,10 @@ by calling <code>write_dataset()</code> on it:</p>
 <pre><code class="r">write_dataset(ds, &quot;nyc-taxi/feather&quot;, format = &quot;feather&quot;)
 </code></pre>
 
-<p>Next, let&#39;s imagine that the &ldquo;payment_type&rdquo; column is something we often filter on,
-so we want to partition the data by that variable. By doing so we ensure that a filter like
-<code>payment_type == 3</code> will touch only a subset of files where payment_type is always 3.</p>
+<p>Next, let&#39;s imagine that the <code>payment_type</code> column is something we often filter
+on, so we want to partition the data by that variable. By doing so we ensure
+that a filter like <code>payment_type == &quot;Cash&quot;</code> will touch only a subset of files
+where <code>payment_type</code> is always <code>&quot;Cash&quot;</code>.</p>
 
 <p>One natural way to express the columns you want to partition on is to use the
 <code>group_by()</code> method:</p>
@@ -519,32 +530,33 @@ so we want to partition the data by that variable. By doing so we ensure that a 
 <p>This will write files to a directory tree that looks like this:</p>
 
 <pre><code class="r">system(&quot;tree nyc-taxi/feather&quot;)
-
-# feather
-# ├── payment_type=1
-# │   └── part-5.feather
-# ├── payment_type=2
-# │   └── part-0.feather
-# ...
-# └── payment_type=5
-#     └── part-2.feather
-#
-# 5 directories, 25 files
 </code></pre>
 
-<p>Note that the directory names are <code>payment_type=1</code> and similar:
+<pre><code>## feather
+## ├── payment_type=1
+## │   └── part-18.feather
+## ├── payment_type=2
+## │   └── part-19.feather
+## ...
+## └── payment_type=UNK
+##     └── part-17.feather
+##
+## 18 directories, 23 files
+</code></pre>
+
+<p>Note that the directory names are <code>payment_type=Cash</code> and similar:
 this is the Hive-style partitioning described above. This means that when
 we call <code>open_dataset()</code> on this directory, we don&#39;t have to declare what the
 partitions are because they can be read from the file paths.
-(To instead write bare values for partition segments,
-i.e. <code>1</code> rather than <code>payment_type=1</code>, call <code>write_dataset()</code> with <code>hive_style = FALSE</code>.)</p>
+(To instead write bare values for partition segments, i.e. <code>Cash</code> rather than 
+<code>payment_type=Cash</code>, call <code>write_dataset()</code> with <code>hive_style = FALSE</code>.)</p>
 
-<p>Perhaps, though, <code>payment_type == 3</code> is the only data we ever care about,
+<p>Perhaps, though, <code>payment_type == &quot;Cash&quot;</code> is the only data we ever care about,
 and we just want to drop the rest and have a smaller working set.
 For this, we can <code>filter()</code> them out when writing:</p>
 
 <pre><code class="r">ds %&gt;%
-  filter(payment_type == 3) %&gt;%
+  filter(payment_type == &quot;Cash&quot;) %&gt;%
   write_dataset(&quot;nyc-taxi/feather&quot;, format = &quot;feather&quot;)
 </code></pre>
 
@@ -559,7 +571,7 @@ it can take up a lot of space when we read it in, so let&#39;s drop it:</p>
 </code></pre>
 
 <p>Note that while you can select a subset of columns,
-you cannot currently rename columns when writing.</p>
+you cannot currently rename columns when writing a dataset.</p>
 
 </body>
 

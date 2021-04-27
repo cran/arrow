@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#' @include arrow-package.R
+#' @include arrow-datum.R
 
 #' @title ChunkedArray class
 #' @usage NULL
@@ -41,6 +41,8 @@
 #'    coerced to an R vector before taking.
 #' - `$Filter(i, keep_na = TRUE)`: return a `ChunkedArray` with values at positions where
 #'    logical vector or Arrow boolean-type `(Chunked)Array` `i` is `TRUE`.
+#' - `$SortIndices(descending = FALSE)`: return an `Array` of integer positions that can be
+#'    used to rearrange the `ChunkedArray` in ascending or descending order
 #' - `$cast(target_type, safe = TRUE, options = cast_options(safe))`: Alter the
 #'    data in the array to change its type.
 #' - `$null_count()`: The number of null entries in the array
@@ -56,7 +58,7 @@
 #' @name ChunkedArray
 #' @seealso [Array]
 #' @export
-ChunkedArray <- R6Class("ChunkedArray", inherit = ArrowObject,
+ChunkedArray <- R6Class("ChunkedArray", inherit = ArrowDatum,
   public = list(
     length = function() ChunkedArray__length(self),
     chunk = function(i) Array$create(ChunkedArray__chunk(self, i)),
@@ -83,9 +85,17 @@ ChunkedArray <- R6Class("ChunkedArray", inherit = ArrowObject,
       }
       call_function("filter", self, i, options = list(keep_na = keep_na))
     },
-    cast = function(target_type, safe = TRUE, options = cast_options(safe)) {
-      assert_is(options, "CastOptions")
-      ChunkedArray__cast(self, as_type(target_type), options)
+    SortIndices = function(descending = FALSE) {
+      assert_that(is.logical(descending))
+      assert_that(length(descending) == 1L)
+      assert_that(!is.na(descending))
+      # TODO: after ARROW-12042 is closed, review whether this and the
+      # Array$SortIndices definition can be consolidated
+      call_function(
+        "sort_indices",
+        self,
+        options = list(names = "", orders = as.integer(descending))
+      )
     },
     View = function(type) {
       ChunkedArray__View(self, as_type(type))
@@ -120,33 +130,3 @@ ChunkedArray$create <- function(..., type = NULL) {
 #' @rdname ChunkedArray
 #' @export
 chunked_array <- ChunkedArray$create
-
-#' @export
-length.ChunkedArray <- function(x) x$length()
-
-#' @export
-as.vector.ChunkedArray <- function(x, mode) x$as_vector()
-
-#' @export
-is.na.ChunkedArray <- function(x) call_function("is_null", x)
-
-#' @export
-is.nan.ChunkedArray <- function(x) call_function("is_nan", x)
-
-#' @export
-`[.ChunkedArray` <- filter_rows
-
-#' @export
-head.ChunkedArray <- head.Array
-
-#' @export
-tail.ChunkedArray <- tail.Array
-
-#' @export
-as.double.ChunkedArray <- as.double.Array
-
-#' @export
-as.integer.ChunkedArray <- as.integer.Array
-
-#' @export
-as.character.ChunkedArray <- as.character.Array

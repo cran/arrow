@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#' @include arrow-package.R
+#' @include arrow-datum.R
 
 #' @title Arrow scalars
 #' @usage NULL
@@ -28,20 +28,18 @@
 #' @rdname Scalar
 #' @export
 Scalar <- R6Class("Scalar",
-  inherit = ArrowObject,
+  inherit = ArrowDatum,
   # TODO: document the methods
   public = list(
     ToString = function() Scalar__ToString(self),
-    cast = function(target_type, safe = TRUE, ...) {
-      opts <- list(
-        to_type = as_type(target_type),
-        allow_int_overflow = !safe,
-        allow_time_truncate = !safe,
-        allow_float_truncate = !safe
-      )
-      call_function("cast", self, options = modifyList(opts, list(...)))
+    as_vector = function() Scalar__as_vector(self),
+    as_array = function() MakeArrayFromScalar(self),
+    Equals = function(other, ...) {
+      inherits(other, "Scalar") && Scalar__Equals(self, other)
     },
-    as_vector = function() Scalar__as_vector(self)
+    ApproxEquals = function(other, ...) {
+      inherits(other, "Scalar") && Scalar__ApproxEquals(self, other)
+    }
   ),
   active = list(
     is_valid = function() Scalar__is_valid(self),
@@ -78,13 +76,4 @@ length.Scalar <- function(x) 1L
 is.na.Scalar <- function(x) !x$is_valid
 
 #' @export
-as.vector.Scalar <- function(x, mode) x$as_vector()
-
-#' @export
-as.double.Scalar <- as.double.Array
-
-#' @export
-as.integer.Scalar <- as.integer.Array
-
-#' @export
-as.character.Scalar <- as.character.Array
+sort.Scalar <- function(x, decreasing = FALSE, ...) x

@@ -37,9 +37,6 @@ DataType <- R6Class("DataType",
     Equals = function(other, ...) {
       inherits(other, "DataType") && DataType__Equals(self, other)
     },
-    num_fields = function() {
-      DataType__num_fields(self)
-    },
     fields = function() {
       DataType__fields(self)
     }
@@ -47,7 +44,8 @@ DataType <- R6Class("DataType",
 
   active = list(
     id = function() DataType__id(self),
-    name = function() DataType__name(self)
+    name = function() DataType__name(self),
+    num_fields = function() DataType__num_fields(self)
   )
 )
 
@@ -66,11 +64,7 @@ type <- function(x) UseMethod("type")
 type.default <- function(x) Array__infer_type(x)
 
 #' @export
-type.Array <- function(x) x$type
-
-#' @export
-type.ChunkedArray <- function(x) x$type
-
+type.ArrowDatum <- function(x) x$type
 
 #----- metadata
 
@@ -162,11 +156,20 @@ NestedType <- R6Class("NestedType", inherit = DataType)
 #' * `float16()` and `halffloat()`
 #' * `float32()` and `float()`
 #' * `bool()` and `boolean()`
-#' * Called from `schema()` or `struct()`, `double()` also is supported as a
-#' way of creating a `float64()`
+#' * When called inside an `arrow` function, such as `schema()` or `cast()`,
+#' `double()` also is supported as a way of creating a `float64()`
 #'
 #' `date32()` creates a datetime type with a "day" unit, like the R `Date`
 #' class. `date64()` has a "ms" unit.
+#'
+#' `uint32` (32 bit unsigned integer), `uint64` (64 bit unsigned integer), and
+#' `int64` (64-bit signed integer) types may contain values that exceed the
+#' range of R's `integer` type (32-bit signed integer). When these arrow objects
+#' are translated to R objects, `uint32` and `uint64` are converted to `double`
+#' ("numeric") and `int64` is converted to `bit64::integer64`. For `int64`
+#' types, this conversion can be disabled (so that `int64` always yields a
+#' `bit64::integer64` object) by setting `options(arrow.int64_downcast =
+#' FALSE)`.
 #'
 #' @param unit For time/timestamp types, the time unit. `time32()` can take
 #' either "s" or "ms", while `time64()` can be "us" or "ns". `timestamp()` can
@@ -357,9 +360,61 @@ decimal <- function(precision, scale) {
   Decimal128Type__initialize(precision, scale)
 }
 
+StructType <- R6Class("StructType",
+  inherit = NestedType,
+  public = list(
+    GetFieldByName = function(name) StructType__GetFieldByName(self, name),
+    GetFieldIndex = function(name) StructType__GetFieldIndex(self, name)
+  )
+)
+StructType$create <- function(...) struct__(.fields(list(...)))
+
+#' @rdname data-type
+#' @export
+struct <- StructType$create
+
+ListType <- R6Class("ListType",
+  inherit = NestedType,
+  active = list(
+    value_field = function() ListType__value_field(self),
+    value_type = function() ListType__value_type(self)
+  )
+)
+
+#' @rdname data-type
+#' @export
+list_of <- function(type) list__(type)
+
+LargeListType <- R6Class("LargeListType",
+  inherit = NestedType,
+  active = list(
+    value_field = function() LargeListType__value_field(self),
+    value_type = function() LargeListType__value_type(self)
+  )
+)
+
+#' @rdname data-type
+#' @export
+large_list_of <- function(type) large_list__(type)
+
+#' @rdname data-type
+#' @export
+FixedSizeListType <- R6Class("FixedSizeListType",
+  inherit = NestedType,
+  active = list(
+    value_field = function() FixedSizeListType__value_field(self),
+    value_type = function() FixedSizeListType__value_type(self),
+    list_size = function() FixedSizeListType__list_size(self)
+  )
+)
+
+#' @rdname data-type
+#' @export
+fixed_size_list_of <- function(type, list_size) fixed_size_list__(type, list_size)
+
 as_type <- function(type, name = "type") {
+  # magic so we don't have to mask base::double()
   if (identical(type, double())) {
-    # Magic so that we don't have to mask this base function
     type <- float64()
   }
   if (!inherits(type, "DataType")) {
@@ -367,7 +422,6 @@ as_type <- function(type, name = "type") {
   }
   type
 }
-
 
 # vctrs support -----------------------------------------------------------
 str_dup <- function(x, times) {

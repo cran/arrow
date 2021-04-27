@@ -19,7 +19,7 @@ args <- commandArgs(TRUE)
 VERSION <- args[1]
 dst_dir <- paste0("libarrow/arrow-", VERSION)
 
-arrow_repo <- "https://dl.bintray.com/ursalabs/arrow-r/libarrow/"
+arrow_repo <- "https://arrow-r-nightly.s3.amazonaws.com/libarrow/"
 
 if (getRversion() < 3.4 && is.null(getOption("download.file.method"))) {
   # default method doesn't work on R 3.3, nor does libcurl
@@ -261,7 +261,7 @@ apache_download <- function(destfile, n_mirrors = 3) {
   downloaded
 }
 
-find_local_source <- function(arrow_home = Sys.getenv("ARROW_HOME", "..")) {
+find_local_source <- function(arrow_home = Sys.getenv("ARROW_SOURCE_HOME", "..")) {
   if (file.exists(paste0(arrow_home, "/cpp/src/arrow/api.h"))) {
     # We're in a git checkout of arrow, so we can build it
     cat("*** Found local C++ source\n")
@@ -322,11 +322,21 @@ build_libarrow <- function(src_dir, dst_dir) {
   env_vars <- paste0(names(env_var_list), '="', env_var_list, '"', collapse = " ")
   env_vars <- with_s3_support(env_vars)
   env_vars <- with_mimalloc(env_vars)
+  if (tolower(Sys.info()[["sysname"]]) %in% "sunos") {
+    # jemalloc doesn't seem to build on Solaris
+    # nor does thrift, so turn off parquet,
+    # and arrowExports.cpp requires parquet for dataset (ARROW-11994), so turn that off
+    # xsimd doesn't compile, so set SIMD level to NONE to skip it
+    # re2 and utf8proc do compile,
+    # but `ar` fails to build libarrow_bundled_dependencies, so turn them off
+    # so that there are no bundled deps
+    env_vars <- paste(env_vars, "ARROW_JEMALLOC=OFF ARROW_PARQUET=OFF ARROW_DATASET=OFF ARROW_WITH_RE2=OFF ARROW_WITH_UTF8PROC=OFF EXTRA_CMAKE_FLAGS=-DARROW_SIMD_LEVEL=NONE")
+  }
   cat("**** arrow", ifelse(quietly, "", paste("with", env_vars)), "\n")
-  status <- system(
+  status <- suppressWarnings(system(
     paste(env_vars, "inst/build_arrow_static.sh"),
     ignore.stdout = quietly, ignore.stderr = quietly
-  )
+  ))
   if (status != 0) {
     # It failed :(
     cat("**** Error building Arrow C++. Re-run with ARROW_R_DEV=true for debug information.\n")
@@ -345,9 +355,14 @@ ensure_cmake <- function() {
     # If not found, download it
     cat("**** cmake\n")
     CMAKE_VERSION <- Sys.getenv("CMAKE_VERSION", "3.19.2")
+    if (tolower(Sys.info()[["sysname"]]) %in% "darwin") {
+      postfix <- "-macos-universal.tar.gz"
+    } else {
+      postfix <- "-Linux-x86_64.tar.gz"
+    }
     cmake_binary_url <- paste0(
       "https://github.com/Kitware/CMake/releases/download/v", CMAKE_VERSION,
-      "/cmake-", CMAKE_VERSION, "-Linux-x86_64.tar.gz"
+      "/cmake-", CMAKE_VERSION, postfix
     )
     cmake_tar <- tempfile()
     cmake_dir <- tempfile()
@@ -357,14 +372,14 @@ ensure_cmake <- function() {
     options(.arrow.cleanup = c(getOption(".arrow.cleanup"), cmake_dir))
     cmake <- paste0(
       cmake_dir,
-      "/cmake-", CMAKE_VERSION, "-Linux-x86_64",
+      "/cmake-", CMAKE_VERSION, sub(".tar.gz", "", postfix, fixed = TRUE),
       "/bin/cmake"
     )
   }
   cmake
 }
 
-find_cmake <- function(paths, version_required = 3.2) {
+find_cmake <- function(paths, version_required = 3.10) {
   # Given a list of possible cmake paths, return the first one that exists and is new enough
   for (path in paths) {
     if (nzchar(path) && cmake_version(path) >= version_required) {
@@ -398,10 +413,11 @@ with_s3_support <- function(env_vars) {
       cat("**** S3 support not available for gcc < 4.9; building with ARROW_S3=OFF\n")
       arrow_s3 <- FALSE
     } else if (!cmake_find_package("CURL", NULL, env_vars)) {
+      # curl on macos should be installed, so no need to alter this for macos
       cat("**** S3 support requires libcurl-devel (rpm) or libcurl4-openssl-dev (deb); building with ARROW_S3=OFF\n")
       arrow_s3 <- FALSE
     } else if (!cmake_find_package("OpenSSL", "1.0.2", env_vars)) {
-      cat("**** S3 support requires openssl-devel (rpm) or libssl-dev (deb), version >= 1.0.2; building with ARROW_S3=OFF\n")
+      cat("**** S3 support requires version >= 1.0.2 of openssl-devel (rpm), libssl-dev (deb), or openssl (brew); building with ARROW_S3=OFF\n")
       arrow_s3 <- FALSE
     }
   }
