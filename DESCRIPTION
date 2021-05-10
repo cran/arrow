@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 4.0.0
+Version: 4.0.0.1
 Authors@R: c(
     person("Neal", "Richardson", email = "neal@ursalabs.org", role = c("aut", "cre")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -45,7 +45,7 @@ Collate: 'enums.R' 'arrow-package.R' 'type.R' 'array-data.R'
         'record-batch-writer.R' 'reexports-bit64.R'
         'reexports-tidyselect.R' 'schema.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2021-04-27 01:53:56 UTC; enpiar
+Packaged: 2021-05-05 23:21:51 UTC; enpiar
 Author: Neal Richardson [aut, cre],
   Ian Cook [aut],
   Jonathan Keane [aut],
@@ -56,4 +56,4 @@ Author: Neal Richardson [aut, cre],
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2021-04-27 06:20:02 UTC
+Date/Publication: 2021-05-10 14:12:15 UTC

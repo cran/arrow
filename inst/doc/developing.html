@@ -276,7 +276,7 @@ guide</a>.</p>
 mkdir $ARROW_HOME
 </code></pre>
 
-<p><em>Special instructions on Linux:</em> You will need to set <code>LD_LIBRARY_PATH</code> to the <code>lib</code> directory that will is under where we set <code>$ARROW_HOME</code>, before launching R and using Arrow. One way to do this is to add it to your profile (we use <code>~/.bash_profile</code> here, but you might need to put this in a different file depending on your setup, e.g. if you use a shell other than <code>bash</code>). On macOS we do not need to do this because the macOS shared library paths are hardcoded to their locations during build time.</p>
+<p><em>Special instructions on Linux:</em> You will need to set <code>LD_LIBRARY_PATH</code> to the <code>lib</code> directory that is under where we set <code>$ARROW_HOME</code>, before launching R and using Arrow. One way to do this is to add it to your profile (we use <code>~/.bash_profile</code> here, but you might need to put this in a different file depending on your setup, e.g. if you use a shell other than <code>bash</code>). On macOS we do not need to do this because the macOS shared library paths are hardcoded to their locations during build time.</p>
 
 <pre><code class="bash">export LD_LIBRARY_PATH=$ARROW_HOME/lib:$LD_LIBRARY_PATH
 echo &quot;export LD_LIBRARY_PATH=$ARROW_HOME/lib:$LD_LIBRARY_PATH&quot; &gt;&gt; ~/.bash_profile
@@ -297,14 +297,14 @@ pushd cpp/build
   -DARROW_COMPUTE=ON \
   -DARROW_CSV=ON \
   -DARROW_DATASET=ON \
+  -DARROW_EXTRA_ERROR_CONTEXT=ON \
   -DARROW_FILESYSTEM=ON \
+  -DARROW_INSTALL_NAME_RPATH=OFF \
   -DARROW_JEMALLOC=ON \
   -DARROW_JSON=ON \
   -DARROW_PARQUET=ON \
   -DARROW_WITH_SNAPPY=ON \
   -DARROW_WITH_ZLIB=ON \
-  -DARROW_INSTALL_NAME_RPATH=OFF \
-  -DARROW_EXTRA_ERROR_CONTEXT=ON \
   ..
 </code></pre>
 
@@ -327,14 +327,14 @@ pushd cpp/build
   -DARROW_COMPUTE=ON \
   -DARROW_CSV=ON \
   -DARROW_DATASET=ON \
+  -DARROW_EXTRA_ERROR_CONTEXT=ON \
   -DARROW_FILESYSTEM=ON \
+  -DARROW_INSTALL_NAME_RPATH=OFF \
   -DARROW_JEMALLOC=ON \
   -DARROW_JSON=ON \
   -DARROW_PARQUET=ON \
   -DARROW_WITH_SNAPPY=ON \
   -DARROW_WITH_ZLIB=ON \
-  -DARROW_INSTALL_NAME_RPATH=OFF \
-  -DARROW_EXTRA_ERROR_CONTEXT=ON \
   ..
 </code></pre>
 
@@ -345,6 +345,7 @@ pushd cpp/build
 <p>To enable optional features including: S3 support, an alternative memory allocator, and additional compression libraries, add some or all of these flags (the trailing <code>\</code> makes them easier to paste into a bash shell on a new line):</p>
 
 <pre><code class="shell">  -DARROW_MIMALLOC=ON \
+  -DARROW_S3=ON \
   -DARROW_WITH_BROTLI=ON \
   -DARROW_WITH_BZ2=ON \
   -DARROW_WITH_LZ4=ON \
@@ -403,7 +404,7 @@ need to set</p>
 <p>With the setups described here, you should not need to rebuild the Arrow library or even the C++ source in the R package as you iterated and work on the R package. The only time those should need to be rebuilt is if you have changed the C++ in the R package (and even then, <code>R CMD INSTALL .</code> should only need to recompile the files that have changed) <em>or</em> if the Arrow library C++ has changed and there is a mismatch between the Arrow Library and the R package. If you find yourself rebuilding either or both each time you install the package or run tests, something is probably wrong with your set up.</p>
 
 <p><details>
-<summary>For a full build: a <code>cmake</code> command with all of the R-relevant optional dependencies turned on</summary></p>
+<summary>For a full build: a <code>cmake</code> command with all of the R-relevant optional dependencies turned on. Development with other languages might require different flags as well. For example, to develop Python, you would need to also add <code>-DARROW_PYTHON=ON</code> (though all of the other flags used for Python are already included here).</summary></p>
 
 <p>
 
@@ -414,19 +415,19 @@ cmake \
   -DARROW_COMPUTE=ON \
   -DARROW_CSV=ON \
   -DARROW_DATASET=ON \
+  -DARROW_EXTRA_ERROR_CONTEXT=ON \
   -DARROW_FILESYSTEM=ON \
+  -DARROW_INSTALL_NAME_RPATH=OFF \
   -DARROW_JEMALLOC=ON \
   -DARROW_JSON=ON \
-  -DARROW_PARQUET=ON \
-  -DARROW_WITH_SNAPPY=ON \
-  -DARROW_WITH_ZLIB=ON \
-  -DARROW_INSTALL_NAME_RPATH=OFF \
-  -DARROW_EXTRA_ERROR_CONTEXT=ON \
   -DARROW_MIMALLOC=ON \
+  -DARROW_PARQUET=ON \
+  -DARROW_S3=ON \
   -DARROW_WITH_BROTLI=ON \
   -DARROW_WITH_BZ2=ON \
   -DARROW_WITH_LZ4=ON \
   -DARROW_WITH_SNAPPY=ON \
+  -DARROW_WITH_ZLIB=ON \
   -DARROW_WITH_ZSTD=ON \
   ..
 &rdquo;
@@ -434,7 +435,7 @@ cmake \
 
 <p></details>  </p>
 
-<h2>Troublshooting</h2>
+<h2>Troubleshooting</h2>
 
 <p>Note that after any change to the C++ library, you must reinstall it and
 run <code>make clean</code> or <code>git clean -fdx .</code> to remove any cached object code
