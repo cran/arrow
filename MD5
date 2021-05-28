@@ -1,6 +1,6 @@
-4095d187f748b5d9a7401c5668af5ae2 *DESCRIPTION
+af7dde0f25d3d93b5b675a0ada45f1cb *DESCRIPTION
 5e34fe23685680b360cf2366854f2247 *NAMESPACE
-42fa0c88aea6f80bdc4208110cd307b2 *NEWS.md
+f642810f8f7ffadc28ebb1c26c5111af *NEWS.md
 1177dba2dcb58ffe772e2bf5a1896c06 *R/array-data.R
 eb37e31001135f021774e57a6dda6fa4 *R/array.R
 af9ae3c71f79e422ee060745db0c552b *R/arrow-datum.R
@@ -47,7 +47,7 @@ fcb5e1c5ef52c212a107d8fa21d2a78f *R/reexports-tidyselect.R
 1b3c1574cabfe7561145b9d3489aa134 *R/table.R
 cb4acb7fe85c4dde2d0b834bf6398e71 *R/type.R
 c50f23db9b28a1da1f41fae063fe0f63 *R/util.R
-56dbe90857c6c6e4cd8ce6fab89f9f2c *README.md
+c3d90248dbe5f384f9b1f76ee0ef3556 *README.md
 246b8db8aeff22458ff1d27cdf04ba6d *build/vignette.rds
 b42138af7af04ffb1c62af0bbca3e73c *cleanup
 ee801fdf2f062dc394c43364f4df2474 *configure
@@ -263,7 +263,7 @@ b9dee00e355b65272dce8c74c2f47121 *tests/testthat/test-thread-pool.R
 fb4c5058573a8029c0d3c669e766f4e9 *tests/testthat/test-type.R
 1f1ea3246241d3b752476ba1c870717d *tests/testthat/test-utf.R
 79a23fcc0c143eac492e2523766f4cb1 *tools/autobrew
-e20af216d17a5f78948b554ceaa5e577 *tools/nixlibs.R
+6d77eae968200cbefc4d762ccf8fd3d1 *tools/nixlibs.R
 46fdc2ac792a6730d71bdd7b6b4d0780 *tools/ubsan.supp
 cdbfc0966554ed48a98704f148e0c777 *tools/winlibs.R
 bff56d2ce5de5ecd98c379c415aea20f *vignettes/arrow.Rmd
