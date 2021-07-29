@@ -15,6 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
+skip_if_not_available("dataset")
+
 library(dplyr)
 
 # randomize order of rows in test data
@@ -137,19 +139,6 @@ test_that("arrange() on integer, double, and character columns", {
       collect(),
     tbl
   )
-  expect_warning(
-    expect_equal(
-      tbl %>%
-        Table$create() %>%
-        arrange(abs(int), dbl) %>%
-        collect(),
-      tbl %>%
-        arrange(abs(int), dbl) %>%
-        collect()
-    ),
-    "not supported in Arrow",
-    fixed = TRUE
-  )
 })
 
 test_that("arrange() on datetime columns", {
@@ -170,7 +159,6 @@ test_that("arrange() on datetime columns", {
 })
 
 test_that("arrange() on logical columns", {
-  skip("Sorting by bool columns is not supported (ARROW-12016)")
   expect_dplyr_equal(
     input %>%
       arrange(lgl, int) %>%
@@ -206,6 +194,13 @@ test_that("arrange() with bad inputs", {
       Table$create() %>%
       arrange(desc(aertidjfgjksertyj + iaermxiwerksxsdqq)),
     "not found",
+    fixed = TRUE
+  )
+  expect_error(
+    tbl %>%
+      Table$create() %>%
+      arrange(desc(int, chr)),
+    "expects only one argument",
     fixed = TRUE
   )
 })

@@ -212,21 +212,30 @@ find_available_binary <- function(os) {
 download_source <- function() {
   tf1 <- tempfile()
   src_dir <- tempfile()
-  if (bintray_download(tf1)) {
-    # First try from bintray
-    cat("*** Successfully retrieved C++ source\n")
-    unzip(tf1, exdir = src_dir)
-    unlink(tf1)
-    src_dir <- paste0(src_dir, "/cpp")
-  } else if (apache_download(tf1)) {
-    # If that fails, try for an official release
-    cat("*** Successfully retrieved C++ source\n")
-    untar(tf1, exdir = src_dir)
-    unlink(tf1)
-    src_dir <- paste0(src_dir, "/apache-arrow-", VERSION, "/cpp")
+
+  # Given VERSION as x.y.z.p
+  p <- package_version(VERSION)[1, 4]
+  if (is.na(p) || p < 1000) {
+    # This is either just x.y.z or it has a small (R-only) patch version
+    # Download from the official Apache release, dropping the p
+    VERSION <- as.character(package_version(VERSION)[1, -4])
+    if (apache_download(VERSION, tf1)) {
+      untar(tf1, exdir = src_dir)
+      unlink(tf1)
+      src_dir <- paste0(src_dir, "/apache-arrow-", VERSION, "/cpp")
+    }
+  } else if (p != 9000) {
+    # This is a custom dev version (x.y.z.9999) or a nightly (x.y.z.20210505)
+    # (Don't try to download on the default dev .9000 version)
+    if (nightly_download(VERSION, tf1)) {
+      unzip(tf1, exdir = src_dir)
+      unlink(tf1)
+      src_dir <- paste0(src_dir, "/cpp")
+    }
   }
 
   if (dir.exists(src_dir)) {
+    cat("*** Successfully retrieved C++ source\n")
     options(.arrow.cleanup = c(getOption(".arrow.cleanup"), src_dir))
     # These scripts need to be executable
     system(
@@ -239,13 +248,13 @@ download_source <- function() {
   }
 }
 
-bintray_download <- function(destfile) {
-  source_url <- paste0(arrow_repo, "src/arrow-", VERSION, ".zip")
+nightly_download <- function(version, destfile) {
+  source_url <- paste0(arrow_repo, "src/arrow-", version, ".zip")
   try_download(source_url, destfile)
 }
 
-apache_download <- function(destfile, n_mirrors = 3) {
-  apache_path <- paste0("arrow/arrow-", VERSION, "/apache-arrow-", VERSION, ".tar.gz")
+apache_download <- function(version, destfile, n_mirrors = 3) {
+  apache_path <- paste0("arrow/arrow-", version, "/apache-arrow-", version, ".tar.gz")
   apache_urls <- c(
     # This returns a different mirror each time
     rep("https://www.apache.org/dyn/closer.lua?action=download&filename=", n_mirrors),
@@ -317,6 +326,7 @@ build_libarrow <- function(src_dir, dst_dir) {
     CC = R_CMD_config("CC"),
     CXX = paste(R_CMD_config("CXX11"), R_CMD_config("CXX11STD")),
     # CXXFLAGS = R_CMD_config("CXX11FLAGS"), # We don't want the same debug symbols
+    ARROW_R_CXXFLAGS = paste(Sys.getenv("ARROW_R_CXXFLAGS", ""), "-fno-lto"),
     LDFLAGS = R_CMD_config("LDFLAGS")
   )
   env_vars <- paste0(names(env_var_list), '="', env_var_list, '"', collapse = " ")
@@ -406,6 +416,10 @@ cmake_version <- function(cmd = "cmake") {
 
 with_s3_support <- function(env_vars) {
   arrow_s3 <- toupper(Sys.getenv("ARROW_S3")) == "ON" || tolower(Sys.getenv("LIBARROW_MINIMAL")) == "false"
+  # but if ARROW_S3=OFF explicitly, we are definitely off, so override
+  if (toupper(Sys.getenv("ARROW_S3")) == "OFF" ) {
+    arrow_s3 <- FALSE
+  }
   if (arrow_s3) {
     # User wants S3 support. If they're using gcc, let's make sure the version is >= 4.9
     # and make sure that we have curl and openssl system libs

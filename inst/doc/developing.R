@@ -1,4 +1,4 @@
-## ----setup options, include=FALSE---------------------------------------------
+## ----setup-options, include=FALSE---------------------------------------------
 knitr::opts_chunk$set(error = TRUE, eval = FALSE)
 
 # Get environment variables describing what to evaluate
@@ -23,4 +23,7 @@ knitr::knit_hooks$set(source = function(x, options) {
   }
   knit_hooks_source(x, options)
 })
+
+## -----------------------------------------------------------------------------
+#  remotes::install_github("r-lib/roxygen2")
 

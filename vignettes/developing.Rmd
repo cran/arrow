@@ -7,7 +7,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup options, include=FALSE}
+```{r setup-options, include=FALSE}
 knitr::opts_chunk$set(error = TRUE, eval = FALSE)
 
 # Get environment variables describing what to evaluate
@@ -282,6 +282,14 @@ cmake \
 </p>
 </details>  
 
+### Documentation
+
+The documentation for the R package uses features of `roxygen2` that haven't yet been released on CRAN, such as conditional inclusion of examples via the `@examplesIf` tag.  If you are making changes which require updating the documentation, please install the development version of `roxygen2` from GitHub. 
+
+```{r}
+remotes::install_github("r-lib/roxygen2")
+```
+
 ## Troubleshooting
 
 Note that after any change to the C++ library, you must reinstall it and
@@ -336,11 +344,11 @@ brew install apache-arrow
 
 ```{bash, save=run & !sys_install & ubuntu, hide=TRUE}
 # Setup troubleshooting section
-# install a system-level arrow on macOS
+# install a system-level arrow on Ubuntu
 sudo apt update
 sudo apt install -y -V ca-certificates lsb-release wget
-wget https://apache.bintray.com/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-archive-keyring-latest-$(lsb_release --codename --short).deb
-sudo apt install -y -V ./apache-arrow-archive-keyring-latest-$(lsb_release --codename --short).deb
+wget https://apache.jfrog.io/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
+sudo apt install -y -V ./apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
 sudo apt update
 sudo apt install -y -V libarrow-dev
 ```

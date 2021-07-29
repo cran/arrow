@@ -108,6 +108,22 @@ test_that("ChunkedArray handles !!! splicing", {
   expect_equal(x$num_chunks, 3L)
 })
 
+test_that("ChunkedArray handles Inf", {
+  data <- list(c(Inf, 2:10), c(1:3, Inf, 5L), 1:10)
+  x <- chunked_array(!!!data)
+  expect_equal(x$type, float64())
+  expect_equal(x$num_chunks, 3L)
+  expect_equal(length(x), 25L)
+  expect_equal(as.vector(x), c(c(Inf, 2:10), c(1:3, Inf, 5), 1:10))
+
+  chunks <- x$chunks
+  expect_equal(as.vector(is.infinite(chunks[[2]])), is.infinite(data[[2]]))
+  expect_equal(
+    as.vector(is.infinite(x)),
+    c(is.infinite(data[[1]]), is.infinite(data[[2]]), is.infinite(data[[3]]))
+  )
+})
+
 test_that("ChunkedArray handles NA", {
   data <- list(1:10, c(NA, 2:10), c(1:3, NA, 5L))
   x <- chunked_array(!!!data)
@@ -312,30 +328,30 @@ test_that("[ ChunkedArray", {
   one_chunk <- chunked_array(2:11)
   x <- chunked_array(1:10, 31:40, 51:55)
   # Slice
-  expect_vector(x[8:12], c(8:10, 31:32))
+  expect_as_vector(x[8:12], c(8:10, 31:32))
   # Take from same chunk
-  expect_vector(x[c(11, 15, 12)], c(31, 35, 32))
+  expect_as_vector(x[c(11, 15, 12)], c(31, 35, 32))
   # Take from multiple chunks (calls Concatenate)
-  expect_vector(x[c(2, 11, 15, 12, 3)], c(2, 31, 35, 32, 3))
+  expect_as_vector(x[c(2, 11, 15, 12, 3)], c(2, 31, 35, 32, 3))
   # Take with Array (note these are 0-based)
   take1 <- Array$create(c(10L, 14L, 11L))
-  expect_vector(x[take1], c(31, 35, 32))
+  expect_as_vector(x[take1], c(31, 35, 32))
   # Take with ChunkedArray
   take2 <- ChunkedArray$create(c(10L, 14L), 11L)
-  expect_vector(x[take2], c(31, 35, 32))
+  expect_as_vector(x[take2], c(31, 35, 32))
 
   # Filter (with recycling)
-  expect_vector(
+  expect_as_vector(
     one_chunk[c(FALSE, TRUE, FALSE, FALSE, TRUE)],
     c(3, 6, 8, 11)
   )
   # Filter where both are 1-chunk
-  expect_vector(
+  expect_as_vector(
     one_chunk[ChunkedArray$create(rep(c(FALSE, TRUE, FALSE, FALSE, TRUE), 2))],
     c(3, 6, 8, 11)
   )
   # Filter multi-chunk with logical (-> Array)
-  expect_vector(
+  expect_as_vector(
     x[c(FALSE, TRUE, FALSE, FALSE, TRUE)],
     c(2, 5, 7, 10, 32, 35, 37, 40, 52, 55)
   )
@@ -343,7 +359,7 @@ test_that("[ ChunkedArray", {
   p1 <- c(FALSE, TRUE, FALSE, FALSE, TRUE)
   p2 <- c(TRUE, FALSE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE)
   filt <- ChunkedArray$create(p1, p2, p2)
-  expect_vector(
+  expect_as_vector(
     x[filt],
     c(2, 5, 6, 8, 9, 35, 36, 38, 39, 55)
   )
@@ -352,15 +368,15 @@ test_that("[ ChunkedArray", {
 test_that("ChunkedArray head/tail", {
   vec <- 11:20
   a <- ChunkedArray$create(11:15, 16:20)
-  expect_vector(head(a), head(vec))
-  expect_vector(head(a, 4), head(vec, 4))
-  expect_vector(head(a, 40), head(vec, 40))
-  expect_vector(head(a, -4), head(vec, -4))
-  expect_vector(head(a, -40), head(vec, -40))
-  expect_vector(tail(a), tail(vec))
-  expect_vector(tail(a, 4), tail(vec, 4))
-  expect_vector(tail(a, 40), tail(vec, 40))
-  expect_vector(tail(a, -40), tail(vec, -40))
+  expect_as_vector(head(a), head(vec))
+  expect_as_vector(head(a, 4), head(vec, 4))
+  expect_as_vector(head(a, 40), head(vec, 40))
+  expect_as_vector(head(a, -4), head(vec, -4))
+  expect_as_vector(head(a, -40), head(vec, -40))
+  expect_as_vector(tail(a), tail(vec))
+  expect_as_vector(tail(a, 4), tail(vec, 4))
+  expect_as_vector(tail(a, 40), tail(vec, 40))
+  expect_as_vector(tail(a, -40), tail(vec, -40))
 })
 
 test_that("ChunkedArray$Equals", {

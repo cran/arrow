@@ -1,9 +1,5 @@
 # arrow
 
-[![cran](https://www.r-pkg.org/badges/version-last-release/arrow)](https://cran.r-project.org/package=arrow)
-[![CI](https://github.com/apache/arrow/workflows/R/badge.svg?event=push)](https://github.com/apache/arrow/actions?query=workflow%3AR+branch%3Amaster+event%3Apush)
-[![conda-forge](https://img.shields.io/conda/vn/conda-forge/r-arrow.svg)](https://anaconda.org/conda-forge/r-arrow)
-
 **[Apache Arrow](https://arrow.apache.org/) is a cross-language
 development platform for in-memory data.** It specifies a standardized
 language-independent columnar memory format for flat and hierarchical
@@ -242,8 +238,8 @@ result %>% collect()
 #>    name               height_in mass_lbs
 #>    <chr>                  <dbl>    <dbl>
 #>  1 C-3PO                   65.7    165.
-#>  2 Cliegg Lars             72.0     NA  
-#>  3 Shmi Skywalker          64.2     NA  
+#>  2 Cliegg Lars             72.0     NA
+#>  3 Shmi Skywalker          64.2     NA
 #>  4 Owen Lars               70.1    265.
 #>  5 Beru Whitesun lars      65.0    165.
 #>  6 Darth Vader             79.5    300.

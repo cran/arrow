@@ -53,6 +53,18 @@
 #' It returns the appropriate subclass of `FileFormat` (e.g. `ParquetFileFormat`)
 #' @rdname FileFormat
 #' @name FileFormat
+#' @examplesIf arrow_with_dataset() && tolower(Sys.info()[["sysname"]]) != "windows"
+#' ## Semi-colon delimited files
+#' # Set up directory for examples
+#' tf <- tempfile()
+#' dir.create(tf)
+#' on.exit(unlink(tf))
+#' write.table(mtcars, file.path(tf, "file1.txt"), sep = ";", row.names = FALSE)
+#' 
+#' # Create FileFormat object
+#' format <- FileFormat$create(format = "text", delimiter = ";")
+#' 
+#' open_dataset(tf, format = format)
 #' @export
 FileFormat <- R6Class("FileFormat", inherit = ArrowObject,
   active = list(
@@ -286,10 +298,10 @@ ParquetFragmentScanOptions$create <- function(use_buffered_stream = FALSE,
 #' A `FileWriteOptions` holds write options specific to a `FileFormat`.
 FileWriteOptions <- R6Class("FileWriteOptions", inherit = ArrowObject,
   public = list(
-    update = function(...) {
+    update = function(table, ...) {
       if (self$type == "parquet") {
         dataset___ParquetFileWriteOptions__update(self,
-            ParquetWriterProperties$create(...),
+            ParquetWriterProperties$create(table, ...),
             ParquetArrowWriterProperties$create(...))
       } else if (self$type == "ipc") {
         args <- list(...)
@@ -303,6 +315,9 @@ FileWriteOptions <- R6Class("FileWriteOptions", inherit = ArrowObject,
               args$codec,
               get_ipc_metadata_version(args$metadata_version))
         }
+      } else if (self$type == "csv") {
+          dataset___CsvFileWriteOptions__update(self,
+              CsvWriteOptions$create(...))
       }
       invisible(self)
     }

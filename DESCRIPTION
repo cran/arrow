@@ -1,9 +1,10 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 4.0.1
+Version: 5.0.0
 Authors@R: c(
     person("Neal", "Richardson", email = "neal@ursalabs.org", role = c("aut", "cre")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
+    person("Nic", "Crane", email = "thisisnic@gmail.com", role = c("aut")),
     person("Jonathan", "Keane", email = "jkeane@gmail.com", role = c("aut")),
     person("Romain", "Fran\u00e7ois", email = "romain@rstudio.com", role = c("aut"), comment = c(ORCID = "0000-0002-2444-4226")),
     person("Jeroen", "Ooms", email = "jeroen@berkeley.edu", role = c("aut")),
@@ -27,27 +28,33 @@ SystemRequirements: C++11; for AWS S3 support on Linux, libcurl and
 Biarch: true
 Imports: assertthat, bit64 (>= 0.9-7), methods, purrr, R6, rlang,
         stats, tidyselect, utils, vctrs
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.1.9001
 VignetteBuilder: knitr
 Suggests: decor, distro, dplyr, hms, knitr, lubridate, pkgload,
-        reticulate, rmarkdown, stringr, testthat, tibble, withr
+        reticulate, rmarkdown, stringi, stringr, testthat, tibble,
+        withr
 LinkingTo: cpp11 (>= 0.2.0)
-Collate: 'enums.R' 'arrow-package.R' 'type.R' 'array-data.R'
-        'arrow-datum.R' 'array.R' 'arrow-tabular.R' 'arrowExports.R'
+Collate: 'arrowExports.R' 'enums.R' 'arrow-package.R' 'type.R'
+        'array-data.R' 'arrow-datum.R' 'array.R' 'arrow-tabular.R'
         'buffer.R' 'chunked-array.R' 'io.R' 'compression.R' 'scalar.R'
         'compute.R' 'config.R' 'csv.R' 'dataset.R' 'dataset-factory.R'
         'dataset-format.R' 'dataset-partition.R' 'dataset-scan.R'
         'dataset-write.R' 'deprecated.R' 'dictionary.R'
-        'record-batch.R' 'table.R' 'expression.R' 'dplyr.R' 'feather.R'
-        'field.R' 'filesystem.R' 'flight.R' 'install-arrow.R'
-        'ipc_stream.R' 'json.R' 'memory-pool.R' 'message.R'
-        'metadata.R' 'parquet.R' 'python.R' 'record-batch-reader.R'
-        'record-batch-writer.R' 'reexports-bit64.R'
-        'reexports-tidyselect.R' 'schema.R' 'util.R'
+        'dplyr-arrange.R' 'dplyr-collect.R' 'dplyr-eval.R'
+        'dplyr-filter.R' 'expression.R' 'dplyr-functions.R'
+        'dplyr-group-by.R' 'dplyr-mutate.R' 'dplyr-select.R'
+        'dplyr-summarize.R' 'record-batch.R' 'table.R' 'dplyr.R'
+        'feather.R' 'field.R' 'filesystem.R' 'flight.R'
+        'install-arrow.R' 'ipc_stream.R' 'json.R' 'memory-pool.R'
+        'message.R' 'metadata.R' 'parquet.R' 'python.R'
+        'record-batch-reader.R' 'record-batch-writer.R'
+        'reexports-bit64.R' 'reexports-tidyselect.R' 'schema.R'
+        'util.R'
 NeedsCompilation: yes
-Packaged: 2021-05-27 21:11:11 UTC; enpiar
+Packaged: 2021-07-29 02:03:47 UTC; enpiar
 Author: Neal Richardson [aut, cre],
   Ian Cook [aut],
+  Nic Crane [aut],
   Jonathan Keane [aut],
   Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Jeroen Ooms [aut],
@@ -56,4 +63,4 @@ Author: Neal Richardson [aut, cre],
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2021-05-28 09:50:02 UTC
+Date/Publication: 2021-07-29 09:10:02 UTC

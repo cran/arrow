@@ -15,8 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-context("Table")
-
 test_that("read_table handles various input streams (ARROW-3450, ARROW-3505)", {
   tbl <- tibble::tibble(
     int = 1:10, dbl = as.numeric(1:10),
@@ -105,7 +103,7 @@ test_that("[, [[, $ for Table", {
   expect_data_frame(tab[6:7,], tbl[6:7,])
   expect_data_frame(tab[6:7, 2:4], tbl[6:7, 2:4])
   expect_data_frame(tab[, c("dbl", "fct")], tbl[, c(2, 5)])
-  expect_vector(tab[, "chr", drop = TRUE], tbl$chr)
+  expect_as_vector(tab[, "chr", drop = TRUE], tbl$chr)
   # Take within a single chunk
   expect_data_frame(tab[c(7, 3, 5), 2:4], tbl[c(7, 3, 5), 2:4])
   expect_data_frame(tab[rep(c(FALSE, TRUE), 5),], tbl[c(2, 4, 6, 8, 10),])
@@ -123,9 +121,9 @@ test_that("[, [[, $ for Table", {
   # Expression
   expect_data_frame(tab[tab$int > 6,], tbl[tbl$int > 6,])
 
-  expect_vector(tab[["int"]], tbl$int)
-  expect_vector(tab$int, tbl$int)
-  expect_vector(tab[[4]], tbl$chr)
+  expect_as_vector(tab[["int"]], tbl$int)
+  expect_as_vector(tab$int, tbl$int)
+  expect_as_vector(tab[[4]], tbl$chr)
   expect_null(tab$qwerty)
   expect_null(tab[["asdf"]])
   # List-like column slicing
@@ -173,16 +171,16 @@ test_that("[[<- assignment", {
 
   # can replace a column by index
   tab[[2]] <- as.numeric(10:1)
-  expect_vector(tab[[2]], as.numeric(10:1))
+  expect_as_vector(tab[[2]], as.numeric(10:1))
 
   # can add a column by index
   tab[[5]] <- as.numeric(10:1)
-  expect_vector(tab[[5]], as.numeric(10:1))
-  expect_vector(tab[["5"]], as.numeric(10:1))
+  expect_as_vector(tab[[5]], as.numeric(10:1))
+  expect_as_vector(tab[["5"]], as.numeric(10:1))
 
   # can replace a column
   tab[["int"]] <- 10:1
-  expect_vector(tab[["int"]], 10:1)
+  expect_as_vector(tab[["int"]], 10:1)
 
   # can use $
   tab$new <- NULL
@@ -190,11 +188,11 @@ test_that("[[<- assignment", {
   expect_identical(dim(tab), c(10L, 4L))
 
   tab$int <- 1:10
-  expect_vector(tab$int, 1:10)
+  expect_as_vector(tab$int, 1:10)
 
   # recycling
   tab[["atom"]] <- 1L
-  expect_vector(tab[["atom"]], rep(1L, 10))
+  expect_as_vector(tab[["atom"]], rep(1L, 10))
 
   expect_error(
     tab[["atom"]] <- 1:6,
@@ -204,10 +202,10 @@ test_that("[[<- assignment", {
   # assign Arrow array and chunked_array
   array <- Array$create(c(10:1))
   tab$array <- array
-  expect_vector(tab$array, 10:1)
+  expect_as_vector(tab$array, 10:1)
 
   tab$chunked <- chunked_array(1:10)
-  expect_vector(tab$chunked, 1:10)
+  expect_as_vector(tab$chunked, 1:10)
 
   # nonsense indexes
   expect_error(tab[[NA]] <- letters[10:1], "'i' must be character or numeric, not logical")
@@ -472,6 +470,82 @@ test_that("Table name assignment", {
 
 test_that("Table$create() with different length columns", {
   msg <- "All columns must have the same length"
-  expect_error(Table$create(a=1:5, b = 42), msg)
-  expect_error(Table$create(a=1:5, b = 1:6), msg)
+  expect_error(Table$create(a = 1:5, b = 1:6), msg)
+})
+
+test_that("Table$create() scalar recycling with vectors", {
+  expect_data_frame(
+    Table$create(a = 1:10, b = 5),
+    tibble::tibble(a = 1:10, b = 5)
+  )
+})
+
+test_that("Table$create() scalar recycling with Scalars, Arrays, and ChunkedArrays", {
+  
+  expect_data_frame(
+    Table$create(a = Array$create(1:10), b = Scalar$create(5)),
+    tibble::tibble(a = 1:10, b = 5)
+  )
+  
+  expect_data_frame(
+    Table$create(a = Array$create(1:10), b = Array$create(5)),
+    tibble::tibble(a = 1:10, b = 5)
+  )
+  
+  expect_data_frame(
+    Table$create(a = Array$create(1:10), b = ChunkedArray$create(5)),
+    tibble::tibble(a = 1:10, b = 5)
+  )
+  
+})
+
+test_that("Table$create() no recycling with tibbles", {
+  expect_error(
+    Table$create(
+      tibble::tibble(a = 1:10, b = 5),
+      tibble::tibble(a = 1, b = 5)
+    ),
+    regexp = "All input tibbles or data.frames must have the same number of rows"
+  )
+  
+  expect_error(
+    Table$create(
+      tibble::tibble(a = 1:10, b = 5),
+      tibble::tibble(a = 1)
+    ),
+    regexp = "All input tibbles or data.frames must have the same number of rows"
+  )
+})
+
+test_that("ARROW-11769 - grouping preserved in table creation", {
+  skip_if_not_available("dataset")
+
+  tbl <- tibble::tibble(
+    int = 1:10,
+    fct = factor(rep(c("A", "B"), 5)),
+    fct2 = factor(rep(c("C", "D"), each = 5)),
+  )
+
+  expect_identical(
+    tbl %>%
+      dplyr::group_by(fct, fct2) %>%
+      Table$create() %>%
+      dplyr::group_vars(),
+    c("fct", "fct2")
+  )
+
+})
+
+test_that("ARROW-12729 - length returns number of columns in Table", {
+
+  tbl <- tibble::tibble(
+    int = 1:10,
+    fct = factor(rep(c("A", "B"), 5)),
+    fct2 = factor(rep(c("C", "D"), each = 5)),
+  )
+
+  tab <- Table$create(!!!tbl)
+
+  expect_identical(length(tab), 3L)
+
 })

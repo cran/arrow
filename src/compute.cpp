@@ -171,12 +171,22 @@ std::shared_ptr<arrow::compute::FunctionOptions> make_compute_options(
     return out;
   }
 
-  if (func_name == "min_max") {
-    using Options = arrow::compute::MinMaxOptions;
+  if (func_name == "min_max" || func_name == "sum" || func_name == "mean" ||
+      func_name == "count" || func_name == "any" || func_name == "all") {
+    using Options = arrow::compute::ScalarAggregateOptions;
     auto out = std::make_shared<Options>(Options::Defaults());
-    out->null_handling =
-        cpp11::as_cpp<bool>(options["na.rm"]) ? Options::SKIP : Options::EMIT_NULL;
+    out->min_count = cpp11::as_cpp<int>(options["na.min_count"]);
+    out->skip_nulls = cpp11::as_cpp<bool>(options["na.rm"]);
     return out;
+  }
+
+  if (func_name == "min_element_wise" || func_name == "max_element_wise") {
+    using Options = arrow::compute::ElementWiseAggregateOptions;
+    bool skip_nulls = true;
+    if (!Rf_isNull(options["skip_nulls"])) {
+      skip_nulls = cpp11::as_cpp<bool>(options["skip_nulls"]);
+    }
+    return std::make_shared<Options>(skip_nulls);
   }
 
   if (func_name == "quantile") {
@@ -217,9 +227,37 @@ std::shared_ptr<arrow::compute::FunctionOptions> make_compute_options(
     return make_cast_options(options);
   }
 
-  if (func_name == "match_substring" || func_name == "match_substring_regex") {
+  if (func_name == "binary_join_element_wise") {
+    using Options = arrow::compute::JoinOptions;
+    auto out = std::make_shared<Options>(Options::Defaults());
+    if (!Rf_isNull(options["null_handling"])) {
+      out->null_handling =
+          cpp11::as_cpp<enum arrow::compute::JoinOptions::NullHandlingBehavior>(
+              options["null_handling"]);
+    }
+    if (!Rf_isNull(options["null_replacement"])) {
+      out->null_replacement = cpp11::as_cpp<std::string>(options["null_replacement"]);
+    }
+    return out;
+  }
+
+  if (func_name == "make_struct") {
+    using Options = arrow::compute::MakeStructOptions;
+    // TODO (ARROW-13371): accept `field_nullability` and `field_metadata` options
+    return std::make_shared<Options>(
+        cpp11::as_cpp<std::vector<std::string>>(options["field_names"]));
+  }
+
+  if (func_name == "match_substring" || func_name == "match_substring_regex" ||
+      func_name == "find_substring" || func_name == "find_substring_regex" ||
+      func_name == "match_like") {
     using Options = arrow::compute::MatchSubstringOptions;
-    return std::make_shared<Options>(cpp11::as_cpp<std::string>(options["pattern"]));
+    bool ignore_case = false;
+    if (!Rf_isNull(options["ignore_case"])) {
+      ignore_case = cpp11::as_cpp<bool>(options["ignore_case"]);
+    }
+    return std::make_shared<Options>(cpp11::as_cpp<std::string>(options["pattern"]),
+                                     ignore_case);
   }
 
   if (func_name == "replace_substring" || func_name == "replace_substring_regex") {
@@ -231,6 +269,80 @@ std::shared_ptr<arrow::compute::FunctionOptions> make_compute_options(
     return std::make_shared<Options>(cpp11::as_cpp<std::string>(options["pattern"]),
                                      cpp11::as_cpp<std::string>(options["replacement"]),
                                      max_replacements);
+  }
+
+  if (func_name == "day_of_week") {
+    using Options = arrow::compute::DayOfWeekOptions;
+    bool one_based_numbering = true;
+    if (!Rf_isNull(options["one_based_numbering"])) {
+      one_based_numbering = cpp11::as_cpp<bool>(options["one_based_numbering"]);
+    }
+    return std::make_shared<Options>(one_based_numbering,
+                                     cpp11::as_cpp<uint32_t>(options["week_start"]));
+  }
+
+  if (func_name == "strptime") {
+    using Options = arrow::compute::StrptimeOptions;
+    return std::make_shared<Options>(
+        cpp11::as_cpp<std::string>(options["format"]),
+        cpp11::as_cpp<arrow::TimeUnit::type>(options["unit"]));
+  }
+
+  if (func_name == "split_pattern" || func_name == "split_pattern_regex") {
+    using Options = arrow::compute::SplitPatternOptions;
+    int64_t max_splits = -1;
+    if (!Rf_isNull(options["max_splits"])) {
+      max_splits = cpp11::as_cpp<int64_t>(options["max_splits"]);
+    }
+    bool reverse = false;
+    if (!Rf_isNull(options["reverse"])) {
+      reverse = cpp11::as_cpp<bool>(options["reverse"]);
+    }
+    return std::make_shared<Options>(cpp11::as_cpp<std::string>(options["pattern"]),
+                                     max_splits, reverse);
+  }
+
+  if (func_name == "utf8_lpad" || func_name == "utf8_rpad" ||
+      func_name == "utf8_center" || func_name == "ascii_lpad" ||
+      func_name == "ascii_rpad" || func_name == "ascii_center") {
+    using Options = arrow::compute::PadOptions;
+    return std::make_shared<Options>(cpp11::as_cpp<int64_t>(options["width"]),
+                                     cpp11::as_cpp<std::string>(options["padding"]));
+  }
+
+  if (func_name == "utf8_split_whitespace" || func_name == "ascii_split_whitespace") {
+    using Options = arrow::compute::SplitOptions;
+    int64_t max_splits = -1;
+    if (!Rf_isNull(options["max_splits"])) {
+      max_splits = cpp11::as_cpp<int64_t>(options["max_splits"]);
+    }
+    bool reverse = false;
+    if (!Rf_isNull(options["reverse"])) {
+      reverse = cpp11::as_cpp<bool>(options["reverse"]);
+    }
+    return std::make_shared<Options>(max_splits, reverse);
+  }
+
+  if (func_name == "utf8_slice_codeunits") {
+    using Options = arrow::compute::SliceOptions;
+
+    int64_t step = 1;
+    if (!Rf_isNull(options["step"])) {
+      step = cpp11::as_cpp<int64_t>(options["step"]);
+    }
+
+    int64_t stop = std::numeric_limits<int32_t>::max();
+    if (!Rf_isNull(options["stop"])) {
+      stop = cpp11::as_cpp<int64_t>(options["stop"]);
+    }
+
+    return std::make_shared<Options>(cpp11::as_cpp<int64_t>(options["start"]), stop,
+                                     step);
+  }
+
+  if (func_name == "variance" || func_name == "stddev") {
+    using Options = arrow::compute::VarianceOptions;
+    return std::make_shared<Options>(cpp11::as_cpp<int64_t>(options["ddof"]));
   }
 
   return nullptr;

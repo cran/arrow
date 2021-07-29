@@ -77,14 +77,12 @@
 #'
 #' @rdname Schema
 #' @name Schema
-#' @examples
-#' \donttest{
+#' @examplesIf arrow_available()
 #' df <- data.frame(col1 = 2:4, col2 = c(0.1, 0.3, 0.5))
 #' tab1 <- Table$create(df)
 #' tab1$schema
 #' tab2 <- Table$create(df, schema = schema(col1 = int8(), col2 = float32()))
 #' tab2$schema
-#' }
 #' @export
 Schema <- R6Class("Schema",
   inherit = ArrowObject,
@@ -114,7 +112,8 @@ Schema <- R6Class("Schema",
     },
     Equals = function(other, check_metadata = FALSE, ...) {
       inherits(other, "Schema") && Schema__Equals(self, other, isTRUE(check_metadata))
-    }
+    },
+    export_to_c = function(ptr) ExportSchema(self, ptr)
   ),
   active = list(
     names = function() {
@@ -138,6 +137,8 @@ Schema <- R6Class("Schema",
   )
 )
 Schema$create <- function(...) schema_(.fields(list2(...)))
+#' @include arrowExports.R
+Schema$import_from_c <- ImportSchema
 
 prepare_key_value_metadata <- function(metadata) {
   # key-value-metadata must be a named character vector;
@@ -282,15 +283,15 @@ read_schema <- function(stream, ...) {
 #'
 #' @param ... [Schema]s to unify
 #' @param schemas Alternatively, a list of schemas
-#' @return A `Schema` with the union of fields contained in the inputs
+#' @return A `Schema` with the union of fields contained in the inputs, or
+#'   `NULL` if any of `schemas` is `NULL`
 #' @export
-#' @examples
-#' \dontrun{
+#' @examplesIf arrow_available()
 #' a <- schema(b = double(), c = bool())
 #' z <- schema(b = double(), k = utf8())
 #' unify_schemas(a, z)
-#' }
 unify_schemas <- function(..., schemas = list(...)) {
+  if (any(vapply(schemas, is.null, TRUE))) return(NULL)
   arrow__UnifySchemas(schemas)
 }
 

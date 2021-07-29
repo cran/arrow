@@ -23,7 +23,7 @@ test_that("Addition", {
   expect_equal(a + 4L, Array$create(c(5:8, NA_integer_)))
   expect_identical(as.vector(a + 4L), c(5:8, NA_integer_))
   expect_equal(a + 4L, Array$create(c(5:8, NA_integer_)))
-  expect_vector(a + 4L, c(5:8, NA_integer_))
+  expect_as_vector(a + 4L, c(5:8, NA_integer_))
   expect_equal(a + NA_integer_, Array$create(rep(NA_integer_, 5)))
 
   a8 <- a$cast(int8())
@@ -111,6 +111,7 @@ test_that("Power", {
 test_that("Dates casting", {
   a <- Array$create(c(Sys.Date() + 1:4, NA_integer_))
 
-  skip("autocasting should happen in compute kernels; R workaround fails on this ARROW-8919")
+  skip("ARROW-11090 (date/datetime arithmetic)")
+  # Error: NotImplemented: Function add_checked has no kernel matching input types (array[date32[day]], scalar[double])
   expect_equal(a + 2, Array$create(c((Sys.Date() + 1:4 ) + 2), NA_integer_))
 })

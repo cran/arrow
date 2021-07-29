@@ -47,7 +47,7 @@ with_language <- function(lang, expr) {
   Sys.setenv(LANGUAGE = lang)
   on.exit({
     Sys.setenv(LANGUAGE = old)
-    dplyr_functions$i18ized_error_pattern <<- NULL
+    .cache$i18ized_error_pattern <<- NULL
   })
   if (!identical(before, i18ize_error_messages())) {
     skip(paste("This OS either does not support changing languages to", lang, "or it caches translations"))
@@ -66,4 +66,10 @@ test_that <- function(what, code) {
 # available (so that at least some tests are run on those platforms)
 r_only <- function(code) {
   withr::with_options(list(..skip.tests = FALSE), code)
+}
+
+make_temp_dir <- function() {
+  path <- tempfile()
+  dir.create(path)
+  normalizePath(path, winslash = "/")
 }

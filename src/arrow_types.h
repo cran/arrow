@@ -55,10 +55,9 @@
 namespace ds = ::arrow::dataset;
 #endif
 
+namespace compute = ::arrow::compute;
 namespace fs = ::arrow::fs;
 
-SEXP ChunkedArray__as_vector(const std::shared_ptr<arrow::ChunkedArray>& chunked_array);
-SEXP Array__as_vector(const std::shared_ptr<arrow::Array>& array);
 std::shared_ptr<arrow::RecordBatch> RecordBatch__from_arrays(SEXP, SEXP);
 arrow::MemoryPool* gc_memory_pool();
 
@@ -78,8 +77,10 @@ arrow::MemoryPool* gc_memory_pool();
 namespace arrow {
 
 static inline void StopIfNotOk(const Status& status) {
-  if (!(status.ok())) {
-    cpp11::stop(status.ToString());
+  if (!status.ok()) {
+    // ARROW-13039: be careful not to interpret our error message as a %-format string
+    std::string s = status.ToString();
+    cpp11::stop("%s", s.c_str());
   }
 }
 
@@ -148,11 +149,25 @@ void TraverseDots(cpp11::list dots, int num_fields, Lambda lambda) {
   }
 }
 
+inline cpp11::writable::list FlattenDots(cpp11::list dots, int num_fields) {
+  std::vector<SEXP> out(num_fields);
+  auto set = [&](int j, SEXP x, cpp11::r_string) { out[j] = x; };
+  TraverseDots(dots, num_fields, set);
+
+  return cpp11::writable::list(out.begin(), out.end());
+}
+
 arrow::Status InferSchemaFromDots(SEXP lst, SEXP schema_sxp, int num_fields,
                                   std::shared_ptr<arrow::Schema>& schema);
 
 arrow::Status AddMetadataFromDots(SEXP lst, int num_fields,
                                   std::shared_ptr<arrow::Schema>& schema);
+
+#if defined(HAS_ALTREP)
+void Init_Altrep_classes(DllInfo* dll);
+SEXP MakeInt32ArrayNoNull(const std::shared_ptr<Array>& array);
+SEXP MakeDoubleArrayNoNull(const std::shared_ptr<Array>& array);
+#endif
 
 }  // namespace r
 }  // namespace arrow
@@ -178,6 +193,7 @@ R6_CLASS_NAME(arrow::csv::ReadOptions, "CsvReadOptions");
 R6_CLASS_NAME(arrow::csv::ParseOptions, "CsvParseOptions");
 R6_CLASS_NAME(arrow::csv::ConvertOptions, "CsvConvertOptions");
 R6_CLASS_NAME(arrow::csv::TableReader, "CsvTableReader");
+R6_CLASS_NAME(arrow::csv::WriteOptions, "CsvWriteOptions");
 
 #if defined(ARROW_R_WITH_PARQUET)
 R6_CLASS_NAME(parquet::ArrowReaderProperties, "ParquetArrowReaderProperties");

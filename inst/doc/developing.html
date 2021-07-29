@@ -1,415 +1,290 @@
 <!DOCTYPE html>
+
 <html>
+
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 
-<title>R-only development</title>
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
-<script type="text/javascript">
-window.onload = function() {
-  var imgs = document.getElementsByTagName('img'), i, img;
-  for (i = 0; i < imgs.length; i++) {
-    img = imgs[i];
-    // center an image if it is the only element of its parent
-    if (img.parentElement.childElementCount === 1)
-      img.parentElement.style.textAlign = 'center';
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Arrow R Developer Guide</title>
+
+<script src="data:application/javascript;base64,Ly8gUGFuZG9jIDIuOSBhZGRzIGF0dHJpYnV0ZXMgb24gYm90aCBoZWFkZXIgYW5kIGRpdi4gV2UgcmVtb3ZlIHRoZSBmb3JtZXIgKHRvCi8vIGJlIGNvbXBhdGlibGUgd2l0aCB0aGUgYmVoYXZpb3Igb2YgUGFuZG9jIDwgMi44KS4KZG9jdW1lbnQuYWRkRXZlbnRMaXN0ZW5lcignRE9NQ29udGVudExvYWRlZCcsIGZ1bmN0aW9uKGUpIHsKICB2YXIgaHMgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yQWxsKCJkaXYuc2VjdGlvbltjbGFzcyo9J2xldmVsJ10gPiA6Zmlyc3QtY2hpbGQiKTsKICB2YXIgaSwgaCwgYTsKICBmb3IgKGkgPSAwOyBpIDwgaHMubGVuZ3RoOyBpKyspIHsKICAgIGggPSBoc1tpXTsKICAgIGlmICghL15oWzEtNl0kL2kudGVzdChoLnRhZ05hbWUpKSBjb250aW51ZTsgIC8vIGl0IHNob3VsZCBiZSBhIGhlYWRlciBoMS1oNgogICAgYSA9IGguYXR0cmlidXRlczsKICAgIHdoaWxlIChhLmxlbmd0aCA+IDApIGgucmVtb3ZlQXR0cmlidXRlKGFbMF0ubmFtZSk7CiAgfQp9KTsK"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+
+<style type="text/css">
+  code {
+    white-space: pre;
   }
-};
-</script>
-
-<!-- Styles for R syntax highlighter -->
-<style type="text/css">
-   pre .operator,
-   pre .paren {
-     color: rgb(104, 118, 135)
-   }
-
-   pre .literal {
-     color: #990073
-   }
-
-   pre .number {
-     color: #099;
-   }
-
-   pre .comment {
-     color: #998;
-     font-style: italic
-   }
-
-   pre .keyword {
-     color: #900;
-     font-weight: bold
-   }
-
-   pre .identifier {
-     color: rgb(0, 0, 0);
-   }
-
-   pre .string {
-     color: #d14;
-   }
+  .sourceCode {
+    overflow: visible;
+  }
 </style>
-
-<!-- R syntax highlighter -->
-<script type="text/javascript">
-var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
-hljs.initHighlightingOnLoad();
-</script>
-
-
-
-<style type="text/css">
-body, td {
-   font-family: sans-serif;
-   background-color: white;
-   font-size: 13px;
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
 }
-
-body {
-  max-width: 800px;
-  margin: auto;
-  padding: 1em;
-  line-height: 20px;
-}
-
-tt, code, pre {
-   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
-}
-
-h1 {
-   font-size:2.2em;
-}
-
-h2 {
-   font-size:1.8em;
-}
-
-h3 {
-   font-size:1.4em;
-}
-
-h4 {
-   font-size:1.0em;
-}
-
-h5 {
-   font-size:0.9em;
-}
-
-h6 {
-   font-size:0.8em;
-}
-
-a:visited {
-   color: rgb(50%, 0%, 50%);
-}
-
-pre, img {
-  max-width: 100%;
-}
-pre {
-  overflow-x: auto;
-}
-pre code {
-   display: block; padding: 0.5em;
-}
-
-code {
-  font-size: 92%;
-  border: 1px solid #ccc;
-}
-
-code[class] {
-  background-color: #F8F8F8;
-}
-
-table, td, th {
-  border: none;
-}
-
-blockquote {
-   color:#666666;
-   margin:0;
-   padding-left: 1em;
-   border-left: 0.5em #EEE solid;
-}
-
-hr {
-   height: 0px;
-   border-bottom: none;
-   border-top-width: thin;
-   border-top-style: dotted;
-   border-top-color: #999999;
-}
-
 @media print {
-   * {
-      background: transparent !important;
-      color: black !important;
-      filter:none !important;
-      -ms-filter: none !important;
-   }
-
-   body {
-      font-size:12pt;
-      max-width:100%;
-   }
-
-   a, a:visited {
-      text-decoration: underline;
-   }
-
-   hr {
-      visibility: hidden;
-      page-break-before: always;
-   }
-
-   pre, blockquote {
-      padding-right: 1em;
-      page-break-inside: avoid;
-   }
-
-   tr, img {
-      page-break-inside: avoid;
-   }
-
-   img {
-      max-width: 100% !important;
-   }
-
-   @page :left {
-      margin: 15mm 20mm 15mm 10mm;
-   }
-
-   @page :right {
-      margin: 15mm 10mm 15mm 20mm;
-   }
-
-   p, h2, h3 {
-      orphans: 3; widows: 3;
-   }
-
-   h2, h3 {
-      page-break-after: avoid;
-   }
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
 }
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
 </style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<link rel="stylesheet" href="data:text/css,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" type="text/css" />
+
 
 
 
 </head>
 
 <body>
-<p>If you&#39;re looking to contribute to <code>arrow</code>, this document can help you set up a development environment that will enable you to write code and run tests locally. It outlines how to build the various components that make up the Arrow project and R package, as well as some common troubleshooting and workflows developers use. Many contributions can be accomplished with the instructions in <a href="#r-only-development">R-only development</a>. But if you&#39;re working on both the C++ library and the R package, the <a href="#-developer-environment-setup">Developer environment setup</a> section will guide you through setting up a developer environment.</p>
 
-<p>This document is intended only for developers of Apache Arrow or the Arrow R package. Users of the package in R do not need to do any of this setup. If you&#39;re looking for how to install Arrow, see <a href="https://arrow.apache.org/docs/r/#installation">the instructions in the readme</a>; Linux users can find more details on building from source at <code>vignette(&quot;install&quot;, package = &quot;arrow&quot;)</code>.</p>
 
-<p>This document is a work in progress and will grow + change as the Apache Arrow project grows and changes. We have tried to make these steps as robust as possible (in fact, we even test exactly these instructions on our nightly CI to ensure they don&#39;t become stale!), but certain custom configurations might conflict with these instructions and there are differences of opinion across developers about if and what the one true way to set up development environments like this is.  We also solicit any feedback you have about things that are confusing or additions you would like to see here. Please <a href="https://issues.apache.org/jira/projects/ARROW/issues">report an issue</a> if there you see anything that is confusing, odd, or just plain wrong.</p>
 
+
+<h1 class="title toc-ignore">Arrow R Developer Guide</h1>
+
+
+
+<p>If you’re looking to contribute to <code>arrow</code>, this document can help you set up a development environment that will enable you to write code and run tests locally. It outlines how to build the various components that make up the Arrow project and R package, as well as some common troubleshooting and workflows developers use. Many contributions can be accomplished with the instructions in <a href="#r-only-development">R-only development</a>. But if you’re working on both the C++ library and the R package, the <a href="#-developer-environment-setup">Developer environment setup</a> section will guide you through setting up a developer environment.</p>
+<p>This document is intended only for developers of Apache Arrow or the Arrow R package. Users of the package in R do not need to do any of this setup. If you’re looking for how to install Arrow, see <a href="https://arrow.apache.org/docs/r/#installation">the instructions in the readme</a>; Linux users can find more details on building from source at <code>vignette(&quot;install&quot;, package = &quot;arrow&quot;)</code>.</p>
+<p>This document is a work in progress and will grow + change as the Apache Arrow project grows and changes. We have tried to make these steps as robust as possible (in fact, we even test exactly these instructions on our nightly CI to ensure they don’t become stale!), but certain custom configurations might conflict with these instructions and there are differences of opinion across developers about if and what the one true way to set up development environments like this is. We also solicit any feedback you have about things that are confusing or additions you would like to see here. Please <a href="https://issues.apache.org/jira/projects/ARROW/issues">report an issue</a> if there you see anything that is confusing, odd, or just plain wrong.</p>
+<div id="r-only-development" class="section level2">
 <h2>R-only development</h2>
-
-<p>Windows and macOS users who wish to contribute to the R package and
-don’t need to alter the Arrow C++ library may be able to obtain a
-recent version of the library without building from source. On macOS,
-you may install the C++ library using <a href="https://brew.sh/">Homebrew</a>:</p>
-
-<pre><code class="shell"># For the released version:
+<p>Windows and macOS users who wish to contribute to the R package and don’t need to alter the Arrow C++ library may be able to obtain a recent version of the library without building from source. On macOS, you may install the C++ library using <a href="https://brew.sh/">Homebrew</a>:</p>
+<pre class="shell"><code># For the released version:
 brew install apache-arrow
 # Or for a development version, you can try:
-brew install apache-arrow --HEAD
-</code></pre>
-
-<p>On Windows and Linux, you can download a .zip file with the arrow dependencies from the
-nightly repository.
-Windows users then can set the <code>RWINLIB_LOCAL</code> environment variable to point to that
-zip file before installing the <code>arrow</code> R package. On Linux, you&#39;ll need to create a <code>libarrow</code> directory inside the R package directory and unzip that file into it. Version numbers in that
-repository correspond to dates, and you will likely want the most recent.</p>
-
-<p>To see what nightlies are available, you can use Arrow&#39;s (or any other S3 client&#39;s) S3 listing functionality to see what is in the bucket <code>s3://arrow-r-nightly/libarrow/bin</code>:</p>
-
+brew install apache-arrow --HEAD</code></pre>
+<p>On Windows and Linux, you can download a .zip file with the arrow dependencies from the nightly repository. Windows users then can set the <code>RWINLIB_LOCAL</code> environment variable to point to that zip file before installing the <code>arrow</code> R package. On Linux, you’ll need to create a <code>libarrow</code> directory inside the R package directory and unzip that file into it. Version numbers in that repository correspond to dates, and you will likely want the most recent.</p>
+<p>To see what nightlies are available, you can use Arrow’s (or any other S3 client’s) S3 listing functionality to see what is in the bucket <code>s3://arrow-r-nightly/libarrow/bin</code>:</p>
 <pre><code>nightly &lt;- s3_bucket(&quot;arrow-r-nightly&quot;)
-nightly$ls(&quot;libarrow/bin&quot;)
-</code></pre>
-
+nightly$ls(&quot;libarrow/bin&quot;)</code></pre>
+</div>
+<div id="developer-environment-setup" class="section level2">
 <h2>Developer environment setup</h2>
-
-<p>If you need to alter both the Arrow C++ library and the R package code, or if you can’t get a binary version of the latest C++ library elsewhere, you’ll need to build it from source too. This section discusses how to set up a C++ build configured to work with the R package. For more general resources, see the <a href="https://arrow.apache.org/docs/developers/cpp/building.html">Arrow C++ developer
-guide</a>.</p>
-
+<p>If you need to alter both the Arrow C++ library and the R package code, or if you can’t get a binary version of the latest C++ library elsewhere, you’ll need to build it from source too. This section discusses how to set up a C++ build configured to work with the R package. For more general resources, see the <a href="https://arrow.apache.org/docs/developers/cpp/building.html">Arrow C++ developer guide</a>.</p>
 <p>There are four major steps to the process — the first three are relevant to all Arrow developers, and the last one is specific to the R bindings:</p>
-
-<ol>
+<ol style="list-style-type: decimal">
 <li>Configuring the Arrow library build (using <code>cmake</code>) — this specifies how you want the build to go, what features to include, etc.</li>
 <li>Building the Arrow library — this actually compiles the Arrow library</li>
 <li>Install the Arrow library — this organizes and moves the compiled Arrow library files into the location specified in the configuration</li>
 <li>Building the R package — this builds the C++ code in the R package, and installs the R package for you</li>
 </ol>
-
-<h3>Install dependencies {.tabset}</h3>
-
+<div id="install-dependencies" class="section level3 tabset">
+<h3 class="tabset">Install dependencies</h3>
 <p>The Arrow C++ library will by default use system dependencies if suitable versions are found; if they are not present, it will build them during its own build process. The only dependencies that one needs to install outside of the build process are <code>cmake</code> (for configuring the build) and <code>openssl</code> if you are building with S3 support.</p>
-
-<p>For a faster build, you may choose to install on the system more C++ library dependencies (such as <code>lz4</code>, <code>zstd</code>, etc.) so that they don&#39;t need to be built from source in the Arrow build. This is optional.</p>
-
+<p>For a faster build, you may choose to install on the system more C++ library dependencies (such as <code>lz4</code>, <code>zstd</code>, etc.) so that they don’t need to be built from source in the Arrow build. This is optional.</p>
+<div id="macos" class="section level4">
 <h4>macOS</h4>
-
-<pre><code class="bash">brew install cmake openssl
-</code></pre>
-
+<div class="sourceCode" id="cb3"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">brew</span> install cmake openssl</span></code></pre></div>
+</div>
+<div id="ubuntu" class="section level4">
 <h4>Ubuntu</h4>
-
-<pre><code class="bash">sudo apt install -y cmake libcurl4-openssl-dev libssl-dev
-</code></pre>
-
-<h3>Configure the Arrow build {.tabset}</h3>
-
+<div class="sourceCode" id="cb4"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install <span class="at">-y</span> cmake libcurl4-openssl-dev libssl-dev</span></code></pre></div>
+</div>
+</div>
+<div id="configure-the-arrow-build" class="section level3 tabset">
+<h3 class="tabset">Configure the Arrow build</h3>
 <p>You can choose to build and then install the Arrow library into a user-defined directory or into a system-level directory. You only need to do one of these two options.</p>
-
-<p>It is recommended that you install the arrow library to a user-level directory to be used in development. This is so that the development version you are using doesn&#39;t overwrite a released version of Arrow you may have installed. You are also able to have more than one version of the Arrow library to link to with this approach (by using different <code>ARROW_HOME</code> directories for the different versions). This approach also matches the recommendations for other Arrow bindings like <a href="http://arrow.apache.org/docs/developers/python.html">Python</a>. </p>
-
+<p>It is recommended that you install the arrow library to a user-level directory to be used in development. This is so that the development version you are using doesn’t overwrite a released version of Arrow you may have installed. You are also able to have more than one version of the Arrow library to link to with this approach (by using different <code>ARROW_HOME</code> directories for the different versions). This approach also matches the recommendations for other Arrow bindings like <a href="http://arrow.apache.org/docs/developers/python.html">Python</a>.</p>
+<div id="configure-for-installing-to-a-user-directory" class="section level4">
 <h4>Configure for installing to a user directory</h4>
-
 <p>In this example we will install it to a directory called <code>dist</code> that has the same parent as our <code>arrow</code> checkout, but it could be named or located anywhere you would like. However, note that your installation of the Arrow R package will point to this directory and need it to remain intact for the package to continue to work. This is one reason we recommend <em>not</em> placing it inside of the arrow git checkout.</p>
-
-<pre><code class="bash">export ARROW_HOME=$(pwd)/dist
-mkdir $ARROW_HOME
-</code></pre>
-
-<p><em>Special instructions on Linux:</em> You will need to set <code>LD_LIBRARY_PATH</code> to the <code>lib</code> directory that is under where we set <code>$ARROW_HOME</code>, before launching R and using Arrow. One way to do this is to add it to your profile (we use <code>~/.bash_profile</code> here, but you might need to put this in a different file depending on your setup, e.g. if you use a shell other than <code>bash</code>). On macOS we do not need to do this because the macOS shared library paths are hardcoded to their locations during build time.</p>
-
-<pre><code class="bash">export LD_LIBRARY_PATH=$ARROW_HOME/lib:$LD_LIBRARY_PATH
-echo &quot;export LD_LIBRARY_PATH=$ARROW_HOME/lib:$LD_LIBRARY_PATH&quot; &gt;&gt; ~/.bash_profile
-</code></pre>
-
-<p>Now we can move into the arrow repository to start the build process. You will need to create a directory into which the C++ build will put its contents. It is recommended to make a <code>build</code> directory inside of the <code>cpp</code> directory of the Arrow git repository (it is git-ignored, so you won&#39;t accidentally check it in). And then, change directories to be inside <code>cpp/build</code>:</p>
-
-<pre><code class="bash">pushd arrow
-mkdir -p cpp/build
-pushd cpp/build
-</code></pre>
-
+<div class="sourceCode" id="cb5"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">ARROW_HOME</span><span class="op">=</span><span class="va">$(</span><span class="bu">pwd</span><span class="va">)</span>/dist</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="va">$ARROW_HOME</span></span></code></pre></div>
+<p><em>Special instructions on Linux:</em> You will need to set <code>LD_LIBRARY_PATH</code> to the <code>lib</code> directory that is under where we set <code>$ARROW_HOME</code>, before launching R and using Arrow. One way to do this is to add it to your profile (we use <code>~/.bash_profile</code> here, but you might need to put this in a different file depending on your setup, e.g. if you use a shell other than <code>bash</code>). On macOS we do not need to do this because the macOS shared library paths are hardcoded to their locations during build time.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="bu">export</span> <span class="va">LD_LIBRARY_PATH</span><span class="op">=</span><span class="va">$ARROW_HOME</span>/lib:<span class="va">$LD_LIBRARY_PATH</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="st">&quot;export LD_LIBRARY_PATH=</span><span class="va">$ARROW_HOME</span><span class="st">/lib:</span><span class="va">$LD_LIBRARY_PATH</span><span class="st">&quot;</span> <span class="op">&gt;&gt;</span> ~/.bash_profile</span></code></pre></div>
+<p>Now we can move into the arrow repository to start the build process. You will need to create a directory into which the C++ build will put its contents. It is recommended to make a <code>build</code> directory inside of the <code>cpp</code> directory of the Arrow git repository (it is git-ignored, so you won’t accidentally check it in). And then, change directories to be inside <code>cpp/build</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="bu">pushd</span> arrow</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> cpp/build</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">pushd</span> cpp/build</span></code></pre></div>
 <p>You’ll first call <code>cmake</code> to configure the build and then <code>make install</code>. For the R package, you’ll need to enable several features in the C++ library using <code>-D</code> flags:</p>
-
-<pre><code class="bash">cmake \
-  -DCMAKE_INSTALL_PREFIX=$ARROW_HOME \
-  -DCMAKE_INSTALL_LIBDIR=lib \
-  -DARROW_COMPUTE=ON \
-  -DARROW_CSV=ON \
-  -DARROW_DATASET=ON \
-  -DARROW_EXTRA_ERROR_CONTEXT=ON \
-  -DARROW_FILESYSTEM=ON \
-  -DARROW_INSTALL_NAME_RPATH=OFF \
-  -DARROW_JEMALLOC=ON \
-  -DARROW_JSON=ON \
-  -DARROW_PARQUET=ON \
-  -DARROW_WITH_SNAPPY=ON \
-  -DARROW_WITH_ZLIB=ON \
-  ..
-</code></pre>
-
-<p><code>..</code> refers to the C++ source directory: we&#39;re in <code>cpp/build</code>, and the source is in <code>cpp</code>.</p>
-
+<div class="sourceCode" id="cb8"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="dt">\</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DCMAKE_INSTALL_PREFIX</span><span class="op">=</span><span class="va">$ARROW_HOME</span> <span class="dt">\</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DCMAKE_INSTALL_LIBDIR</span><span class="op">=</span>lib <span class="dt">\</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_COMPUTE</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_CSV</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_DATASET</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_EXTRA_ERROR_CONTEXT</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_FILESYSTEM</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_INSTALL_NAME_RPATH</span><span class="op">=</span>OFF <span class="dt">\</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_JEMALLOC</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_JSON</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_PARQUET</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_WITH_SNAPPY</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_WITH_ZLIB</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  ..</span></code></pre></div>
+<p><code>..</code> refers to the C++ source directory: we’re in <code>cpp/build</code>, and the source is in <code>cpp</code>.</p>
+</div>
+<div id="configure-to-install-to-a-system-directory" class="section level4">
 <h4>Configure to install to a system directory</h4>
-
 <p>If you would like to install Arrow as a system library you can do that as well. This is in some respects simpler, but if you already have Arrow libraries installed there, it would disrupt them and possibly require <code>sudo</code> permissions.</p>
-
-<p>Now we can move into the arrow repository to start the build process. You will need to create a directory into which the C++ build will put its contents. It is recommended to make a <code>build</code> directory inside of the <code>cpp</code> directory of the Arrow git repository (it is git-ignored, so you won&#39;t accidentally check it in). And then, change directories to be inside <code>cpp/build</code>:</p>
-
-<pre><code class="bash">pushd arrow
-mkdir -p cpp/build
-pushd cpp/build
-</code></pre>
-
+<p>Now we can move into the arrow repository to start the build process. You will need to create a directory into which the C++ build will put its contents. It is recommended to make a <code>build</code> directory inside of the <code>cpp</code> directory of the Arrow git repository (it is git-ignored, so you won’t accidentally check it in). And then, change directories to be inside <code>cpp/build</code>:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">pushd</span> arrow</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">mkdir</span> <span class="at">-p</span> cpp/build</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">pushd</span> cpp/build</span></code></pre></div>
 <p>You’ll first call <code>cmake</code> to configure the build and then <code>make install</code>. For the R package, you’ll need to enable several features in the C++ library using <code>-D</code> flags:</p>
-
-<pre><code class="bash">cmake \
-  -DARROW_COMPUTE=ON \
-  -DARROW_CSV=ON \
-  -DARROW_DATASET=ON \
-  -DARROW_EXTRA_ERROR_CONTEXT=ON \
-  -DARROW_FILESYSTEM=ON \
-  -DARROW_INSTALL_NAME_RPATH=OFF \
-  -DARROW_JEMALLOC=ON \
-  -DARROW_JSON=ON \
-  -DARROW_PARQUET=ON \
-  -DARROW_WITH_SNAPPY=ON \
-  -DARROW_WITH_ZLIB=ON \
-  ..
-</code></pre>
-
-<p><code>..</code> refers to the C++ source directory: we&#39;re in <code>cpp/build</code>, and the source is in <code>cpp</code>.</p>
-
+<div class="sourceCode" id="cb10"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cmake</span> <span class="dt">\</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_COMPUTE</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_CSV</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_DATASET</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_EXTRA_ERROR_CONTEXT</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_FILESYSTEM</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_INSTALL_NAME_RPATH</span><span class="op">=</span>OFF <span class="dt">\</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_JEMALLOC</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_JSON</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_PARQUET</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_WITH_SNAPPY</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">-DARROW_WITH_ZLIB</span><span class="op">=</span>ON <span class="dt">\</span></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  ..</span></code></pre></div>
+<p><code>..</code> refers to the C++ source directory: we’re in <code>cpp/build</code>, and the source is in <code>cpp</code>.</p>
+</div>
+</div>
+<div id="more-arrow-features" class="section level3">
 <h3>More Arrow features</h3>
-
 <p>To enable optional features including: S3 support, an alternative memory allocator, and additional compression libraries, add some or all of these flags (the trailing <code>\</code> makes them easier to paste into a bash shell on a new line):</p>
-
-<pre><code class="shell">  -DARROW_MIMALLOC=ON \
+<pre class="shell"><code>  -DARROW_MIMALLOC=ON \
   -DARROW_S3=ON \
   -DARROW_WITH_BROTLI=ON \
   -DARROW_WITH_BZ2=ON \
   -DARROW_WITH_LZ4=ON \
   -DARROW_WITH_SNAPPY=ON \
-  -DARROW_WITH_ZSTD=ON \
-</code></pre>
-
+  -DARROW_WITH_ZSTD=ON \</code></pre>
 <p>Other flags that may be useful:</p>
-
 <ul>
-<li><code>-DBoost_SOURCE=BUNDLED</code> and <code>-DThrift_SOURCE=bundled</code>, for example, or any other dependency <code>*_SOURCE</code>, if you have a system version of a C++ dependency that doesn&#39;t work correctly with Arrow. This tells the build to compile its own version of the dependency from source.</li>
-<li><code>-DCMAKE_BUILD_TYPE=debug</code> or <code>-DCMAKE_BUILD_TYPE=relwithdebinfo</code> can be useful for debugging. You probably don&#39;t want to do this generally because a debug build is much slower at runtime than the default <code>release</code> build.</li>
+<li><code>-DBoost_SOURCE=BUNDLED</code> and <code>-DThrift_SOURCE=bundled</code>, for example, or any other dependency <code>*_SOURCE</code>, if you have a system version of a C++ dependency that doesn’t work correctly with Arrow. This tells the build to compile its own version of the dependency from source.</li>
+<li><code>-DCMAKE_BUILD_TYPE=debug</code> or <code>-DCMAKE_BUILD_TYPE=relwithdebinfo</code> can be useful for debugging. You probably don’t want to do this generally because a debug build is much slower at runtime than the default <code>release</code> build.</li>
 </ul>
-
-<p><em>Note</em> <code>cmake</code> is particularly sensitive to whitespacing, if you see errors, check that you don&#39;t have any errant whitespace around</p>
-
+<p><em>Note</em> <code>cmake</code> is particularly sensitive to whitespacing, if you see errors, check that you don’t have any errant whitespace around</p>
+</div>
+<div id="build-arrow" class="section level3">
 <h3>Build Arrow</h3>
-
 <p>You can add <code>-j#</code> between <code>make</code> and <code>install</code> here too to speed up compilation by running in parallel (where <code>#</code> is the number of cores you have available).</p>
-
-<pre><code class="bash">make -j8 install
-</code></pre>
-
-<p>If you are installing on linux, and you are installing to the system, you may
-need to use <code>sudo</code>:</p>
-
-<pre><code class="bash">sudo make install
-</code></pre>
-
+<div class="sourceCode" id="cb12"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">make</span> <span class="at">-j8</span> install</span></code></pre></div>
+<p>If you are installing on linux, and you are installing to the system, you may need to use <code>sudo</code>:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> make install</span></code></pre></div>
+</div>
+<div id="build-the-arrow-r-package" class="section level3">
 <h3>Build the Arrow R package</h3>
-
-<p>Once you’ve built the C++ library, you can install the R package and its
-dependencies, along with additional dev dependencies, from the git
-checkout:</p>
-
-<pre><code class="bash">popd # To go back to the root directory of the project, from cpp/build
-
-pushd r
-R -e &#39;install.packages(&quot;remotes&quot;); remotes::install_deps(dependencies = TRUE)&#39;
-
-R CMD INSTALL .
-</code></pre>
-
+<p>Once you’ve built the C++ library, you can install the R package and its dependencies, along with additional dev dependencies, from the git checkout:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">popd</span> <span class="co"># To go back to the root directory of the project, from cpp/build</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="bu">pushd</span> r</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="ex">R</span> <span class="at">-e</span> <span class="st">&#39;install.packages(&quot;remotes&quot;); remotes::install_deps(dependencies = TRUE)&#39;</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="ex">R</span> CMD INSTALL .</span></code></pre></div>
+</div>
+<div id="compilation-flags" class="section level3">
 <h3>Compilation flags</h3>
-
-<p>If you need to set any compilation flags while building the C++
-extensions, you can use the <code>ARROW_R_CXXFLAGS</code> environment variable. For
-example, if you are using <code>perf</code> to profile the R extensions, you may
-need to set</p>
-
-<pre><code class="shell">export ARROW_R_CXXFLAGS=-fno-omit-frame-pointer
-</code></pre>
-
+<p>If you need to set any compilation flags while building the C++ extensions, you can use the <code>ARROW_R_CXXFLAGS</code> environment variable. For example, if you are using <code>perf</code> to profile the R extensions, you may need to set</p>
+<pre class="shell"><code>export ARROW_R_CXXFLAGS=-fno-omit-frame-pointer</code></pre>
+</div>
+<div id="developer-experience" class="section level3">
 <h3>Developer Experience</h3>
-
 <p>With the setups described here, you should not need to rebuild the Arrow library or even the C++ source in the R package as you iterated and work on the R package. The only time those should need to be rebuilt is if you have changed the C++ in the R package (and even then, <code>R CMD INSTALL .</code> should only need to recompile the files that have changed) <em>or</em> if the Arrow library C++ has changed and there is a mismatch between the Arrow Library and the R package. If you find yourself rebuilding either or both each time you install the package or run tests, something is probably wrong with your set up.</p>
-
-<p><details>
-<summary>For a full build: a <code>cmake</code> command with all of the R-relevant optional dependencies turned on. Development with other languages might require different flags as well. For example, to develop Python, you would need to also add <code>-DARROW_PYTHON=ON</code> (though all of the other flags used for Python are already included here).</summary></p>
-
+<details>
+<summary>
+For a full build: a <code>cmake</code> command with all of the R-relevant optional dependencies turned on. Development with other languages might require different flags as well. For example, to develop Python, you would need to also add <code>-DARROW_PYTHON=ON</code> (though all of the other flags used for Python are already included here).
+</summary>
 <p>
-
-&ldquo; shell
-cmake \
+<pre class="shell"><code>cmake \
   -DCMAKE_INSTALL_PREFIX=$ARROW_HOME \
   -DCMAKE_INSTALL_LIBDIR=lib \
   -DARROW_COMPUTE=ON \
@@ -429,25 +304,22 @@ cmake \
   -DARROW_WITH_SNAPPY=ON \
   -DARROW_WITH_ZLIB=ON \
   -DARROW_WITH_ZSTD=ON \
-  ..
-&rdquo;
+  ..</code></pre>
 </p>
-
-<p></details>  </p>
-
+</details>
+</div>
+<div id="documentation" class="section level3">
+<h3>Documentation</h3>
+<p>The documentation for the R package uses features of <code>roxygen2</code> that haven’t yet been released on CRAN, such as conditional inclusion of examples via the <code>@examplesIf</code> tag. If you are making changes which require updating the documentation, please install the development version of <code>roxygen2</code> from GitHub.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;r-lib/roxygen2&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+<div id="troubleshooting" class="section level2">
 <h2>Troubleshooting</h2>
-
-<p>Note that after any change to the C++ library, you must reinstall it and
-run <code>make clean</code> or <code>git clean -fdx .</code> to remove any cached object code
-in the <code>r/src/</code> directory before reinstalling the R package. This is
-only necessary if you make changes to the C++ library source; you do not
-need to manually purge object files if you are only editing R or C++
-code inside <code>r/</code>.</p>
-
+<p>Note that after any change to the C++ library, you must reinstall it and run <code>make clean</code> or <code>git clean -fdx .</code> to remove any cached object code in the <code>r/src/</code> directory before reinstalling the R package. This is only necessary if you make changes to the C++ library source; you do not need to manually purge object files if you are only editing R or C++ code inside <code>r/</code>.</p>
+<div id="arrow-library-r-package-mismatches" class="section level3">
 <h3>Arrow library-R package mismatches</h3>
-
 <p>If the Arrow library and the R package have diverged, you will see errors like:</p>
-
 <pre><code>Error: package or namespace load failed for ‘arrow’ in dyn.load(file, DLLpath = DLLpath, ...):
  unable to load shared object &#39;/Library/Frameworks/R.framework/Versions/4.0/Resources/library/00LOCK-r/00new/arrow/libs/arrow.so&#39;:
   dlopen(/Library/Frameworks/R.framework/Versions/4.0/Resources/library/00LOCK-r/00new/arrow/libs/arrow.so, 6): Symbol not found: __ZN5arrow2io16RandomAccessFile9ReadAsyncERKNS0_9IOContextExx
@@ -456,208 +328,146 @@ code inside <code>r/</code>.</p>
  in /Library/Frameworks/R.framework/Versions/4.0/Resources/library/00LOCK-r/00new/arrow/libs/arrow.so
 Error: loading failed
 Execution halted
-ERROR: loading failed
-</code></pre>
-
+ERROR: loading failed</code></pre>
 <p>To resolve this, try rebuilding the Arrow library from <a href="#building-arrow">Building Arrow above</a>.</p>
-
+</div>
+<div id="multiple-versions-of-arrow-library" class="section level3">
 <h3>Multiple versions of Arrow library</h3>
-
-<p>If rebuilding the Arrow library doesn&#39;t work and you are <a href="#installing-to-another-directory">installing from a user-level directory</a> and you already have a previous installation of libarrow in a system directory or you get you may get errors like the following when you install the R package:</p>
-
+<p>If rebuilding the Arrow library doesn’t work and you are <a href="#installing-to-another-directory">installing from a user-level directory</a> and you already have a previous installation of libarrow in a system directory or you get you may get errors like the following when you install the R package:</p>
 <pre><code>Error: package or namespace load failed for ‘arrow’ in dyn.load(file, DLLpath = DLLpath, ...):
  unable to load shared object &#39;/Library/Frameworks/R.framework/Versions/4.0/Resources/library/00LOCK-r/00new/arrow/libs/arrow.so&#39;:
   dlopen(/Library/Frameworks/R.framework/Versions/4.0/Resources/library/00LOCK-r/00new/arrow/libs/arrow.so, 6): Library not loaded: /usr/local/lib/libarrow.400.dylib
   Referenced from: /usr/local/lib/libparquet.400.dylib
-  Reason: image not found
-</code></pre>
-
-<p>You need to make sure that you don&#39;t let R link to your system library when building arrow. You can do this a number of different ways:</p>
-
+  Reason: image not found</code></pre>
+<p>You need to make sure that you don’t let R link to your system library when building arrow. You can do this a number of different ways:</p>
 <ul>
 <li>Setting the <code>MAKEFLAGS</code> environment variable to <code>&quot;LDFLAGS=&quot;</code> (see below for an example) this is the recommended way to accomplish this</li>
-<li>Using {withr}&#39;s <code>with_makevars(list(LDFLAGS = &quot;&quot;), ...)</code></li>
+<li>Using {withr}’s <code>with_makevars(list(LDFLAGS = &quot;&quot;), ...)</code></li>
 <li>adding <code>LDFLAGS=</code> to your <code>~/.R/Makevars</code> file (the least recommended way, though it is a common debugging approach suggested online)</li>
 </ul>
-
-<pre><code class="bash">MAKEFLAGS=&quot;LDFLAGS=&quot; R CMD INSTALL .
-</code></pre>
-
+<div class="sourceCode" id="cb20"><pre class="sourceCode bash"><code class="sourceCode bash"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="va">MAKEFLAGS</span><span class="op">=</span><span class="st">&quot;LDFLAGS=&quot;</span> <span class="ex">R</span> CMD INSTALL .</span></code></pre></div>
+</div>
+<div id="rpath-issues" class="section level3">
 <h3><code>rpath</code> issues</h3>
-
 <p>If the package fails to install/load with an error like this:</p>
-
 <pre><code>  ** testing if installed package can be loaded from temporary location
   Error: package or namespace load failed for &#39;arrow&#39; in dyn.load(file, DLLpath = DLLpath, ...):
   unable to load shared object &#39;/Users/you/R/00LOCK-r/00new/arrow/libs/arrow.so&#39;:
-  dlopen(/Users/you/R/00LOCK-r/00new/arrow/libs/arrow.so, 6): Library not loaded: @rpath/libarrow.14.dylib
-</code></pre>
-
-<p>ensure that <code>-DARROW_INSTALL_NAME_RPATH=OFF</code> was passed (this is important on
-macOS to prevent problems at link time and is a no-op on other platforms).
-Alternatively, try setting the environment variable <code>R_LD_LIBRARY_PATH</code> to
-wherever Arrow C++ was put in <code>make install</code>, e.g. <code>export
-R_LD_LIBRARY_PATH=/usr/local/lib</code>, and retry installing the R package.</p>
-
-<p>When installing from source, if the R and C++ library versions do not
-match, installation may fail. If you’ve previously installed the
-libraries and want to upgrade the R package, you’ll need to update the
-Arrow C++ library first.</p>
-
-<p>For any other build/configuration challenges, see the <a href="https://arrow.apache.org/docs/developers/cpp/building.html">C++ developer
-guide</a>.</p>
-
+  dlopen(/Users/you/R/00LOCK-r/00new/arrow/libs/arrow.so, 6): Library not loaded: @rpath/libarrow.14.dylib</code></pre>
+<p>ensure that <code>-DARROW_INSTALL_NAME_RPATH=OFF</code> was passed (this is important on macOS to prevent problems at link time and is a no-op on other platforms). Alternatively, try setting the environment variable <code>R_LD_LIBRARY_PATH</code> to wherever Arrow C++ was put in <code>make install</code>, e.g. <code>export R_LD_LIBRARY_PATH=/usr/local/lib</code>, and retry installing the R package.</p>
+<p>When installing from source, if the R and C++ library versions do not match, installation may fail. If you’ve previously installed the libraries and want to upgrade the R package, you’ll need to update the Arrow C++ library first.</p>
+<p>For any other build/configuration challenges, see the <a href="https://arrow.apache.org/docs/developers/cpp/building.html">C++ developer guide</a>.</p>
+</div>
+</div>
+<div id="using-remotesinstall_github..." class="section level2">
 <h2>Using <code>remotes::install_github(...)</code></h2>
-
-<p>If you need an Arrow installation from a specific repository or at a specific ref,
-<code>remotes::install_github(&quot;apache/arrow/r&quot;, build = FALSE)</code>
-should work on most platforms (with the notable exception of Windows).
-The <code>build = FALSE</code> argument is important so that the installation can access the
-C++ source in the <code>cpp/</code> directory in <code>apache/arrow</code>.</p>
-
+<p>If you need an Arrow installation from a specific repository or at a specific ref, <code>remotes::install_github(&quot;apache/arrow/r&quot;, build = FALSE)</code> should work on most platforms (with the notable exception of Windows). The <code>build = FALSE</code> argument is important so that the installation can access the C++ source in the <code>cpp/</code> directory in <code>apache/arrow</code>.</p>
 <p>As with other installation methods, setting the environment variables <code>LIBARROW_MINIMAL=false</code> and <code>ARROW_R_DEV=true</code> will provide a more full-featured version of Arrow and provide more verbose output, respectively.</p>
-
 <p>For example, to install from the (fictional) branch <code>bugfix</code> from <code>apache/arrow</code> one could:</p>
-
-<pre><code class="r">Sys.setenv(LIBARROW_MINIMAL=&quot;false&quot;)
-remotes::install_github(&quot;apache/arrow/r@bugfix&quot;, build = FALSE)
-</code></pre>
-
-<p>Developers may wish to use this method of installing a specific commit
-separate from another Arrow development environment or system installation
-(e.g. we use this in <a href="https://github.com/ursacomputing/arrowbench">arrowbench</a> to install development versions of arrow isolated from the system install). If you already have Arrow C++ libraries installed system-wide, you may need to set some additional variables in order to isolate this build from your system libraries:</p>
-
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Sys.setenv</span>(<span class="at">LIBARROW_MINIMAL=</span><span class="st">&quot;false&quot;</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;apache/arrow/r@bugfix&quot;</span>, <span class="at">build =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<p>Developers may wish to use this method of installing a specific commit separate from another Arrow development environment or system installation (e.g. we use this in <a href="https://github.com/ursacomputing/arrowbench">arrowbench</a> to install development versions of arrow isolated from the system install). If you already have Arrow C++ libraries installed system-wide, you may need to set some additional variables in order to isolate this build from your system libraries:</p>
 <ul>
 <li>Setting the environment variable <code>FORCE_BUNDLED_BUILD</code> to <code>true</code> will skip the <code>pkg-config</code> search for Arrow libraries and attempt to build from the same source at the repository+ref given.</li>
 <li>You may also need to set the Makevars <code>CPPFLAGS</code> and <code>LDFLAGS</code> to <code>&quot;&quot;</code> in order to prevent the installation process from attempting to link to already installed system versions of Arrow. One way to do this temporarily is wrapping your <code>remotes::install_github()</code> call like so: <code>withr::with_makevars(list(CPPFLAGS = &quot;&quot;, LDFLAGS = &quot;&quot;), remotes::install_github(...))</code>.</li>
 </ul>
-
+</div>
+<div id="what-happens-when-you-r-cmd-install" class="section level2">
 <h2>What happens when you <code>R CMD INSTALL</code>?</h2>
-
-<p>There are a number of scripts that are triggered when <code>R CMD INSTALL .</code>. For Arrow users, these should all just work without configuration and pull in the most complete pieces (e.g. official binaries that we host) so the installation process is easy. However knowing about these scripts can help troubleshoot if things go wrong in them or things go wrong in an install:</p>
-
+<p>There are a number of scripts that are triggered when <code>R CMD INSTALL .</code>. For Arrow users, these should all just work without configuration and pull in the most complete pieces (e.g. official binaries that we host) so the installation process is easy. However knowing about these scripts can help troubleshoot if things go wrong in them or things go wrong in an install:</p>
 <ul>
 <li><code>configure</code> and <code>configure.win</code> These scripts are triggered during <code>R CMD INSTALL .</code> on non-Windows and Windows platforms, respectively. They handle finding the Arrow library, setting up the build variables necessary, and writing the package Makevars file that is used to compile the C++ code in the R package.</li>
 <li><code>tools/nixlibs.R</code> This script is sometimes called by <code>configure</code> on Linux (or on any non-windows OS with the environment variable <code>FORCE_BUNDLED_BUILD=true</code>). This sets up the build process for our bundled builds (which is the default on linux). The operative logic is at the end of the script, but it will do the following (and it will stop with the first one that succeeds and some of the steps are only checked if they are enabled via an environment variable):
-
 <ul>
 <li>Check if there is an already built libarrow in <code>arrow/r/libarrow-{version}</code>, use that to link against if it exists.</li>
 <li>Check if a binary is available from our hosted unofficial builds.</li>
 <li>Download the Arrow source and build the Arrow Library from source.</li>
 <li><code>*** Proceed without C++</code> dependencies (this is an error and the package will not work, but if you see this message you know the previous steps have not succeeded/were not enabled)</li>
 </ul></li>
-<li><code>inst/build_arrow_static.sh</code> this script builds Arrow for a bundled, static build. It is called by <code>tools/nixlibs.R</code> when the Arrow library is being built. (If you&#39;re looking at this script, and you&#39;ve gotten this far, it should look <em>incredibly</em> familiar: it&#39;s basically the contents of this guide in script form — with a few important changes)</li>
+<li><code>inst/build_arrow_static.sh</code> this script builds Arrow for a bundled, static build. It is called by <code>tools/nixlibs.R</code> when the Arrow library is being built. (If you’re looking at this script, and you’ve gotten this far, it should look <em>incredibly</em> familiar: it’s basically the contents of this guide in script form — with a few important changes)</li>
 </ul>
-
+</div>
+<div id="editing-c-code-in-the-r-package" class="section level2">
 <h2>Editing C++ code in the R package</h2>
-
-<p>The <code>arrow</code> package uses some customized tools on top of <code>cpp11</code> to prepare its
-C++ code in <code>src/</code>. This is because we have some features that are only enabled
-and built conditionally during build time. If you change C++ code in the R
-package, you will need to set the <code>ARROW_R_DEV</code> environment variable to <code>true</code>
-(optionally, add it to your <code>~/.Renviron</code> file to persist across sessions) so
-that the <code>data-raw/codegen.R</code> file is used for code generation. The <code>Makefile</code> 
-commands also handles this automatically.</p>
-
-<p>We use Google C++ style in our C++ code. The easiest way to accomplish this is
-use an editors/IDE that formats your code for you. Many popular editors/IDEs 
-have support for running <code>clang-format</code> on C++ files when you save them. 
-Installing/enabling the appropriate plugin may save you much frustration.</p>
-
+<p>The <code>arrow</code> package uses some customized tools on top of <code>cpp11</code> to prepare its C++ code in <code>src/</code>. This is because we have some features that are only enabled and built conditionally during build time. If you change C++ code in the R package, you will need to set the <code>ARROW_R_DEV</code> environment variable to <code>true</code> (optionally, add it to your <code>~/.Renviron</code> file to persist across sessions) so that the <code>data-raw/codegen.R</code> file is used for code generation. The <code>Makefile</code> commands also handles this automatically.</p>
+<p>We use Google C++ style in our C++ code. The easiest way to accomplish this is use an editors/IDE that formats your code for you. Many popular editors/IDEs have support for running <code>clang-format</code> on C++ files when you save them. Installing/enabling the appropriate plugin may save you much frustration.</p>
 <p>Check for style errors with</p>
-
-<pre><code class="shell">./lint.sh
-</code></pre>
-
+<pre class="shell"><code>./lint.sh</code></pre>
 <p>Fix any style issues before committing with</p>
-
-<pre><code class="shell">./lint.sh --fix
-</code></pre>
-
-<p>The lint script requires Python 3 and <code>clang-format-8</code>. If the command
-isn’t found, you can explicitly provide the path to it like
-<code>CLANG_FORMAT=$(which clang-format-8) ./lint.sh</code>. On macOS, you can get
-this by installing LLVM via Homebrew and running the script as
-<code>CLANG_FORMAT=$(brew --prefix llvm@8)/bin/clang-format ./lint.sh</code></p>
-
-<p><em>Note</em> that the lint script requires Python 3 and the Python dependencies 
-(note that cmake_format is pinned to a specific version):</p>
-
+<pre class="shell"><code>./lint.sh --fix</code></pre>
+<p>The lint script requires Python 3 and <code>clang-format-8</code>. If the command isn’t found, you can explicitly provide the path to it like <code>CLANG_FORMAT=$(which clang-format-8) ./lint.sh</code>. On macOS, you can get this by installing LLVM via Homebrew and running the script as <code>CLANG_FORMAT=$(brew --prefix llvm@8)/bin/clang-format ./lint.sh</code></p>
+<p><em>Note</em> that the lint script requires Python 3 and the Python dependencies (note that `cmake_format is pinned to a specific version):</p>
 <ul>
 <li>autopep8</li>
 <li>flake8</li>
 <li>cmake_format==0.5.2</li>
 </ul>
-
+</div>
+<div id="running-tests" class="section level2">
 <h2>Running tests</h2>
-
-<p>Some tests are conditionally enabled based on the availability of certain
-features in the package build (S3 support, compression libraries, etc.).
-Others are generally skipped by default but can be enabled with environment
-variables or other settings:</p>
-
+<p>Some tests are conditionally enabled based on the availability of certain features in the package build (S3 support, compression libraries, etc.). Others are generally skipped by default but can be enabled with environment variables or other settings:</p>
 <ul>
-<li>All tests are skipped on Linux if the package builds without the C++ libarrow.
-To make the build fail if libarrow is not available (as in, to test that
-the C++ build was successful), set <code>TEST_R_WITH_ARROW=true</code></li>
+<li>All tests are skipped on Linux if the package builds without the C++ libarrow. To make the build fail if libarrow is not available (as in, to test that the C++ build was successful), set <code>TEST_R_WITH_ARROW=true</code></li>
 <li>Some tests are disabled unless <code>ARROW_R_DEV=true</code></li>
-<li>Tests that require allocating &gt;2GB of memory to test Large types are disabled
-unless <code>ARROW_LARGE_MEMORY_TESTS=true</code></li>
-<li>Integration tests against a real S3 bucket are disabled unless credentials
-are set in <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code>; these are available
-on request</li>
-<li>S3 tests using <a href="https://min.io/">MinIO</a> locally are enabled if the
-<code>minio server</code> process is found running. If you&#39;re running MinIO with custom
-settings, you can set <code>MINIO_ACCESS_KEY</code>, <code>MINIO_SECRET_KEY</code>, and
-<code>MINIO_PORT</code> to override the defaults.</li>
+<li>Tests that require allocating &gt;2GB of memory to test Large types are disabled unless <code>ARROW_LARGE_MEMORY_TESTS=true</code></li>
+<li>Integration tests against a real S3 bucket are disabled unless credentials are set in <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code>; these are available on request</li>
+<li>S3 tests using <a href="https://min.io/">MinIO</a> locally are enabled if the <code>minio server</code> process is found running. If you’re running MinIO with custom settings, you can set <code>MINIO_ACCESS_KEY</code>, <code>MINIO_SECRET_KEY</code>, and <code>MINIO_PORT</code> to override the defaults.</li>
 </ul>
-
+</div>
+<div id="github-workflows" class="section level2">
 <h2>Github workflows</h2>
-
 <p>On a pull request, there are some actions you can trigger by commenting on the PR. We have additional CI checks that run nightly and can be requested on demand using an internal tool called <a href="https://arrow.apache.org/docs/developers/crossbow.html">crosssbow</a>. A few important GitHub comment commands include:</p>
-
 <ul>
 <li><code>@github-actions crossbow submit -g r</code> for all extended R CI tests</li>
 <li><code>@github-actions crossbow submit {task-name}</code> for running a specific task. See the <code>r:</code> group definition near the beginning of the <a href="https://github.com/apache/arrow/blob/master/dev/tasks/tasks.yml">crossbow configuration</a> for a list of glob expression patterns that match names of items in the <code>tasks:</code> list below it.</li>
 <li><code>@github-actions autotune</code> will run and fix lint c++ linting errors + run R documentation (among other cleanup tasks) and commit them to the branch</li>
 </ul>
-
+</div>
+<div id="useful-functions-for-arrow-developers" class="section level2">
 <h2>Useful functions for Arrow developers</h2>
-
 <p>Within an R session, these can help with package development:</p>
-
-<pre><code class="r"># Load the dev package
-devtools::load_all()
-
-# Run the test suite, optionally filtering file names
-devtools::test(filter=&quot;^regexp$&quot;)
-# or the Makefile alternative from the arrow/r directory in a shell:
-make test file=regexp
-
-# Update roxygen documentation
-devtools::document()
-
-# To preview the documentation website
-pkgdown::build_site()
-
-# All package checks; see also below
-devtools::check()
-
-# See test coverage statistics
-covr::report()
-covr::package_coverage()
-</code></pre>
-
-<p>Any of those can be run from the command line by wrapping them in <code>R -e
-&#39;$COMMAND&#39;</code>. There’s also a <code>Makefile</code> to help with some common tasks
-from the command line (<code>make test</code>, <code>make doc</code>, <code>make clean</code>, etc.)</p>
-
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load the dev package</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">load_all</span>()</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Run the test suite, optionally filtering file names</span></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">test</span>(<span class="at">filter=</span><span class="st">&quot;^regexp$&quot;</span>)</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="co"># or the Makefile alternative from the arrow/r directory in a shell:</span></span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>make test file<span class="ot">=</span>regexp</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Update roxygen documentation</span></span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">document</span>()</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a><span class="co"># To preview the documentation website</span></span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>pkgdown<span class="sc">::</span><span class="fu">build_site</span>()</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="co"># All package checks; see also below</span></span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">check</span>()</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a><span class="co"># See test coverage statistics</span></span>
+<span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>covr<span class="sc">::</span><span class="fu">report</span>()</span>
+<span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>covr<span class="sc">::</span><span class="fu">package_coverage</span>()</span></code></pre></div>
+<p>Any of those can be run from the command line by wrapping them in <code>R -e &#39;$COMMAND&#39;</code>. There’s also a <code>Makefile</code> to help with some common tasks from the command line (<code>make test</code>, <code>make doc</code>, <code>make clean</code>, etc.)</p>
+<div id="full-package-validation" class="section level3">
 <h3>Full package validation</h3>
+<pre class="shell"><code>R CMD build .
+R CMD check arrow_*.tar.gz --as-cran</code></pre>
+</div>
+</div>
 
-<pre><code class="shell">R CMD build .
-R CMD check arrow_*.tar.gz --as-cran
-</code></pre>
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
 
 </body>
-
 </html>
