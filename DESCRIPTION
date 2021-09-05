@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 5.0.0
+Version: 5.0.0.2
 Authors@R: c(
     person("Neal", "Richardson", email = "neal@ursalabs.org", role = c("aut", "cre")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -33,7 +33,6 @@ VignetteBuilder: knitr
 Suggests: decor, distro, dplyr, hms, knitr, lubridate, pkgload,
         reticulate, rmarkdown, stringi, stringr, testthat, tibble,
         withr
-LinkingTo: cpp11 (>= 0.2.0)
 Collate: 'arrowExports.R' 'enums.R' 'arrow-package.R' 'type.R'
         'array-data.R' 'arrow-datum.R' 'array.R' 'arrow-tabular.R'
         'buffer.R' 'chunked-array.R' 'io.R' 'compression.R' 'scalar.R'
@@ -51,7 +50,7 @@ Collate: 'arrowExports.R' 'enums.R' 'arrow-package.R' 'type.R'
         'reexports-bit64.R' 'reexports-tidyselect.R' 'schema.R'
         'util.R'
 NeedsCompilation: yes
-Packaged: 2021-07-29 02:03:47 UTC; enpiar
+Packaged: 2021-08-31 21:13:31 UTC; enpiar
 Author: Neal Richardson [aut, cre],
   Ian Cook [aut],
   Nic Crane [aut],
@@ -63,4 +62,4 @@ Author: Neal Richardson [aut, cre],
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2021-07-29 09:10:02 UTC
+Date/Publication: 2021-09-05 04:30:22 UTC

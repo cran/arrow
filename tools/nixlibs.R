@@ -215,10 +215,8 @@ download_source <- function() {
 
   # Given VERSION as x.y.z.p
   p <- package_version(VERSION)[1, 4]
-  if (is.na(p) || p < 1000) {
-    # This is either just x.y.z or it has a small (R-only) patch version
-    # Download from the official Apache release, dropping the p
-    VERSION <- as.character(package_version(VERSION)[1, -4])
+  if (is.na(p)) {
+    # This is just x.y.z so download the official Apache release
     if (apache_download(VERSION, tf1)) {
       untar(tf1, exdir = src_dir)
       unlink(tf1)
@@ -326,7 +324,6 @@ build_libarrow <- function(src_dir, dst_dir) {
     CC = R_CMD_config("CC"),
     CXX = paste(R_CMD_config("CXX11"), R_CMD_config("CXX11STD")),
     # CXXFLAGS = R_CMD_config("CXX11FLAGS"), # We don't want the same debug symbols
-    ARROW_R_CXXFLAGS = paste(Sys.getenv("ARROW_R_CXXFLAGS", ""), "-fno-lto"),
     LDFLAGS = R_CMD_config("LDFLAGS")
   )
   env_vars <- paste0(names(env_var_list), '="', env_var_list, '"', collapse = " ")
