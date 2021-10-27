@@ -17,7 +17,7 @@
 
 skip_if_not_available("dataset")
 
-library(dplyr)
+library(dplyr, warn.conflicts = FALSE)
 library(stringr)
 
 tbl <- example_data
@@ -25,8 +25,8 @@ tbl <- example_data
 tbl$verses <- verses[[1]]
 # c(" a ", "  b  ", "   c   ", ...) increasing padding
 # nchar =   3  5  7  9 11 13 15 17 19 21
-tbl$padded_strings <- stringr::str_pad(letters[1:10], width = 2*(1:10)+1, side = "both")
-tbl$some_negative <- tbl$int * (-1)^(1:nrow(tbl))
+tbl$padded_strings <- stringr::str_pad(letters[1:10], width = 2 * (1:10) + 1, side = "both")
+tbl$some_negative <- tbl$int * (-1)^(1:nrow(tbl)) # nolint
 
 test_that("filter() on is.na()", {
   expect_dplyr_equal(
@@ -186,7 +186,7 @@ test_that("Negative scalar values", {
       filter(some_negative %in% -1) %>%
       collect(),
     tbl
-    )
+  )
   expect_dplyr_equal(
     input %>%
       filter(int == -some_negative) %>%
@@ -217,7 +217,7 @@ test_that("filter() with between()", {
       collect(),
     tbl %>%
       filter(dbl >= int, dbl <= dbl2)
-    )
+  )
 
   expect_error(
     tbl %>%
@@ -239,7 +239,6 @@ test_that("filter() with between()", {
       filter(between(chr, 1, 2)) %>%
       collect()
   )
-
 })
 
 test_that("filter() with string ops", {
@@ -274,16 +273,29 @@ test_that("filter environment scope", {
   # 'could not find function "isEqualTo"' because we haven't defined it yet
   expect_dplyr_error(input %>% filter(isEqualTo(int, 4)), tbl)
 
-  skip("Need to substitute in user defined function too")
-  # TODO: fix this: this isEqualTo function is eagerly evaluating; it should
-  # instead yield Expressions. Probably bc the parent env of the function
-  # has the Ops.Expression methods defined; we need to move it so that the
-  # parent env is the data mask we use in the dplyr eval
+  # This works but only because there are S3 methods for those operations
   isEqualTo <- function(x, y) x == y & !is.na(x)
   expect_dplyr_equal(
     input %>%
       select(-fct) %>% # factor levels aren't identical
       filter(isEqualTo(int, 4)) %>%
+      collect(),
+    tbl
+  )
+  # Try something that needs to call another nse_func
+  expect_dplyr_equal(
+    input %>%
+      select(-fct) %>%
+      filter(nchar(padded_strings) < 10) %>%
+      collect(),
+    tbl
+  )
+  isShortString <- function(x) nchar(x) < 10
+  skip("TODO: 14071")
+  expect_dplyr_equal(
+    input %>%
+      select(-fct) %>%
+      filter(isShortString(padded_strings)) %>%
       collect(),
     tbl
   )
@@ -320,14 +332,14 @@ test_that("Filtering with unsupported functions", {
       filter(int > 2, pnorm(dbl) > .99) %>%
       collect(),
     tbl,
-    warning = 'Expression pnorm\\(dbl\\) > 0.99 not supported in Arrow; pulling data into R'
+    warning = "Expression pnorm\\(dbl\\) > 0.99 not supported in Arrow; pulling data into R"
   )
   expect_dplyr_equal(
     input %>%
       filter(
         nchar(chr, type = "bytes", allowNA = TRUE) == 1, # bad, Arrow msg
-        int > 2,                                         # good
-        pnorm(dbl) > .99                                 # bad, opaque
+        int > 2, # good
+        pnorm(dbl) > .99 # bad, opaque
       ) %>%
       collect(),
     tbl,

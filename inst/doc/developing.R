@@ -1,12 +1,10 @@
 ## ----setup-options, include=FALSE---------------------------------------------
 knitr::opts_chunk$set(error = TRUE, eval = FALSE)
-
 # Get environment variables describing what to evaluate
 run <- tolower(Sys.getenv("RUN_DEVDOCS", "false")) == "true"
 macos <- tolower(Sys.getenv("DEVDOCS_MACOS", "false")) == "true"
 ubuntu <- tolower(Sys.getenv("DEVDOCS_UBUNTU", "false")) == "true"
 sys_install <- tolower(Sys.getenv("DEVDOCS_SYSTEM_INSTALL", "false")) == "true"
-
 # Update the source knit_hook to save the chunk (if it is marked to be saved)
 knit_hooks_source <- knitr::knit_hooks$get("source")
 knitr::knit_hooks$set(source = function(x, options) {
@@ -25,5 +23,18 @@ knitr::knit_hooks$set(source = function(x, options) {
 })
 
 ## -----------------------------------------------------------------------------
+#  remotes::install_github("apache/arrow/r", build = FALSE)
+
+## -----------------------------------------------------------------------------
+#  withr::with_makevars(list(CPPFLAGS = "", LDFLAGS = ""), remotes::install_github(...))
+
+## -----------------------------------------------------------------------------
 #  remotes::install_github("r-lib/roxygen2")
+
+## -----------------------------------------------------------------------------
+#  lintr::lint_package("arrow/r")
+
+## -----------------------------------------------------------------------------
+#  # note the two excluded files which should not be styled
+#  styler::style_pkg(exclude_files = c("tests/testthat/latin1.R", "data-raw/codegen.R"))
 

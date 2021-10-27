@@ -17,7 +17,7 @@
 
 skip_if_not_available("dataset")
 
-library(dplyr)
+library(dplyr, warn.conflicts = FALSE)
 library(stringr)
 
 tbl <- example_data
@@ -25,7 +25,7 @@ tbl <- example_data
 tbl$verses <- verses[[1]]
 # c(" a ", "  b  ", "   c   ", ...) increasing padding
 # nchar =   3  5  7  9 11 13 15 17 19 21
-tbl$padded_strings <- stringr::str_pad(letters[1:10], width = 2*(1:10)+1, side = "both")
+tbl$padded_strings <- stringr::str_pad(letters[1:10], width = 2 * (1:10) + 1, side = "both")
 
 test_that("mutate() is lazy", {
   expect_s3_class(
@@ -164,7 +164,10 @@ test_that("nchar() arguments", {
       filter(line_lengths > 15) %>%
       collect(),
     tbl,
-    warning = 'In nchar\\(verses, type = "bytes", allowNA = TRUE\\), allowNA = TRUE not supported by Arrow; pulling data into R'
+    warning = paste0(
+      "In nchar\\(verses, type = \"bytes\", allowNA = TRUE\\), ",
+      "allowNA = TRUE not supported by Arrow; pulling data into R"
+    )
   )
 })
 
@@ -187,8 +190,8 @@ test_that("mutate with unnamed expressions", {
     input %>%
       select(int, padded_strings) %>%
       mutate(
-        int,                   # bare column name
-        nchar(padded_strings)  # expression
+        int, # bare column name
+        nchar(padded_strings) # expression
       ) %>%
       filter(int > 5) %>%
       collect(),
@@ -249,7 +252,7 @@ test_that("dplyr::mutate's examples", {
   # Examples we don't support should succeed
   # but warn that they're pulling data into R to do so
 
-  # across + autosplicing: ARROW-11699
+  # across and autosplicing: ARROW-11699
   expect_dplyr_equal(
     input %>%
       select(name, homeworld, species) %>%
@@ -280,6 +283,7 @@ test_that("dplyr::mutate's examples", {
   #>       x     y     z
   #>   <dbl> <dbl> <dbl>
   #> 1     1     2     3
+
   expect_dplyr_equal(
     input %>% mutate(z = x + y, .before = 1) %>% collect(),
     df
@@ -337,14 +341,57 @@ test_that("dplyr::mutate's examples", {
   # The mutate operation may yield different results on grouped
   # tibbles because the expressions are computed within groups.
   # The following normalises `mass` by the global average:
-  # TODO(ARROW-11702)
+  # TODO: ARROW-13926
   expect_dplyr_equal(
     input %>%
       select(name, mass, species) %>%
       mutate(mass_norm = mass / mean(mass, na.rm = TRUE)) %>%
       collect(),
     starwars,
-    warning = TRUE
+    warning = "window function"
+  )
+})
+
+test_that("Can mutate after group_by as long as there are no aggregations", {
+  expect_dplyr_equal(
+    input %>%
+      select(int, chr) %>%
+      group_by(chr) %>%
+      mutate(int = int + 6L) %>%
+      collect(),
+    tbl
+  )
+  expect_dplyr_equal(
+    input %>%
+      select(mean = int, chr) %>%
+      # rename `int` to `mean` and use `mean` in `mutate()` to test that
+      # `all_funs()` does not incorrectly identify it as an aggregate function
+      group_by(chr) %>%
+      mutate(mean = mean + 6L) %>%
+      collect(),
+    tbl
+  )
+  expect_warning(
+    tbl %>%
+      Table$create() %>%
+      select(int, chr) %>%
+      group_by(chr) %>%
+      mutate(avg_int = mean(int)) %>%
+      collect(),
+    "window functions not currently supported in Arrow; pulling data into R",
+    fixed = TRUE
+  )
+  expect_warning(
+    tbl %>%
+      Table$create() %>%
+      select(mean = int, chr) %>%
+      # rename `int` to `mean` and use `mean(mean)` in `mutate()` to test that
+      # `all_funs()` detects `mean()` despite the collision with a column name
+      group_by(chr) %>%
+      mutate(avg_int = mean(mean)) %>%
+      collect(),
+    "window functions not currently supported in Arrow; pulling data into R",
+    fixed = TRUE
   )
 })
 
@@ -385,11 +432,11 @@ test_that("print a mutated table", {
       select(int) %>%
       mutate(twice = int * 2) %>%
       print(),
-'InMemoryDataset (query)
+    "InMemoryDataset (query)
 int: int32
 twice: double (multiply_checked(int, 2))
 
-See $.data for the source Arrow object',
+See $.data for the source Arrow object",
     fixed = TRUE
   )
 })
@@ -397,8 +444,6 @@ See $.data for the source Arrow object',
 test_that("mutate and write_dataset", {
   skip_if_not_available("dataset")
   # See related test in test-dataset.R
-
-  skip_on_os("windows") # https://issues.apache.org/jira/browse/ARROW-9651
 
   first_date <- lubridate::ymd_hms("2015-04-29 03:12:39")
   df1 <- tibble(
@@ -431,7 +476,7 @@ test_that("mutate and write_dataset", {
 
   new_ds <- open_dataset(dst_dir, format = "feather")
 
-  expect_equivalent(
+  expect_equal(
     new_ds %>%
       select(string = chr, integer = int, twice) %>%
       filter(integer > 6 & integer < 11) %>%
@@ -457,9 +502,9 @@ test_that("mutate and pmin/pmax", {
     input %>%
       mutate(
         max_val_1 = pmax(val1, val2, val3),
-        max_val_2 = pmax(val1, val2, val3, na.rm = T),
+        max_val_2 = pmax(val1, val2, val3, na.rm = TRUE),
         min_val_1 = pmin(val1, val2, val3),
-        min_val_2 = pmin(val1, val2, val3, na.rm = T)
+        min_val_2 = pmin(val1, val2, val3, na.rm = TRUE)
       ) %>%
       collect(),
     df
@@ -468,8 +513,8 @@ test_that("mutate and pmin/pmax", {
   expect_dplyr_equal(
     input %>%
       mutate(
-        max_val_1 = pmax(val1 - 100, 200, val1 * 100, na.rm = T),
-        min_val_1 = pmin(val1 - 100, 100, val1 * 100, na.rm = T),
+        max_val_1 = pmax(val1 - 100, 200, val1 * 100, na.rm = TRUE),
+        min_val_1 = pmin(val1 - 100, 100, val1 * 100, na.rm = TRUE),
       ) %>%
       collect(),
     df

@@ -50,8 +50,9 @@
   "str_length" = "utf8_length",
   # str_pad is defined in dplyr-functions.R
   # str_sub is defined in dplyr-functions.R
-  "str_to_lower" = "utf8_lower",
-  "str_to_upper" = "utf8_upper",
+  # str_to_lower is defined in dplyr-functions.R
+  # str_to_title is defined in dplyr-functions.R
+  # str_to_upper is defined in dplyr-functions.R
   # str_trim is defined in dplyr-functions.R
   "stri_reverse" = "utf8_reverse",
   # substr is defined in dplyr-functions.R
@@ -63,6 +64,7 @@
   "day" = "day",
   "hour" = "hour",
   "isoweek" = "iso_week",
+  "epiweek" = "us_week",
   "isoyear" = "iso_year",
   "minute" = "minute",
   "month" = "month",
@@ -81,7 +83,6 @@
   # arguments. Most map *directly* to an Arrow C++ compute kernel and require no
   # non-default options, but some are modified by build_expr(). More complex R
   # function/operator mappings are defined in dplyr-functions.R.
-
   "==" = "equal",
   "!=" = "not_equal",
   ">" = "greater",
@@ -93,10 +94,10 @@
   "+" = "add_checked",
   "-" = "subtract_checked",
   "*" = "multiply_checked",
-  "/" = "divide_checked",
+  "/" = "divide",
   "%/%" = "divide_checked",
   # we don't actually use divide_checked with `%%`, rather it is rewritten to
-  # use %/% above.
+  # use `%/%` above.
   "%%" = "divide_checked",
   "^" = "power_checked",
   "%in%" = "is_in_meta_binary"
@@ -121,9 +122,13 @@
 #' @name Expression
 #' @rdname Expression
 #' @export
-Expression <- R6Class("Expression", inherit = ArrowObject,
+Expression <- R6Class("Expression",
+  inherit = ArrowObject,
   public = list(
     ToString = function() compute___expr__ToString(self),
+    Equals = function(other, ...) {
+      inherits(other, "Expression") && compute___expr__equals(self, other)
+    },
     # TODO: Implement type determination without storing
     # schemas in Expression objects (ARROW-13186)
     schema = NULL,
@@ -212,7 +217,7 @@ build_expr <- function(FUN,
       out <- build_expr("/", args = args)
       return(out$cast(int32(), allow_float_truncate = TRUE))
     } else if (FUN == "%%") {
-      return(args[[1]] - args[[2]] * ( args[[1]] %/% args[[2]] ))
+      return(args[[1]] - args[[2]] * (args[[1]] %/% args[[2]]))
     }
 
     expr <- Expression$create(.array_function_map[[FUN]] %||% FUN, args = args, options = options)
@@ -231,11 +236,5 @@ Ops.Expression <- function(e1, e2) {
 
 #' @export
 is.na.Expression <- function(x) {
-  if (!is.null(x$schema) && x$type_id() %in% TYPES_WITH_NAN) {
-    # TODO: if an option is added to the is_null kernel to treat NaN as NA,
-    # use that to simplify the code here (ARROW-13367)
-    Expression$create("is_nan", x) | build_expr("is_null", x)
-  } else {
-    Expression$create("is_null", x)
-  }
+  Expression$create("is_null", x, options = list(nan_is_null = TRUE))
 }

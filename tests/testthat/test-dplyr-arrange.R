@@ -17,7 +17,7 @@
 
 skip_if_not_available("dataset")
 
-library(dplyr)
+library(dplyr, warn.conflicts = FALSE)
 
 # randomize order of rows in test data
 tbl <- slice_sample(example_data_for_sorting, prop = 1L)
@@ -56,7 +56,7 @@ test_that("arrange() on integer, double, and character columns", {
   )
   expect_dplyr_equal(
     input %>%
-      mutate(zzz = int + dbl,) %>%
+      mutate(zzz = int + dbl, ) %>%
       arrange(zzz, chr) %>%
       collect(),
     tbl
@@ -148,7 +148,6 @@ test_that("arrange() on datetime columns", {
       collect(),
     tbl
   )
-  skip("Sorting by only a single timestamp column fails (ARROW-12087)")
   expect_dplyr_equal(
     input %>%
       arrange(dttm) %>%

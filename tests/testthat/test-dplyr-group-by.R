@@ -17,7 +17,7 @@
 
 skip_if_not_available("dataset")
 
-library(dplyr)
+library(dplyr, warn.conflicts = FALSE)
 library(stringr)
 
 tbl <- example_data
@@ -28,12 +28,12 @@ test_that("group_by groupings are recorded", {
       group_by(chr) %>%
       select(int, chr) %>%
       filter(int > 5) %>%
-      summarize(min_int = min(int)),
+      collect(),
     tbl
   )
 })
 
-test_that("group_by doesn't yet support creating/renaming", {
+test_that("group_by supports creating/renaming", {
   expect_dplyr_equal(
     input %>%
       group_by(chr, numbers = int) %>%
@@ -46,6 +46,12 @@ test_that("group_by doesn't yet support creating/renaming", {
       collect(),
     tbl
   )
+  expect_dplyr_equal(
+    input %>%
+      group_by(int > 4, lgl, foo = int > 5) %>%
+      collect(),
+    tbl
+  )
 })
 
 test_that("ungroup", {
@@ -55,8 +61,23 @@ test_that("ungroup", {
       select(int, chr) %>%
       ungroup() %>%
       filter(int > 5) %>%
-      summarize(min_int = min(int)),
+      collect(),
     tbl
+  )
+
+  # to confirm that the above expectation is actually testing what we think it's
+  # testing, verify that expect_dplyr_equal() distinguishes between grouped and
+  # ungrouped tibbles
+  expect_error(
+    expect_dplyr_equal(
+      input %>%
+        group_by(chr) %>%
+        select(int, chr) %>%
+        (function(x) if (inherits(x, "tbl_df")) ungroup(x) else x) %>%
+        filter(int > 5) %>%
+        collect(),
+      tbl
+    )
   )
 })
 

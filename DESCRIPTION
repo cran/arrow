@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 5.0.0.2
+Version: 6.0.0.2
 Authors@R: c(
     person("Neal", "Richardson", email = "neal@ursalabs.org", role = c("aut", "cre")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -9,6 +9,7 @@ Authors@R: c(
     person("Romain", "Fran\u00e7ois", email = "romain@rstudio.com", role = c("aut"), comment = c(ORCID = "0000-0002-2444-4226")),
     person("Jeroen", "Ooms", email = "jeroen@berkeley.edu", role = c("aut")),
     person("Javier", "Luraschi", email = "javier@rstudio.com", role = c("ctb")),
+    person("Karl", "Dunkle Werner", email = "karldw@users.noreply.github.com", role = c("ctb"), comment = c(ORCID = "0000-0003-0523-7309")),
     person("Jeffrey", "Wong", email = "jeffreyw@netflix.com", role = c("ctb")),
     person("Apache Arrow", email = "dev@arrow.apache.org", role = c("aut", "cph"))
   )
@@ -28,29 +29,31 @@ SystemRequirements: C++11; for AWS S3 support on Linux, libcurl and
 Biarch: true
 Imports: assertthat, bit64 (>= 0.9-7), methods, purrr, R6, rlang,
         stats, tidyselect, utils, vctrs
-RoxygenNote: 7.1.1.9001
+RoxygenNote: 7.1.2
+Config/testthat/edition: 3
 VignetteBuilder: knitr
-Suggests: decor, distro, dplyr, hms, knitr, lubridate, pkgload,
-        reticulate, rmarkdown, stringi, stringr, testthat, tibble,
-        withr
+Suggests: DBI, dbplyr, decor, distro, dplyr, duckdb (>= 0.2.8), hms,
+        knitr, lubridate, pkgload, reticulate, rmarkdown, stringi,
+        stringr, testthat, tibble, withr
 Collate: 'arrowExports.R' 'enums.R' 'arrow-package.R' 'type.R'
         'array-data.R' 'arrow-datum.R' 'array.R' 'arrow-tabular.R'
         'buffer.R' 'chunked-array.R' 'io.R' 'compression.R' 'scalar.R'
         'compute.R' 'config.R' 'csv.R' 'dataset.R' 'dataset-factory.R'
         'dataset-format.R' 'dataset-partition.R' 'dataset-scan.R'
         'dataset-write.R' 'deprecated.R' 'dictionary.R'
-        'dplyr-arrange.R' 'dplyr-collect.R' 'dplyr-eval.R'
-        'dplyr-filter.R' 'expression.R' 'dplyr-functions.R'
-        'dplyr-group-by.R' 'dplyr-mutate.R' 'dplyr-select.R'
+        'dplyr-arrange.R' 'dplyr-collect.R' 'dplyr-count.R'
+        'dplyr-distinct.R' 'dplyr-eval.R' 'dplyr-filter.R'
+        'expression.R' 'dplyr-functions.R' 'dplyr-group-by.R'
+        'dplyr-join.R' 'dplyr-mutate.R' 'dplyr-select.R'
         'dplyr-summarize.R' 'record-batch.R' 'table.R' 'dplyr.R'
-        'feather.R' 'field.R' 'filesystem.R' 'flight.R'
+        'duckdb.R' 'feather.R' 'field.R' 'filesystem.R' 'flight.R'
         'install-arrow.R' 'ipc_stream.R' 'json.R' 'memory-pool.R'
         'message.R' 'metadata.R' 'parquet.R' 'python.R'
-        'record-batch-reader.R' 'record-batch-writer.R'
-        'reexports-bit64.R' 'reexports-tidyselect.R' 'schema.R'
-        'util.R'
+        'query-engine.R' 'record-batch-reader.R'
+        'record-batch-writer.R' 'reexports-bit64.R'
+        'reexports-tidyselect.R' 'schema.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2021-08-31 21:13:31 UTC; enpiar
+Packaged: 2021-10-27 19:10:23 UTC; enpiar
 Author: Neal Richardson [aut, cre],
   Ian Cook [aut],
   Nic Crane [aut],
@@ -58,8 +61,9 @@ Author: Neal Richardson [aut, cre],
   Romain François [aut] (<https://orcid.org/0000-0002-2444-4226>),
   Jeroen Ooms [aut],
   Javier Luraschi [ctb],
+  Karl Dunkle Werner [ctb] (<https://orcid.org/0000-0003-0523-7309>),
   Jeffrey Wong [ctb],
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2021-09-05 04:30:22 UTC
+Date/Publication: 2021-10-27 21:20:06 UTC

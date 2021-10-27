@@ -210,10 +210,10 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <p>Arrow defines the following classes for representing zero-dimensional (scalar), one-dimensional (array/vector-like), and two-dimensional (tabular/data frame-like) data:</p>
 <table>
 <colgroup>
-<col width="2%" />
-<col width="10%" />
-<col width="31%" />
-<col width="56%" />
+<col width="1%" />
+<col width="8%" />
+<col width="25%" />
+<col width="63%" />
 </colgroup>
 <thead>
 <tr class="header">
@@ -252,7 +252,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>2</td>
 <td><code>Table</code></td>
 <td>list of <code>ChunkedArray</code> with a <code>Schema</code></td>
-<td><code>Table$create(...)</code> or <code>arrow::read_*(file, as_data_frame = FALSE)</code></td>
+<td><code>Table$create(...)</code>, alias <code>arrow_table(...)</code>, or <code>arrow::read_*(file, as_data_frame = FALSE)</code></td>
 </tr>
 <tr class="even">
 <td>2</td>
@@ -297,11 +297,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 <tr class="odd">
 <td>double (“numeric”)</td>
-<td>float64</td>
+<td>float64<sup>1</sup></td>
 </tr>
 <tr class="even">
 <td>character</td>
-<td>utf8<sup>1</sup></td>
+<td>utf8<sup>2</sup></td>
 </tr>
 <tr class="odd">
 <td>factor</td>
@@ -328,7 +328,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>struct</td>
 </tr>
 <tr class="odd">
-<td>list<sup>2</sup></td>
+<td>list<sup>3</sup></td>
 <td>list</td>
 </tr>
 <tr class="even">
@@ -345,8 +345,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 </tbody>
 </table>
-<p><sup>1</sup>: If the character vector exceeds 2GB of strings, it will be converted to a <code>large_utf8</code> Arrow type</p>
-<p><sup>2</sup>: Only lists where all elements are the same type are able to be translated to Arrow list type (which is a “list of” some type).</p>
+<p><sup>1</sup>: <code>float64</code> and <code>double</code> are the same concept and data type in Arrow C++; however, only <code>float64()</code> is used in arrow as the function <code>double()</code> already exists in base R</p>
+<p><sup>2</sup>: If the character vector exceeds 2GB of strings, it will be converted to a <code>large_utf8</code> Arrow type</p>
+<p><sup>3</sup>: Only lists where all elements are the same type are able to be translated to Arrow list type (which is a “list of” some type).</p>
 </div>
 <div id="arrow-to-r" class="section level3">
 <h3>Arrow to R</h3>
@@ -376,7 +377,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 <tr class="odd">
 <td>int64</td>
-<td>integer<sup>3</sup></td>
+<td>integer<sup>1</sup></td>
 </tr>
 <tr class="even">
 <td>uint8</td>
@@ -388,15 +389,15 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 <tr class="even">
 <td>uint32</td>
-<td>integer<sup>3</sup></td>
+<td>integer<sup>1</sup></td>
 </tr>
 <tr class="odd">
 <td>uint64</td>
-<td>integer<sup>3</sup></td>
+<td>integer<sup>1</sup></td>
 </tr>
 <tr class="even">
 <td>float16</td>
-<td>-</td>
+<td>-<sup>2</sup></td>
 </tr>
 <tr class="odd">
 <td>float32</td>
@@ -411,12 +412,20 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>character</td>
 </tr>
 <tr class="even">
+<td>large_utf8</td>
+<td>character</td>
+</tr>
+<tr class="odd">
 <td>binary</td>
-<td>arrow_binary <sup>5</sup></td>
+<td>arrow_binary <sup>3</sup></td>
+</tr>
+<tr class="even">
+<td>large_binary</td>
+<td>arrow_large_binary <sup>3</sup></td>
 </tr>
 <tr class="odd">
 <td>fixed_size_binary</td>
-<td>arrow_fixed_size_binary <sup>5</sup></td>
+<td>arrow_fixed_size_binary <sup>3</sup></td>
 </tr>
 <tr class="even">
 <td>date32</td>
@@ -440,7 +449,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 <tr class="odd">
 <td>duration</td>
-<td>-</td>
+<td>-<sup>2</sup></td>
 </tr>
 <tr class="even">
 <td>decimal</td>
@@ -452,46 +461,39 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 <tr class="even">
 <td>list</td>
-<td>arrow_list <sup>6</sup></td>
+<td>arrow_list <sup>5</sup></td>
 </tr>
 <tr class="odd">
-<td>fixed_size_list</td>
-<td>arrow_fixed_size_list <sup>6</sup></td>
+<td>large_list</td>
+<td>arrow_large_list <sup>5</sup></td>
 </tr>
 <tr class="even">
+<td>fixed_size_list</td>
+<td>arrow_fixed_size_list <sup>5</sup></td>
+</tr>
+<tr class="odd">
 <td>struct</td>
 <td>data.frame</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>null</td>
 <td>vctrs::vctrs_unspecified</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>map</td>
-<td>-</td>
+<td>-<sup>2</sup></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>union</td>
-<td>-</td>
-</tr>
-<tr class="even">
-<td>large_utf8</td>
-<td>character</td>
-</tr>
-<tr class="odd">
-<td>large_binary</td>
-<td>arrow_large_binary <sup>5</sup></td>
-</tr>
-<tr class="even">
-<td>large_list</td>
-<td>arrow_large_list <sup>6</sup></td>
+<td>-<sup>2</sup></td>
 </tr>
 </tbody>
 </table>
-<p><sup>3</sup>: These integer types may contain values that exceed the range of R’s <code>integer</code> type (32-bit signed integer). When they do, <code>uint32</code> and <code>uint64</code> are converted to <code>double</code> (“numeric”) and <code>int64</code> is converted to <code>bit64::integer64</code>. This conversion can be disabled (so that <code>int64</code> always yields a <code>bit64::integer64</code> vector) by setting <code>options(arrow.int64_downcast = FALSE)</code>.</p>
-<p><sup>4</sup>: Due to the limitation of R <code>factor</code>s, Arrow <code>dictionary</code> values are coerced to string when translated to R if they are not already strings.</p>
-<p><sup>5</sup>: <code>arrow*_binary</code> classes are implemented as lists of raw vectors.</p>
-<p><sup>6</sup>: <code>arrow*_list</code> classes are implemented as subclasses of <code>vctrs_list_of</code> with a <code>ptype</code> attribute set to what an empty Array of the value type converts to.</p>
+<p><sup>1</sup>: These integer types may contain values that exceed the range of R’s <code>integer</code> type (32-bit signed integer). When they do, <code>uint32</code> and <code>uint64</code> are converted to <code>double</code> (“numeric”) and <code>int64</code> is converted to <code>bit64::integer64</code>. This conversion can be disabled (so that <code>int64</code> always yields a <code>bit64::integer64</code> vector) by setting <code>options(arrow.int64_downcast = FALSE)</code>.</p>
+<p><sup>2</sup>: Some Arrow data types do not currently have an R equivalent and will raise an error if cast to or mapped to via a schema.</p>
+<p><sup>3</sup>: <code>arrow*_binary</code> classes are implemented as lists of raw vectors.</p>
+<p><sup>4</sup>: Due to the limitation of R factors, Arrow <code>dictionary</code> values are coerced to string when translated to R if they are not already strings.</p>
+<p><sup>5</sup>: <code>arrow*_list</code> classes are implemented as subclasses of <code>vctrs_list_of</code> with a <code>ptype</code> attribute set to what an empty Array of the value type converts to.</p>
 </div>
 <div id="r-object-attributes" class="section level3">
 <h3>R object attributes</h3>

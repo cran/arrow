@@ -15,9 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-context("DataType")
-
-test_that("null type works as expected",{
+test_that("null type works as expected", {
   x <- null()
   expect_equal(x$id, 0L)
   expect_equal(x$name, "null")
@@ -28,7 +26,7 @@ test_that("null type works as expected",{
   expect_equal(x$fields(), list())
 })
 
-test_that("boolean type work as expected",{
+test_that("boolean type work as expected", {
   x <- boolean()
   expect_equal(x$id, Type$BOOL)
   expect_equal(x$name, "bool")
@@ -40,7 +38,7 @@ test_that("boolean type work as expected",{
   expect_equal(x$bit_width, 1L)
 })
 
-test_that("int types works as expected",{
+test_that("int types works as expected", {
   x <- uint8()
   expect_equal(x$id, Type$UINT8)
   expect_equal(x$name, "uint8")
@@ -122,7 +120,7 @@ test_that("int types works as expected",{
   expect_equal(x$bit_width, 64L)
 })
 
-test_that("float types work as expected",{
+test_that("float types work as expected", {
   x <- float16()
   expect_equal(x$id, Type$HALF_FLOAT)
   expect_equal(x$name, "halffloat")
@@ -154,7 +152,7 @@ test_that("float types work as expected",{
   expect_equal(x$bit_width, 64L)
 })
 
-test_that("utf8 type works as expected",{
+test_that("utf8 type works as expected", {
   x <- utf8()
   expect_equal(x$id, Type$STRING)
   expect_equal(x$name, "utf8")
@@ -331,8 +329,8 @@ test_that("list type works as expected", {
   expect_false(x == null())
   expect_equal(x$num_fields, 1L)
   expect_equal(
-    x$fields(),
-    list(field("item", int32()))
+    x$fields()[[1]],
+    field("item", int32())
   )
   expect_equal(x$value_type, int32())
   expect_equal(x$value_field, field("item", int32()))
@@ -347,8 +345,12 @@ test_that("struct type works as expected", {
   expect_false(x == null())
   expect_equal(x$num_fields, 2L)
   expect_equal(
-    x$fields(),
-    list(field("x", int32()), field("y", boolean()))
+    x$fields()[[1]],
+    field("x", int32())
+  )
+  expect_equal(
+    x$fields()[[2]],
+    field("y", boolean())
   )
   expect_equal(x$GetFieldIndex("x"), 0L)
   expect_equal(x$GetFieldIndex("y"), 1L)
@@ -393,7 +395,6 @@ test_that("decimal type and validation", {
   expect_error(decimal(4, NA), '"scale" must be an integer')
 
   expect_r6_class(decimal(4, 2), "Decimal128Type")
-
 })
 
 test_that("Binary", {

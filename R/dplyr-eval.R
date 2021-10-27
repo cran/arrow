@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-arrow_eval <- function (expr, mask) {
+arrow_eval <- function(expr, mask) {
   # filter(), mutate(), etc. work by evaluating the quoted `exprs` to generate Expressions
   # with references to Arrays (if .data is Table/RecordBatch) or Fields (if
   # .data is a Dataset).
@@ -28,6 +28,7 @@ arrow_eval <- function (expr, mask) {
     # else, for things not supported by Arrow return a "try-error",
     # which we'll handle differently
     msg <- conditionMessage(e)
+    if (getOption("arrow.debug", FALSE)) print(msg)
     patterns <- .cache$i18ized_error_pattern
     if (is.null(patterns)) {
       patterns <- i18ize_error_messages()
@@ -39,7 +40,7 @@ arrow_eval <- function (expr, mask) {
     }
 
     out <- structure(msg, class = "try-error", condition = e)
-    if (grepl("not supported.*Arrow", msg)) {
+    if (grepl("not supported.*Arrow", msg) || getOption("arrow.debug", FALSE)) {
       # One of ours. Mark it so that consumers can handle it differently
       class(out) <- c("arrow-try-error", class(out))
     }
@@ -51,10 +52,10 @@ handle_arrow_not_supported <- function(err, lab) {
   # Look for informative message from the Arrow function version (see above)
   if (inherits(err, "arrow-try-error")) {
     # Include it if found
-    paste0('In ', lab, ', ', as.character(err))
+    paste0("In ", lab, ", ", as.character(err))
   } else {
     # Otherwise be opaque (the original error is probably not useful)
-    paste('Expression', lab, 'not supported in Arrow')
+    paste("Expression", lab, "not supported in Arrow")
   }
 }
 
@@ -65,7 +66,7 @@ i18ize_error_messages <- function() {
     obj = tryCatch(eval(parse(text = "X_____X")), error = function(e) conditionMessage(e)),
     fun = tryCatch(eval(parse(text = "X_____X()")), error = function(e) conditionMessage(e))
   )
-  paste(map(out, ~sub("X_____X", ".*", .)), collapse = "|")
+  paste(map(out, ~ sub("X_____X", ".*", .)), collapse = "|")
 }
 
 # Helper to raise a common error
@@ -75,7 +76,7 @@ arrow_not_supported <- function(msg) {
 }
 
 # Create a data mask for evaluating a dplyr expression
-arrow_mask <- function(.data) {
+arrow_mask <- function(.data, aggregation = FALSE) {
   f_env <- new_environment(.cache$functions)
 
   # Add functions that need to error hard and clear.
@@ -86,8 +87,16 @@ arrow_mask <- function(.data) {
     f_env[[f]] <- fail
   }
 
+  if (aggregation) {
+    # This should probably be done with an environment inside an environment
+    # but a first attempt at that had scoping problems (ARROW-13499)
+    for (f in names(agg_funcs)) {
+      f_env[[f]] <- agg_funcs[[f]]
+    }
+  }
+
   # Assign the schema to the expressions
-  map(.data$selected_columns, ~(.$schema <- .data$.data$schema))
+  map(.data$selected_columns, ~ (.$schema <- .data$.data$schema))
 
   # Add the column references and make the mask
   out <- new_data_mask(
@@ -99,4 +108,16 @@ arrow_mask <- function(.data) {
   # (because if we do we get `Error: Can't modify the data pronoun` in mutate())
   out$.data <- .data$selected_columns
   out
+}
+
+format_expr <- function(x) {
+  if (is_quosure(x)) {
+    x <- quo_get_expr(x)
+  }
+  out <- deparse(x)
+  if (length(out) > 1) {
+    # Add ellipses because we are going to truncate
+    out[1] <- paste0(out[1], "...")
+  }
+  head(out, 1)
 }

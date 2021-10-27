@@ -35,6 +35,7 @@ skip_if_not_available <- function(feature) {
 
 skip_if_no_pyarrow <- function() {
   skip_on_valgrind()
+  skip_on_os("windows")
 
   skip_if_not_installed("reticulate")
   if (!reticulate::py_module_available("pyarrow")) {
@@ -58,13 +59,19 @@ skip_if_not_running_large_memory_tests <- function() {
 
 skip_on_valgrind <- function() {
   # This does not actually skip on valgrind because we can't exactly detect it.
-  # Instead, it skips on CRAN when the OS is linux + and the R version is development 
+  # Instead, it skips on CRAN when the OS is linux + and the R version is development
   # (which is where valgrind is run as of this code)
   linux_dev <- identical(tolower(Sys.info()[["sysname"]]), "linux") &&
     grepl("devel", R.version.string)
 
   if (linux_dev) {
     skip_on_cran()
+  }
+}
+
+skip_if_r_version <- function(r_version) {
+  if (getRversion() <= r_version) {
+    skip(paste("R version:", getRversion()))
   }
 }
 
