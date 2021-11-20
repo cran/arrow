@@ -229,6 +229,7 @@ test_that("columns of struct types may be altrep", {
 })
 
 test_that("Conversion from altrep R vector to Array uses the existing Array", {
+  skip("These tests are flaky")
   a_int <- Array$create(c(1L, 2L, 3L))
   b_int <- Array$create(a_int$as_vector())
   expect_true(test_same_Array(a_int$pointer(), b_int$pointer()))
