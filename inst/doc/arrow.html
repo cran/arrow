@@ -165,7 +165,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </div>
 <div id="access-to-arrow-messages-buffers-and-streams" class="section level2">
 <h2>Access to Arrow messages, buffers, and streams</h2>
-<p>The <code>arrow</code> package also provides many lower-level bindings to the C++ library, which enable you to access and manipulate Arrow objects. You can use these to build connectors to other applications and services that use Arrow. One example is Spark: the <a href="https://spark.rstudio.com/"><code>sparklyr</code></a> package has support for using Arrow to move data to and from Spark, yielding <a href="http://arrow.apache.org/blog/2019/01/25/r-spark-improvements/">significant performance gains</a>.</p>
+<p>The <code>arrow</code> package also provides many lower-level bindings to the C++ library, which enable you to access and manipulate Arrow objects. You can use these to build connectors to other applications and services that use Arrow. One example is Spark: the <a href="https://spark.rstudio.com/"><code>sparklyr</code></a> package has support for using Arrow to move data to and from Spark, yielding <a href="https://arrow.apache.org/blog/2019/01/25/r-spark-improvements/">significant performance gains</a>.</p>
 </div>
 </div>
 <div id="object-hierarchy" class="section level1">
@@ -336,10 +336,14 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <td>int64</td>
 </tr>
 <tr class="odd">
-<td>difftime</td>
+<td>hms::hms</td>
 <td>time32</td>
 </tr>
 <tr class="even">
+<td>difftime</td>
+<td>duration</td>
+</tr>
+<tr class="odd">
 <td>vctrs::vctrs_unspecified</td>
 <td>null</td>
 </tr>
@@ -437,11 +441,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 <tr class="even">
 <td>time32</td>
-<td>hms::difftime</td>
+<td>hms::hms</td>
 </tr>
 <tr class="odd">
 <td>time64</td>
-<td>hms::difftime</td>
+<td>hms::hms</td>
 </tr>
 <tr class="even">
 <td>timestamp</td>
@@ -449,7 +453,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 <tr class="odd">
 <td>duration</td>
-<td>-<sup>2</sup></td>
+<td>difftime</td>
 </tr>
 <tr class="even">
 <td>decimal</td>
@@ -481,7 +485,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </tr>
 <tr class="odd">
 <td>map</td>
-<td>-<sup>2</sup></td>
+<td>arrow_list <sup>5</sup></td>
 </tr>
 <tr class="even">
 <td>union</td>
@@ -504,7 +508,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </div>
 <div id="class-structure-and-package-conventions" class="section level2">
 <h2>Class structure and package conventions</h2>
-<p>C++ is an object-oriented language, so the core logic of the Arrow library is encapsulated in classes and methods. In the R package, these classes are implemented as <code>R6</code> reference classes, most of which are exported from the namespace.</p>
+<p>C++ is an object-oriented language, so the core logic of the Arrow library is encapsulated in classes and methods. In the R package, these classes are implemented as <a href="https://r6.r-lib.org"><code>R6</code></a> classes, most of which are exported from the namespace.</p>
 <p>In order to match the C++ naming conventions, the <code>R6</code> classes are in TitleCase, e.g. <code>RecordBatch</code>. This makes it easy to look up the relevant C++ implementations in the <a href="https://github.com/apache/arrow/tree/master/cpp">code</a> or <a href="https://arrow.apache.org/docs/cpp/">documentation</a>. To simplify things in R, the C++ library namespaces are generally dropped or flattened; that is, where the C++ library has <code>arrow::io::FileOutputStream</code>, it is just <code>FileOutputStream</code> in the R package. One exception is for the file readers, where the namespace is necessary to disambiguate. So <code>arrow::csv::TableReader</code> becomes <code>CsvTableReader</code>, and <code>arrow::json::TableReader</code> becomes <code>JsonTableReader</code>.</p>
 <p>Some of these classes are not meant to be instantiated directly; they may be base classes or other kinds of helpers. For those that you should be able to create, use the <code>$create()</code> method to instantiate an object. For example, <code>rb &lt;- RecordBatch$create(int = 1:10, dbl = as.numeric(1:10))</code> will create a <code>RecordBatch</code>. Many of these factory methods that an R user might most often encounter also have a <code>snake_case</code> alias, in order to be more familiar for contemporary R users. So <code>record_batch(int = 1:10, dbl = as.numeric(1:10))</code> would do the same as <code>RecordBatch$create()</code> above.</p>
 <p>The typical user of the <code>arrow</code> R package may never deal directly with the <code>R6</code> objects. We provide more R-friendly wrapper functions as a higher-level interface to the C++ library. An R user can call <code>read_parquet()</code> without knowing or caring that they’re instantiating a <code>ParquetFileReader</code> object and calling the <code>$ReadFile()</code> method on it. The classes are there and available to the advanced programmer who wants fine-grained control over how the C++ library is used.</p>

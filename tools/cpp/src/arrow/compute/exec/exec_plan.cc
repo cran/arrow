@@ -23,6 +23,7 @@
 
 #include "arrow/compute/exec.h"
 #include "arrow/compute/exec/expression.h"
+#include "arrow/compute/exec/options.h"
 #include "arrow/compute/exec_internal.h"
 #include "arrow/compute/registry.h"
 #include "arrow/datum.h"
@@ -156,11 +157,62 @@ struct ExecPlanImpl : public ExecPlan {
     return std::move(Impl{nodes_}.sorted);
   }
 
+  // This function returns a node vector and a vector of integers with the
+  // number of spaces to add as an indentation. The main difference between
+  // this function and the TopoSort function is that here we visit the nodes
+  // in reverse order and we can have repeated nodes if necessary.
+  // For example, in the following plan:
+  // s1 --> s3 -
+  //   -        -
+  //    -        -> s5 --> s6
+  //     -      -
+  // s2 --> s4 -
+  // Toposort node vector: s1 s2 s3 s4 s5 s6
+  // OrderedNodes node vector: s6 s5 s3 s1 s4 s2 s1
+  std::pair<NodeVector, std::vector<int>> OrderedNodes() const {
+    struct Impl {
+      const std::vector<std::unique_ptr<ExecNode>>& nodes;
+      std::unordered_set<ExecNode*> visited;
+      std::unordered_set<ExecNode*> marked;
+      NodeVector sorted;
+      std::vector<int> indents;
+
+      explicit Impl(const std::vector<std::unique_ptr<ExecNode>>& nodes) : nodes(nodes) {
+        visited.reserve(nodes.size());
+
+        for (auto it = nodes.rbegin(); it != nodes.rend(); ++it) {
+          if (visited.count(it->get()) != 0) continue;
+          Visit(it->get());
+        }
+
+        DCHECK_EQ(visited.size(), nodes.size());
+      }
+
+      void Visit(ExecNode* node, int indent = 0) {
+        marked.insert(node);
+        for (auto input : node->inputs()) {
+          if (marked.count(input) != 0) continue;
+          Visit(input, indent + 1);
+        }
+        marked.erase(node);
+
+        indents.push_back(indent);
+        sorted.push_back(node);
+        visited.insert(node);
+      }
+    };
+
+    auto result = Impl{nodes_};
+    return std::make_pair(result.sorted, result.indents);
+  }
+
   std::string ToString() const {
     std::stringstream ss;
     ss << "ExecPlan with " << nodes_.size() << " nodes:" << std::endl;
-    for (const auto& node : TopoSort()) {
-      ss << node->ToString() << std::endl;
+    auto sorted = OrderedNodes();
+    for (size_t i = sorted.first.size(); i > 0; --i) {
+      for (int j = 0; j < sorted.second[i - 1]; ++j) ss << "  ";
+      ss << sorted.first[i - 1]->ToString(sorted.second[i - 1]) << std::endl;
     }
     return ss.str();
   }
@@ -248,35 +300,26 @@ Status ExecNode::Validate() const {
   return Status::OK();
 }
 
-std::string ExecNode::ToString() const {
+std::string ExecNode::ToString(int indent) const {
   std::stringstream ss;
-  ss << kind_name() << "{\"" << label_ << '"';
-  if (!inputs_.empty()) {
-    ss << ", inputs=[";
-    for (size_t i = 0; i < inputs_.size(); i++) {
-      if (i > 0) ss << ", ";
-      ss << input_labels_[i] << ": \"" << inputs_[i]->label() << '"';
-    }
-    ss << ']';
-  }
 
-  if (!outputs_.empty()) {
-    ss << ", outputs=[";
-    for (size_t i = 0; i < outputs_.size(); i++) {
-      if (i > 0) ss << ", ";
-      ss << "\"" << outputs_[i]->label() << "\"";
-    }
-    ss << ']';
-  }
+  auto PrintLabelAndKind = [&](const ExecNode* node) {
+    ss << node->label() << ":" << node->kind_name();
+  };
 
-  const std::string extra = ToStringExtra();
-  if (!extra.empty()) ss << ", " << extra;
+  PrintLabelAndKind(this);
+  ss << "{";
+
+  const std::string extra = ToStringExtra(indent);
+  if (!extra.empty()) {
+    ss << extra;
+  }
 
   ss << '}';
   return ss.str();
 }
 
-std::string ExecNode::ToStringExtra() const { return ""; }
+std::string ExecNode::ToStringExtra(int indent = 0) const { return ""; }
 
 bool ExecNode::ErrorIfNotOk(Status status) {
   if (status.ok()) return false;
@@ -338,7 +381,9 @@ Future<> MapNode::finished() { return finished_; }
 void MapNode::SubmitTask(std::function<Result<ExecBatch>(ExecBatch)> map_fn,
                          ExecBatch batch) {
   Status status;
-  if (finished_.is_finished()) {
+  // This will be true if the node is stopped early due to an error or manual
+  // cancellation
+  if (input_counter_.Completed()) {
     return;
   }
   auto task = [this, map_fn, batch]() {
@@ -368,7 +413,9 @@ void MapNode::SubmitTask(std::function<Result<ExecBatch>(ExecBatch)> map_fn,
       this->Finish(status);
     }
   }
-  if (!status.ok()) {
+  // If we get a cancelled status from AddTask it means this node was stopped
+  // or errored out already so we can just drop the task.
+  if (!status.ok() && !status.IsCancelled()) {
     if (input_counter_.Cancel()) {
       this->Finish(status);
     }
@@ -518,6 +565,6 @@ Result<std::function<Future<util::optional<ExecBatch>>()>> MakeReaderGenerator(
 
   return MakeBackgroundGenerator(std::move(batch_it), io_executor, max_q, q_restart);
 }
-}  // namespace compute
 
+}  // namespace compute
 }  // namespace arrow

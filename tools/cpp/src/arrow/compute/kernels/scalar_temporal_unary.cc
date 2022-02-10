@@ -37,18 +37,23 @@ namespace internal {
 
 namespace {
 
+using arrow_vendored::date::ceil;
 using arrow_vendored::date::days;
 using arrow_vendored::date::floor;
 using arrow_vendored::date::hh_mm_ss;
 using arrow_vendored::date::local_days;
 using arrow_vendored::date::local_time;
 using arrow_vendored::date::locate_zone;
+using arrow_vendored::date::Monday;
+using arrow_vendored::date::months;
+using arrow_vendored::date::round;
+using arrow_vendored::date::Sunday;
 using arrow_vendored::date::sys_days;
 using arrow_vendored::date::sys_time;
-using arrow_vendored::date::time_zone;
 using arrow_vendored::date::trunc;
 using arrow_vendored::date::weekday;
 using arrow_vendored::date::weeks;
+using arrow_vendored::date::year;
 using arrow_vendored::date::year_month_day;
 using arrow_vendored::date::year_month_weekday;
 using arrow_vendored::date::years;
@@ -61,11 +66,15 @@ using arrow_vendored::date::literals::sun;
 using arrow_vendored::date::literals::thu;
 using arrow_vendored::date::literals::wed;
 using internal::applicator::SimpleUnary;
+using std::chrono::duration_cast;
+using std::chrono::hours;
+using std::chrono::minutes;
 
 using DayOfWeekState = OptionsWrapper<DayOfWeekOptions>;
 using WeekState = OptionsWrapper<WeekOptions>;
 using StrftimeState = OptionsWrapper<StrftimeOptions>;
 using AssumeTimezoneState = OptionsWrapper<AssumeTimezoneOptions>;
+using RoundTemporalState = OptionsWrapper<RoundTemporalOptions>;
 
 const std::shared_ptr<DataType>& IsoCalendarType() {
   static auto type = struct_({field("iso_year", int64()), field("iso_week", int64()),
@@ -73,12 +82,11 @@ const std::shared_ptr<DataType>& IsoCalendarType() {
   return type;
 }
 
-Result<std::locale> GetLocale(const std::string& locale) {
-  try {
-    return std::locale(locale.c_str());
-  } catch (const std::runtime_error& ex) {
-    return Status::Invalid("Cannot find locale '", locale, "': ", ex.what());
-  }
+const std::shared_ptr<DataType>& YearMonthDayType() {
+  static auto type =
+      struct_({field("year", int64()), field("month", int64()), field("day", int64())});
+
+  return type;
 }
 
 Status ValidateDayOfWeekOptions(const DayOfWeekOptions& options) {
@@ -133,6 +141,18 @@ struct TemporalComponentExtractWeek
 
   static Status Exec(KernelContext* ctx, const ExecBatch& batch, Datum* out) {
     const WeekOptions& options = WeekState::Get(ctx);
+    return Base::ExecWithOptions(ctx, &options, batch, out);
+  }
+};
+
+template <template <typename...> class Op, typename Duration, typename InType,
+          typename OutType>
+struct TemporalComponentExtractRound
+    : public TemporalComponentExtractBase<Op, Duration, InType, OutType> {
+  using Base = TemporalComponentExtractBase<Op, Duration, InType, OutType>;
+
+  static Status Exec(KernelContext* ctx, const ExecBatch& batch, Datum* out) {
+    const RoundTemporalOptions& options = RoundTemporalState::Get(ctx);
     return Base::ExecWithOptions(ctx, &options, batch, out);
   }
 };
@@ -192,6 +212,128 @@ struct Day {
   }
 
   Localizer localizer_;
+};
+
+// ----------------------------------------------------------------------
+// Extract (year, month, day) struct from temporal types
+
+template <typename Duration, typename Localizer>
+std::array<int64_t, 3> GetYearMonthDay(int64_t arg, Localizer&& localizer) {
+  const auto t = floor<days>(localizer.template ConvertTimePoint<Duration>(arg));
+  const auto ymd = year_month_day(t);
+
+  return {static_cast<int64_t>(static_cast<const int32_t>(ymd.year())),
+          static_cast<int64_t>(static_cast<const uint32_t>(ymd.month())),
+          static_cast<int64_t>(static_cast<const uint32_t>(ymd.day()))};
+}
+
+template <typename Duration, typename InType>
+struct YearMonthDayWrapper {
+  static Result<std::array<int64_t, 3>> Get(const Scalar& in) {
+    const auto& in_val = internal::UnboxScalar<const InType>::Unbox(in);
+    return GetYearMonthDay<Duration>(in_val, NonZonedLocalizer{});
+  }
+};
+
+template <typename Duration>
+struct YearMonthDayWrapper<Duration, TimestampType> {
+  static Result<std::array<int64_t, 3>> Get(const Scalar& in) {
+    const auto& in_val = internal::UnboxScalar<const TimestampType>::Unbox(in);
+    const auto& timezone = GetInputTimezone(in);
+    if (timezone.empty()) {
+      return GetYearMonthDay<Duration>(in_val, NonZonedLocalizer{});
+    } else {
+      ARROW_ASSIGN_OR_RAISE(auto tz, LocateZone(timezone));
+      return GetYearMonthDay<Duration>(in_val, ZonedLocalizer{tz});
+    }
+  }
+};
+
+template <typename Duration, typename InType, typename BuilderType>
+struct YearMonthDayVisitValueFunction {
+  static Result<std::function<Status(typename InType::c_type arg)>> Get(
+      const std::vector<BuilderType*>& field_builders, const ArrayData&,
+      StructBuilder* struct_builder) {
+    return [=](typename InType::c_type arg) {
+      const auto ymd = GetYearMonthDay<Duration>(arg, NonZonedLocalizer{});
+      field_builders[0]->UnsafeAppend(static_cast<const int32_t>(ymd[0]));
+      field_builders[1]->UnsafeAppend(static_cast<const uint32_t>(ymd[1]));
+      field_builders[2]->UnsafeAppend(static_cast<const uint32_t>(ymd[2]));
+      return struct_builder->Append();
+    };
+  }
+};
+
+template <typename Duration, typename BuilderType>
+struct YearMonthDayVisitValueFunction<Duration, TimestampType, BuilderType> {
+  static Result<std::function<Status(typename TimestampType::c_type arg)>> Get(
+      const std::vector<BuilderType*>& field_builders, const ArrayData& in,
+      StructBuilder* struct_builder) {
+    const auto& timezone = GetInputTimezone(in);
+    if (timezone.empty()) {
+      return [=](TimestampType::c_type arg) {
+        const auto ymd = GetYearMonthDay<Duration>(arg, NonZonedLocalizer{});
+        field_builders[0]->UnsafeAppend(static_cast<const int32_t>(ymd[0]));
+        field_builders[1]->UnsafeAppend(static_cast<const uint32_t>(ymd[1]));
+        field_builders[2]->UnsafeAppend(static_cast<const uint32_t>(ymd[2]));
+        return struct_builder->Append();
+      };
+    }
+    ARROW_ASSIGN_OR_RAISE(auto tz, LocateZone(timezone));
+    return [=](TimestampType::c_type arg) {
+      const auto ymd = GetYearMonthDay<Duration>(arg, ZonedLocalizer{tz});
+      field_builders[0]->UnsafeAppend(static_cast<const int32_t>(ymd[0]));
+      field_builders[1]->UnsafeAppend(static_cast<const uint32_t>(ymd[1]));
+      field_builders[2]->UnsafeAppend(static_cast<const uint32_t>(ymd[2]));
+      return struct_builder->Append();
+    };
+  }
+};
+
+template <typename Duration, typename InType>
+struct YearMonthDay {
+  static Status Call(KernelContext* ctx, const Scalar& in, Scalar* out) {
+    if (in.is_valid) {
+      ARROW_ASSIGN_OR_RAISE(auto year_month_day,
+                            (YearMonthDayWrapper<Duration, InType>::Get(in)));
+      ScalarVector values = {std::make_shared<Int64Scalar>(year_month_day[0]),
+                             std::make_shared<Int64Scalar>(year_month_day[1]),
+                             std::make_shared<Int64Scalar>(year_month_day[2])};
+      *checked_cast<StructScalar*>(out) =
+          StructScalar(std::move(values), YearMonthDayType());
+    } else {
+      out->is_valid = false;
+    }
+    return Status::OK();
+  }
+
+  static Status Call(KernelContext* ctx, const ArrayData& in, ArrayData* out) {
+    using BuilderType = typename TypeTraits<Int64Type>::BuilderType;
+
+    std::unique_ptr<ArrayBuilder> array_builder;
+    RETURN_NOT_OK(MakeBuilder(ctx->memory_pool(), YearMonthDayType(), &array_builder));
+    StructBuilder* struct_builder = checked_cast<StructBuilder*>(array_builder.get());
+    RETURN_NOT_OK(struct_builder->Reserve(in.length));
+
+    std::vector<BuilderType*> field_builders;
+    field_builders.reserve(3);
+    for (int i = 0; i < 3; i++) {
+      field_builders.push_back(
+          checked_cast<BuilderType*>(struct_builder->field_builder(i)));
+      RETURN_NOT_OK(field_builders[i]->Reserve(1));
+    }
+    auto visit_null = [&]() { return struct_builder->AppendNull(); };
+    std::function<Status(typename InType::c_type arg)> visit_value;
+    ARROW_ASSIGN_OR_RAISE(
+        visit_value, (YearMonthDayVisitValueFunction<Duration, InType, BuilderType>::Get(
+                         field_builders, in, struct_builder)));
+    RETURN_NOT_OK(
+        VisitArrayDataInline<typename InType::PhysicalType>(in, visit_value, visit_null));
+    std::shared_ptr<Array> out_array;
+    RETURN_NOT_OK(struct_builder->Finish(&out_array));
+    *out = *std::move(out_array->data());
+    return Status::OK();
+  }
 };
 
 // ----------------------------------------------------------------------
@@ -364,7 +506,7 @@ struct Hour {
   template <typename T, typename Arg0>
   T Call(KernelContext*, Arg0 arg, Status*) const {
     const auto t = localizer_.template ConvertTimePoint<Duration>(arg);
-    return static_cast<T>((t - floor<days>(t)) / std::chrono::hours(1));
+    return static_cast<T>((t - floor<days>(t)) / hours(1));
   }
 
   Localizer localizer_;
@@ -381,7 +523,7 @@ struct Minute {
   template <typename T, typename Arg0>
   T Call(KernelContext*, Arg0 arg, Status*) const {
     const auto t = localizer_.template ConvertTimePoint<Duration>(arg);
-    return static_cast<T>((t - floor<std::chrono::hours>(t)) / std::chrono::minutes(1));
+    return static_cast<T>((t - floor<hours>(t)) / minutes(1));
   }
 
   Localizer localizer_;
@@ -397,7 +539,7 @@ struct Second {
   template <typename T, typename Arg0>
   T Call(KernelContext*, Arg0 arg, Status*) const {
     Duration t = Duration{arg};
-    return static_cast<T>((t - floor<std::chrono::minutes>(t)) / std::chrono::seconds(1));
+    return static_cast<T>((t - floor<minutes>(t)) / std::chrono::seconds(1));
   }
 };
 
@@ -462,9 +604,313 @@ struct Nanosecond {
 };
 
 // ----------------------------------------------------------------------
+// Round temporal values to given frequency
+
+template <typename Duration, typename Localizer>
+year_month_day GetFlooredYmd(int64_t arg, int multiple, Localizer localizer_) {
+  year_month_day ymd{floor<days>(localizer_.template ConvertTimePoint<Duration>(arg))};
+
+  if (multiple == 1) {
+    return year_month_day(ymd.year() / ymd.month() / 1);
+  } else {
+    int32_t total_months_origin = 1970 * 12;
+    int32_t total_months = static_cast<int32_t>(ymd.year()) * 12 +
+                           static_cast<int32_t>(static_cast<uint32_t>(ymd.month())) - 1 -
+                           total_months_origin;
+
+    if (total_months >= 0) {
+      total_months = total_months / multiple * multiple;
+    } else {
+      total_months = (total_months - multiple + 1) / multiple * multiple;
+    }
+    return year_month_day(year{1970} / jan / 0) + months{total_months};
+  }
+}
+
+template <typename Duration, typename Unit, typename Localizer>
+const Duration FloorTimePoint(const int64_t arg, const int64_t multiple,
+                              Localizer localizer_, Status* st) {
+  const auto t = localizer_.template ConvertTimePoint<Duration>(arg);
+  const Unit d = floor<Unit>(t).time_since_epoch();
+
+  if (multiple == 1) {
+    return localizer_.template ConvertLocalToSys<Duration>(duration_cast<Duration>(d),
+                                                           st);
+  } else {
+    const Unit unit = Unit{multiple};
+    const Unit m =
+        (d.count() >= 0) ? d / unit * unit : (d - unit + Unit{1}) / unit * unit;
+    return localizer_.template ConvertLocalToSys<Duration>(duration_cast<Duration>(m),
+                                                           st);
+  }
+}
+
+template <typename Duration, typename Unit, typename Localizer>
+Duration CeilTimePoint(const int64_t arg, const int64_t multiple, Localizer localizer_,
+                       Status* st) {
+  const Duration f =
+      FloorTimePoint<Duration, Unit, Localizer>(arg, multiple, localizer_, st);
+  const auto cl =
+      localizer_.template ConvertTimePoint<Duration>(f.count()).time_since_epoch();
+  const Duration cs =
+      localizer_.template ConvertLocalToSys<Duration>(duration_cast<Duration>(cl), st);
+  if (cs >= Duration{arg}) {
+    return cs;
+  }
+  return localizer_.template ConvertLocalToSys<Duration>(
+      duration_cast<Duration>(cl + duration_cast<Duration>(Unit{multiple})), st);
+}
+
+template <typename Duration, typename Unit, typename Localizer>
+Duration RoundTimePoint(const int64_t arg, const int64_t multiple, Localizer localizer_,
+                        Status* st) {
+  const Duration f =
+      FloorTimePoint<Duration, Unit, Localizer>(arg, multiple, localizer_, st);
+  const Duration c =
+      CeilTimePoint<Duration, Unit, Localizer>(arg, multiple, localizer_, st);
+  return (Duration{arg} - f >= c - Duration{arg}) ? c : f;
+}
+
+template <typename Duration, typename Localizer>
+struct CeilTemporal {
+  explicit CeilTemporal(const RoundTemporalOptions* options, Localizer&& localizer)
+      : localizer_(std::move(localizer)), options(*options) {}
+
+  template <typename T, typename Arg0>
+  T Call(KernelContext*, Arg0 arg, Status* st) const {
+    Duration t;
+    switch (options.unit) {
+      case compute::CalendarUnit::NANOSECOND:
+        t = CeilTimePoint<Duration, std::chrono::nanoseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MICROSECOND:
+        t = CeilTimePoint<Duration, std::chrono::microseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MILLISECOND:
+        t = CeilTimePoint<Duration, std::chrono::milliseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::SECOND:
+        t = CeilTimePoint<Duration, std::chrono::seconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MINUTE:
+        t = CeilTimePoint<Duration, minutes, Localizer>(arg, options.multiple, localizer_,
+                                                        st);
+        break;
+      case compute::CalendarUnit::HOUR:
+        t = CeilTimePoint<Duration, std::chrono::hours, Localizer>(arg, options.multiple,
+                                                                   localizer_, st);
+        break;
+      case compute::CalendarUnit::DAY:
+        t = CeilTimePoint<Duration, days, Localizer>(arg, options.multiple, localizer_,
+                                                     st);
+        break;
+      case compute::CalendarUnit::WEEK:
+        t = CeilTimePoint<Duration, weeks, Localizer>(arg, options.multiple, localizer_,
+                                                      st);
+        break;
+      case compute::CalendarUnit::MONTH: {
+        year_month_day ymd =
+            GetFlooredYmd<Duration, Localizer>(arg, options.multiple, localizer_);
+        ymd += months{options.multiple};
+        t = localizer_.ConvertDays(ymd.year() / ymd.month() / 1).time_since_epoch();
+        break;
+      }
+      case compute::CalendarUnit::QUARTER: {
+        year_month_day ymd =
+            GetFlooredYmd<Duration, Localizer>(arg, 3 * options.multiple, localizer_);
+        ymd += months{3 * options.multiple};
+        t = localizer_.ConvertDays(ymd.year() / ymd.month() / 1).time_since_epoch();
+        break;
+      }
+      case compute::CalendarUnit::YEAR: {
+        year_month_day ymd(
+            floor<days>(localizer_.template ConvertTimePoint<Duration>(arg)));
+        year y{(static_cast<int32_t>(ymd.year()) / options.multiple + 1) *
+               options.multiple};
+        t = localizer_.ConvertDays(y / jan / 1).time_since_epoch();
+        break;
+      }
+      default:
+        t = Duration{arg};
+    }
+    return static_cast<T>(t.count());
+  }
+
+  Localizer localizer_;
+  RoundTemporalOptions options;
+};
+
+template <typename Duration, typename Localizer>
+struct FloorTemporal {
+  explicit FloorTemporal(const RoundTemporalOptions* options, Localizer&& localizer)
+      : localizer_(std::move(localizer)), options(*options) {}
+
+  template <typename T, typename Arg0>
+  T Call(KernelContext*, Arg0 arg, Status* st) const {
+    Duration t;
+    switch (options.unit) {
+      case compute::CalendarUnit::NANOSECOND:
+        t = FloorTimePoint<Duration, std::chrono::nanoseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MICROSECOND:
+        t = FloorTimePoint<Duration, std::chrono::microseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MILLISECOND:
+        t = FloorTimePoint<Duration, std::chrono::milliseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::SECOND:
+        t = FloorTimePoint<Duration, std::chrono::seconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MINUTE:
+        t = FloorTimePoint<Duration, minutes, Localizer>(arg, options.multiple,
+                                                         localizer_, st);
+        break;
+      case compute::CalendarUnit::HOUR:
+        t = FloorTimePoint<Duration, std::chrono::hours, Localizer>(arg, options.multiple,
+                                                                    localizer_, st);
+        break;
+      case compute::CalendarUnit::DAY:
+        t = FloorTimePoint<Duration, days, Localizer>(arg, options.multiple, localizer_,
+                                                      st);
+        break;
+      case compute::CalendarUnit::WEEK:
+        t = FloorTimePoint<Duration, weeks, Localizer>(arg, options.multiple, localizer_,
+                                                       st);
+        break;
+      case compute::CalendarUnit::MONTH: {
+        year_month_day ymd =
+            GetFlooredYmd<Duration, Localizer>(arg, options.multiple, localizer_);
+        t = localizer_.ConvertDays(ymd.year() / ymd.month() / 1).time_since_epoch();
+        break;
+      }
+      case compute::CalendarUnit::QUARTER: {
+        year_month_day ymd =
+            GetFlooredYmd<Duration, Localizer>(arg, 3 * options.multiple, localizer_);
+        t = localizer_.ConvertDays(ymd.year() / ymd.month() / 1).time_since_epoch();
+        break;
+      }
+      case compute::CalendarUnit::YEAR: {
+        year_month_day ymd(
+            floor<days>(localizer_.template ConvertTimePoint<Duration>(arg)));
+        year y{(static_cast<int32_t>(ymd.year()) / options.multiple) * options.multiple};
+        t = localizer_.ConvertDays(y / jan / 1).time_since_epoch();
+        break;
+      }
+      default:
+        t = Duration{arg};
+    }
+    return static_cast<T>(t.count());
+  }
+
+  Localizer localizer_;
+  RoundTemporalOptions options;
+};
+
+template <typename Duration, typename Localizer>
+struct RoundTemporal {
+  explicit RoundTemporal(const RoundTemporalOptions* options, Localizer&& localizer)
+      : localizer_(std::move(localizer)), options(*options) {}
+
+  template <typename T, typename Arg0>
+  T Call(KernelContext*, Arg0 arg, Status* st) const {
+    Duration t;
+    switch (options.unit) {
+      case compute::CalendarUnit::NANOSECOND:
+        t = RoundTimePoint<Duration, std::chrono::nanoseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MICROSECOND:
+        t = RoundTimePoint<Duration, std::chrono::microseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MILLISECOND:
+        t = RoundTimePoint<Duration, std::chrono::milliseconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::SECOND:
+        t = RoundTimePoint<Duration, std::chrono::seconds, Localizer>(
+            arg, options.multiple, localizer_, st);
+        break;
+      case compute::CalendarUnit::MINUTE:
+        t = RoundTimePoint<Duration, minutes, Localizer>(arg, options.multiple,
+                                                         localizer_, st);
+        break;
+      case compute::CalendarUnit::HOUR:
+        t = RoundTimePoint<Duration, std::chrono::hours, Localizer>(arg, options.multiple,
+                                                                    localizer_, st);
+        break;
+      case compute::CalendarUnit::DAY:
+        t = RoundTimePoint<Duration, days, Localizer>(arg, options.multiple, localizer_,
+                                                      st);
+        break;
+      case compute::CalendarUnit::WEEK:
+        t = RoundTimePoint<Duration, weeks, Localizer>(arg, options.multiple, localizer_,
+                                                       st);
+        break;
+      case compute::CalendarUnit::MONTH: {
+        auto t0 = localizer_.template ConvertTimePoint<Duration>(arg);
+        year_month_day ymd =
+            GetFlooredYmd<Duration, Localizer>(arg, options.multiple, localizer_);
+
+        auto f = localizer_.ConvertDays(ymd.year() / ymd.month() / 1);
+        ymd += months{options.multiple};
+        auto c = localizer_.ConvertDays(ymd.year() / ymd.month() / 1);
+
+        t = (t0 - f >= c - t0) ? c.time_since_epoch() : f.time_since_epoch();
+        break;
+      }
+      case compute::CalendarUnit::QUARTER: {
+        auto t0 = localizer_.template ConvertTimePoint<Duration>(arg);
+        year_month_day ymd =
+            GetFlooredYmd<Duration, Localizer>(arg, 3 * options.multiple, localizer_);
+
+        auto f = localizer_.ConvertDays(ymd.year() / ymd.month() / 1);
+        ymd += months{3 * options.multiple};
+        auto c = localizer_.ConvertDays(ymd.year() / ymd.month() / 1);
+
+        t = (t0 - f >= c - t0) ? c.time_since_epoch() : f.time_since_epoch();
+        break;
+      }
+      case compute::CalendarUnit::YEAR: {
+        auto t0 = localizer_.template ConvertTimePoint<Duration>(arg);
+        year_month_day ymd(floor<days>(t0));
+        year y{(static_cast<int32_t>(ymd.year()) / options.multiple) * options.multiple};
+        auto f = localizer_.ConvertDays(y / jan / 1);
+        auto c = localizer_.ConvertDays((y + years{options.multiple}) / jan / 1);
+
+        t = (t0 - f >= c - t0) ? c.time_since_epoch() : f.time_since_epoch();
+        break;
+      }
+      default:
+        t = Duration{arg};
+    }
+    return static_cast<T>(t.count());
+  }
+
+  Localizer localizer_;
+  RoundTemporalOptions options;
+};
+
+// ----------------------------------------------------------------------
 // Convert timestamps to a string representation with an arbitrary format
 
 #ifndef _WIN32
+Result<std::locale> GetLocale(const std::string& locale) {
+  try {
+    return std::locale(locale.c_str());
+  } catch (const std::runtime_error& ex) {
+    return Status::Invalid("Cannot find locale '", locale, "': ", ex.what());
+  }
+}
+
 template <typename Duration, typename InType>
 struct Strftime {
   const StrftimeOptions& options;
@@ -479,7 +925,7 @@ struct Strftime {
     if ((options.format.find("%c") != std::string::npos) && (options.locale != "C")) {
       return Status::Invalid("%c flag is not supported in non-C locales.");
     }
-    auto timezone = GetInputTimezone(type);
+    const auto& timezone = GetInputTimezone(type);
 
     if (timezone.empty()) {
       if ((options.format.find("%z") != std::string::npos) ||
@@ -488,10 +934,10 @@ struct Strftime {
             "Timezone not present, cannot convert to string with timezone: ",
             options.format);
       }
-      timezone = "UTC";
     }
 
-    ARROW_ASSIGN_OR_RAISE(const time_zone* tz, LocateZone(timezone));
+    ARROW_ASSIGN_OR_RAISE(const time_zone* tz,
+                          LocateZone(timezone.empty() ? "UTC" : timezone));
 
     ARROW_ASSIGN_OR_RAISE(std::locale locale, GetLocale(options.locale));
 
@@ -500,7 +946,7 @@ struct Strftime {
 
   static Status Call(KernelContext* ctx, const Scalar& in, Scalar* out) {
     ARROW_ASSIGN_OR_RAISE(auto self, Make(ctx, *in.type));
-    TimestampFormatter formatter{self.options.format, self.tz, self.locale};
+    TimestampFormatter<Duration> formatter{self.options.format, self.tz, self.locale};
 
     if (in.is_valid) {
       const int64_t in_val = internal::UnboxScalar<const InType>::Unbox(in);
@@ -514,7 +960,7 @@ struct Strftime {
 
   static Status Call(KernelContext* ctx, const ArrayData& in, ArrayData* out) {
     ARROW_ASSIGN_OR_RAISE(auto self, Make(ctx, *in.type));
-    TimestampFormatter formatter{self.options.format, self.tz, self.locale};
+    TimestampFormatter<Duration> formatter{self.options.format, self.tz, self.locale};
 
     StringBuilder string_builder;
     // Presize string data using a heuristic
@@ -539,35 +985,9 @@ struct Strftime {
 
     return Status::OK();
   }
-
-  struct TimestampFormatter {
-    const char* format;
-    const time_zone* tz;
-    std::ostringstream bufstream;
-
-    explicit TimestampFormatter(const std::string& format, const time_zone* tz,
-                                const std::locale& locale)
-        : format(format.c_str()), tz(tz) {
-      bufstream.imbue(locale);
-      // Propagate errors as C++ exceptions (to get an actual error message)
-      bufstream.exceptions(std::ios::failbit | std::ios::badbit);
-    }
-
-    Result<std::string> operator()(int64_t arg) {
-      bufstream.str("");
-      const auto zt = zoned_time<Duration>{tz, sys_time<Duration>(Duration{arg})};
-      try {
-        arrow_vendored::date::to_stream(bufstream, format, zt);
-      } catch (const std::runtime_error& ex) {
-        bufstream.clear();
-        return Status::Invalid("Failed formatting timestamp: ", ex.what());
-      }
-      // XXX could return a view with std::ostringstream::view() (C++20)
-      return std::move(bufstream).str();
-    }
-  };
 };
 #else
+// TODO(ARROW-13168)
 template <typename Duration, typename InType>
 struct Strftime {
   static Status Call(KernelContext* ctx, const Scalar& in, Scalar* out) {
@@ -860,6 +1280,13 @@ const FunctionDoc day_doc{
      "cannot be found in the timezone database."),
     {"values"}};
 
+const FunctionDoc year_month_day_doc{
+    "Extract (year, month, day) struct",
+    ("Null values emit null.\n"
+     "An error is returned in the values have a defined timezone but it\n"
+     "cannot be found in the timezone database."),
+    {"values"}};
+
 const FunctionDoc day_of_week_doc{
     "Extract day of the week number",
     ("By default, the week starts on Monday represented by 0 and ends on Sunday\n"
@@ -883,7 +1310,7 @@ const FunctionDoc day_of_year_doc{
 
 const FunctionDoc iso_year_doc{
     "Extract ISO year number",
-    ("First week of an ISO year has the majority (4 or more) of its days in January."
+    ("First week of an ISO year has the majority (4 or more) of its days in January.\n"
      "Null values emit null.\n"
      "An error is returned if the values have a defined timezone but it\n"
      "cannot be found in the timezone database."),
@@ -891,9 +1318,9 @@ const FunctionDoc iso_year_doc{
 
 const FunctionDoc iso_week_doc{
     "Extract ISO week of year number",
-    ("First ISO week has the majority (4 or more) of its days in January."
-     "ISO week starts on Monday.\n"
-     "Week of the year starts with 1 and can run up to 53.\n"
+    ("First ISO week has the majority (4 or more) of its days in January.\n"
+     "ISO week starts on Monday. The week number starts with 1 and can run\n"
+     "up to 53.\n"
      "Null values emit null.\n"
      "An error is returned if the values have a defined timezone but it\n"
      "cannot be found in the timezone database."),
@@ -901,20 +1328,20 @@ const FunctionDoc iso_week_doc{
 
 const FunctionDoc us_week_doc{
     "Extract US week of year number",
-    ("First US week has the majority (4 or more) of its days in January."
-     "US week starts on Sunday.\n"
-     "Week of the year starts with 1 and can run up to 53.\n"
+    ("First US week has the majority (4 or more) of its days in January.\n"
+     "US week starts on Monday. The week number starts with 1 and can run\n"
+     "up to 53.\n"
      "Null values emit null.\n"
-     "An error is returned if the timestamps have a defined timezone but it\n"
+     "An error is returned if the values have a defined timezone but it\n"
      "cannot be found in the timezone database."),
     {"values"}};
 
 const FunctionDoc week_doc{
     "Extract week of year number",
     ("First week has the majority (4 or more) of its days in January.\n"
-     "Year can have 52 or 53 weeks. Week numbering can start with 0 or 1 using "
+     "Year can have 52 or 53 weeks. Week numbering can start with 0 or 1 using\n"
      "DayOfWeekOptions.count_from_zero.\n"
-     "An error is returned if the timestamps have a defined timezone but it\n"
+     "An error is returned if the values have a defined timezone but it\n"
      "cannot be found in the timezone database."),
     {"values"},
     "WeekOptions"};
@@ -1014,7 +1441,30 @@ const FunctionDoc assume_timezone_doc{
      "\"timezone-aware\" timestamps. An error is returned if the timestamps\n"
      "already have a defined timezone."),
     {"timestamps"},
-    "AssumeTimezoneOptions"};
+    "AssumeTimezoneOptions",
+    /*options_required=*/true};
+
+const FunctionDoc floor_temporal_doc{
+    "Round temporal values down to nearest multiple of specified time unit",
+    ("Null values emit null.\n"
+     "An error is returned if the values have a defined timezone but it\n"
+     "cannot be found in the timezone database."),
+    {"timestamps"},
+    "RoundTemporalOptions"};
+const FunctionDoc ceil_temporal_doc{
+    "Round temporal values up to nearest multiple of specified time unit",
+    ("Null values emit null.\n"
+     "An error is returned if the values have a defined timezone but it\n"
+     "cannot be found in the timezone database."),
+    {"timestamps"},
+    "RoundTemporalOptions"};
+const FunctionDoc round_temporal_doc{
+    "Round temporal values to the nearest multiple of specified time unit",
+    ("Null values emit null.\n"
+     "An error is returned if the values have a defined timezone but it\n"
+     "cannot be found in the timezone database."),
+    {"timestamps"},
+    "RoundTemporalOptions"};
 
 }  // namespace
 
@@ -1037,6 +1487,11 @@ void RegisterScalarTemporalUnary(FunctionRegistry* registry) {
                            Int64Type>::Make<WithDates, WithTimestamps>("day", int64(),
                                                                        &day_doc);
   DCHECK_OK(registry->AddFunction(std::move(day)));
+
+  auto year_month_day =
+      SimpleUnaryTemporalFactory<YearMonthDay>::Make<WithDates, WithTimestamps>(
+          "year_month_day", YearMonthDayType(), &year_month_day_doc);
+  DCHECK_OK(registry->AddFunction(std::move(year_month_day)));
 
   static const auto default_day_of_week_options = DayOfWeekOptions::Defaults();
   auto day_of_week =
@@ -1151,6 +1606,27 @@ void RegisterScalarTemporalUnary(FunctionRegistry* registry) {
                           OutputType::Resolver(ResolveAssumeTimezoneOutput),
                           &assume_timezone_doc, nullptr, AssumeTimezoneState::Init);
   DCHECK_OK(registry->AddFunction(std::move(assume_timezone)));
+
+  // Temporal rounding functions
+  static const auto default_round_temporal_options = RoundTemporalOptions::Defaults();
+  auto floor_temporal = UnaryTemporalFactory<FloorTemporal, TemporalComponentExtractRound,
+                                             TimestampType>::Make<WithDates, WithTimes,
+                                                                  WithTimestamps>(
+      "floor_temporal", OutputType(FirstType), &floor_temporal_doc,
+      &default_round_temporal_options, RoundTemporalState::Init);
+  DCHECK_OK(registry->AddFunction(std::move(floor_temporal)));
+  auto ceil_temporal = UnaryTemporalFactory<CeilTemporal, TemporalComponentExtractRound,
+                                            TimestampType>::Make<WithDates, WithTimes,
+                                                                 WithTimestamps>(
+      "ceil_temporal", OutputType(FirstType), &ceil_temporal_doc,
+      &default_round_temporal_options, RoundTemporalState::Init);
+  DCHECK_OK(registry->AddFunction(std::move(ceil_temporal)));
+  auto round_temporal = UnaryTemporalFactory<RoundTemporal, TemporalComponentExtractRound,
+                                             TimestampType>::Make<WithDates, WithTimes,
+                                                                  WithTimestamps>(
+      "round_temporal", OutputType(FirstType), &round_temporal_doc,
+      &default_round_temporal_options, RoundTemporalState::Init);
+  DCHECK_OK(registry->AddFunction(std::move(round_temporal)));
 }
 
 }  // namespace internal

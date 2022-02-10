@@ -155,7 +155,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <h3>Retrieving data from a public Amazon S3 bucket</h3>
 <p>If your arrow build has S3 support, you can sync the data locally with:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>arrow<span class="sc">::</span><span class="fu">copy_files</span>(<span class="st">&quot;s3://ursa-labs-taxi-data&quot;</span>, <span class="st">&quot;nyc-taxi&quot;</span>)</span></code></pre></div>
-<p>If your arrow build doesn’t have S3 support, you can download the files with some additional code:</p>
+<p>If your arrow build doesn’t have S3 support, you can download the files with the additional code shown below. Since these are large files, you may need to increase R’s download timeout from the default of 60 seconds, e.g. <code>options(timeout = 300)</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>bucket <span class="ot">&lt;-</span> <span class="st">&quot;https://ursa-labs-taxi-data.s3.us-east-2.amazonaws.com&quot;</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> <span class="dv">2009</span><span class="sc">:</span><span class="dv">2019</span>) {</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (year <span class="sc">==</span> <span class="dv">2019</span>) {</span>
@@ -293,6 +293,43 @@ year=2009/month=02/data.parquet
 <p>This code returns an output instantly and shows the manipulations you’ve made, without loading data from the files. Because the evaluation of these queries is deferred, you can build up a query that selects down to a small subset without generating intermediate datasets that would potentially be large.</p>
 <p>Second, all work is pushed down to the individual data files, and depending on the file format, chunks of data within the files. As a result, you can select a subset of data from a much larger dataset by collecting the smaller slices from each file—you don’t have to load the whole dataset in memory to slice from it.</p>
 <p>Third, because of partitioning, you can ignore some files entirely. In this example, by filtering <code>year == 2015</code>, all files corresponding to other years are immediately excluded: you don’t have to load them in order to find that no rows match the filter. Relatedly, since Parquet files contain row groups with statistics on the data within, there may be entire chunks of data you can avoid scanning because they have no rows where <code>total_amount &gt; 100</code>.</p>
+<div id="processing-data-in-batches" class="section level3">
+<h3>Processing data in batches</h3>
+<p>Sometimes you want to run R code on the entire dataset, but that dataset is much larger than memory. You can use <code>map_batches</code> on a dataset query to process it batch-by-batch.</p>
+<p><strong>Note</strong>: <code>map_batches</code> is experimental and not recommended for production use.</p>
+<p>As an example, to randomly sample a dataset, use <code>map_batches</code> to sample a percentage of rows from each batch:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>sampled_data <span class="ot">&lt;-</span> ds <span class="sc">%&gt;%</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2015</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(tip_amount, total_amount, passenger_count) <span class="sc">%&gt;%</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_batches</span>(<span class="sc">~</span> <span class="fu">sample_frac</span>(<span class="fu">as.data.frame</span>(.), <span class="fl">1e-4</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tip_pct =</span> tip_amount <span class="sc">/</span> total_amount)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(sampled_data)</span></code></pre></div>
+<pre><code>## 
+## &#39;data.frame&#39;:    15603 obs. of  4 variables:
+##  $ tip_amount     : num  0 0 1.55 1.45 5.2 ...
+##  $ total_amount   : num  5.8 16.3 7.85 8.75 26 ...
+##  $ passenger_count: int  1 1 1 1 1 6 5 1 2 1 ...
+##  $ tip_pct        : num  0 0 0.197 0.166 0.2 ...</code></pre>
+<p>This function can also be used to aggregate summary statistics over a dataset by computing partial results for each batch and then aggregating those partial results. Extending the example above, you could fit a model to the sample data and then use <code>map_batches</code> to compute the MSE on the full dataset.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>model <span class="ot">&lt;-</span> <span class="fu">lm</span>(tip_pct <span class="sc">~</span> total_amount <span class="sc">+</span> passenger_count, <span class="at">data =</span> sampled_data)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>ds <span class="sc">%&gt;%</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">==</span> <span class="dv">2015</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(tip_amount, total_amount, passenger_count) <span class="sc">%&gt;%</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">tip_pct =</span> tip_amount <span class="sc">/</span> total_amount) <span class="sc">%&gt;%</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">map_batches</span>(<span class="cf">function</span>(batch) {</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    batch <span class="sc">%&gt;%</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">as.data.frame</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">pred_tip_pct =</span> <span class="fu">predict</span>(model, <span class="at">newdata =</span> .)) <span class="sc">%&gt;%</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.nan</span>(tip_pct)) <span class="sc">%&gt;%</span></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">summarize</span>(<span class="at">sse_partial =</span> <span class="fu">sum</span>((pred_tip_pct <span class="sc">-</span> tip_pct)<span class="sc">^</span><span class="dv">2</span>), <span class="at">n_partial =</span> <span class="fu">n</span>())</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>  }) <span class="sc">%&gt;%</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">mse =</span> <span class="fu">sum</span>(sse_partial) <span class="sc">/</span> <span class="fu">sum</span>(n_partial)) <span class="sc">%&gt;%</span></span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(mse)</span></code></pre></div>
+<pre><code>## 
+## [1] 0.1304284</code></pre>
+</div>
 </div>
 <div id="more-dataset-options" class="section level2">
 <h2>More dataset options</h2>
@@ -320,16 +357,16 @@ year=2009/month=02/data.parquet
 <p>As you can see, querying a large dataset can be made quite fast by storage in an efficient binary columnar format like Parquet or Feather and partitioning based on columns commonly used for filtering. However, data isn’t always stored that way. Sometimes you might start with one giant CSV. The first step in analyzing data is cleaning is up and reshaping it into a more usable form.</p>
 <p>The <code>write_dataset()</code> function allows you to take a Dataset or another tabular data object—an Arrow Table or RecordBatch, or an R data frame—and write it to a different file format, partitioned into multiple files.</p>
 <p>Assume that you have a version of the NYC Taxi data as CSV:</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>ds <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">&quot;nyc-taxi/csv/&quot;</span>, <span class="at">format =</span> <span class="st">&quot;csv&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>ds <span class="ot">&lt;-</span> <span class="fu">open_dataset</span>(<span class="st">&quot;nyc-taxi/csv/&quot;</span>, <span class="at">format =</span> <span class="st">&quot;csv&quot;</span>)</span></code></pre></div>
 <p>You can write it to a new location and translate the files to the Feather format by calling <code>write_dataset()</code> on it:</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_dataset</span>(ds, <span class="st">&quot;nyc-taxi/feather&quot;</span>, <span class="at">format =</span> <span class="st">&quot;feather&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_dataset</span>(ds, <span class="st">&quot;nyc-taxi/feather&quot;</span>, <span class="at">format =</span> <span class="st">&quot;feather&quot;</span>)</span></code></pre></div>
 <p>Next, let’s imagine that the <code>payment_type</code> column is something you often filter on, so you want to partition the data by that variable. By doing so you ensure that a filter like <code>payment_type == &quot;Cash&quot;</code> will touch only a subset of files where <code>payment_type</code> is always <code>&quot;Cash&quot;</code>.</p>
 <p>One natural way to express the columns you want to partition on is to use the <code>group_by()</code> method:</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>ds <span class="sc">%&gt;%</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(payment_type) <span class="sc">%&gt;%</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">&quot;nyc-taxi/feather&quot;</span>, <span class="at">format =</span> <span class="st">&quot;feather&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>ds <span class="sc">%&gt;%</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(payment_type) <span class="sc">%&gt;%</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">&quot;nyc-taxi/feather&quot;</span>, <span class="at">format =</span> <span class="st">&quot;feather&quot;</span>)</span></code></pre></div>
 <p>This will write files to a directory tree that looks like this:</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;tree nyc-taxi/feather&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">system</span>(<span class="st">&quot;tree nyc-taxi/feather&quot;</span>)</span></code></pre></div>
 <pre><code>## feather
 ## ├── payment_type=1
 ## │   └── part-18.feather
@@ -342,15 +379,33 @@ year=2009/month=02/data.parquet
 ## 18 directories, 23 files</code></pre>
 <p>Note that the directory names are <code>payment_type=Cash</code> and similar: this is the Hive-style partitioning described above. This means that when you call <code>open_dataset()</code> on this directory, you don’t have to declare what the partitions are because they can be read from the file paths. (To instead write bare values for partition segments, i.e. <code>Cash</code> rather than <code>payment_type=Cash</code>, call <code>write_dataset()</code> with <code>hive_style = FALSE</code>.)</p>
 <p>Perhaps, though, <code>payment_type == &quot;Cash&quot;</code> is the only data you ever care about, and you just want to drop the rest and have a smaller working set. For this, you can <code>filter()</code> them out when writing:</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>ds <span class="sc">%&gt;%</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(payment_type <span class="sc">==</span> <span class="st">&quot;Cash&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">&quot;nyc-taxi/feather&quot;</span>, <span class="at">format =</span> <span class="st">&quot;feather&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>ds <span class="sc">%&gt;%</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(payment_type <span class="sc">==</span> <span class="st">&quot;Cash&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">&quot;nyc-taxi/feather&quot;</span>, <span class="at">format =</span> <span class="st">&quot;feather&quot;</span>)</span></code></pre></div>
 <p>The other thing you can do when writing datasets is select a subset of columns or reorder them. Suppose you never care about <code>vendor_id</code>, and being a string column, it can take up a lot of space when you read it in, so let’s drop it:</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>ds <span class="sc">%&gt;%</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(payment_type) <span class="sc">%&gt;%</span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>vendor_id) <span class="sc">%&gt;%</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">&quot;nyc-taxi/feather&quot;</span>, <span class="at">format =</span> <span class="st">&quot;feather&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>ds <span class="sc">%&gt;%</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(payment_type) <span class="sc">%&gt;%</span></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>vendor_id) <span class="sc">%&gt;%</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">write_dataset</span>(<span class="st">&quot;nyc-taxi/feather&quot;</span>, <span class="at">format =</span> <span class="st">&quot;feather&quot;</span>)</span></code></pre></div>
 <p>Note that while you can select a subset of columns, you cannot currently rename columns when writing a dataset.</p>
+</div>
+<div id="partitioning-performance-considerations" class="section level2">
+<h2>Partitioning performance considerations</h2>
+<p>Partitioning datasets has two aspects that affect performance: it increases the number of files and it creates a directory structure around the files. Both of these have benefits as well as costs. Depending on the configuration and the size of your dataset, the costs can outweigh the benefits.</p>
+<p>Because partitions split up the dataset into multiple files, partitioned datasets can be read and written with parallelism. However, each additional file adds a little overhead in processing for filesystem interaction. It also increases the overall dataset size since each file has some shared metadata. For example, each parquet file contains the schema and group-level statistics. The number of partitions is a floor for the number of files. If you partition a dataset by date with a year of data, you will have at least 365 files. If you further partition by another dimension with 1,000 unique values, you will have up to 365,000 files. This fine of partitioning often leads to small files that mostly consist of metadata.</p>
+<p>Partitioned datasets create nested folder structures, and those allow us to prune which files are loaded in a scan. However, this adds overhead to discovering files in the dataset, as we’ll need to recursively “list directory” to find the data files. Too fine partitions can cause problems here: Partitioning a dataset by date for a years worth of data will require 365 list calls to find all the files; adding another column with cardinality 1,000 will make that 365,365 calls.</p>
+<p>The most optimal partitioning layout will depend on your data, access patterns, and which systems will be reading the data. Most systems, including Arrow, should work across a range of file sizes and partitioning layouts, but there are extremes you should avoid. These guidelines can help avoid some known worst cases:</p>
+<ul>
+<li>Avoid files smaller than 20MB and larger than 2GB.</li>
+<li>Avoid partitioning layouts with more than 10,000 distinct partitions.</li>
+</ul>
+<p>For file formats that have a notion of groups within a file, such as Parquet, similar guidelines apply. Row groups can provide parallelism when reading and allow data skipping based on statistics, but very small groups can cause metadata to be a significant portion of file size. Arrow’s file writer provides sensible defaults for group sizing in most cases.</p>
+</div>
+<div id="transactions-acid-guarantees" class="section level2">
+<h2>Transactions / ACID guarantees</h2>
+<p>The dataset API offers no transaction support or any ACID guarantees. This affects both reading and writing. Concurrent reads are fine. Concurrent writes or writes concurring with reads may have unexpected behavior. Various approaches can be used to avoid operating on the same files such as using a unique basename template for each writer, a temporary directory for new files, or separate storage of the file list instead of relying on directory discovery.</p>
+<p>Unexpectedly killing the process while a write is in progress can leave the system in an inconsistent state. Write calls generally return as soon as the bytes to be written have been completely delivered to the OS page cache. Even though a write operation has been completed it is possible for part of the file to be lost if there is a sudden power loss immediately after the write call.</p>
+<p>Most file formats have magic numbers which are written at the end. This means a partial file write can safely be detected and discarded. The CSV file format does not have any such concept and a partially written CSV file may be detected as valid.</p>
 </div>
 
 

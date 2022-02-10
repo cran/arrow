@@ -18,7 +18,7 @@
 #' @include arrow-package.R
 #' @title Schema class
 #'
-#' @description A `Schema` is a list of [Field]s, which map names to
+#' @description A `Schema` is an Arrow object containing [Field]s, which map names to
 #' Arrow [data types][data-type]. Create a `Schema` when you
 #' want to convert an R `data.frame` to Arrow but don't want to rely on the
 #' default mapping of R types to Arrow types, such as when you want to choose a
@@ -78,6 +78,14 @@
 #' @rdname Schema
 #' @name Schema
 #' @examplesIf arrow_available()
+#' schema(a = int32(), b = float64())
+#'
+#' schema(
+#'   field("b", double()),
+#'   field("c", bool(), nullable = FALSE),
+#'   field("d", string())
+#' )
+#'
 #' df <- data.frame(col1 = 2:4, col2 = c(0.1, 0.3, 0.5))
 #' tab1 <- arrow_table(df)
 #' tab1$schema
@@ -113,7 +121,16 @@ Schema <- R6Class("Schema",
     Equals = function(other, check_metadata = FALSE, ...) {
       inherits(other, "Schema") && Schema__Equals(self, other, isTRUE(check_metadata))
     },
-    export_to_c = function(ptr) ExportSchema(self, ptr)
+    export_to_c = function(ptr) ExportSchema(self, ptr),
+    code = function() {
+      names <- self$names
+      codes <- map2(names, self$fields, function(name, field) {
+        field$type$code()
+      })
+      codes <- set_names(codes, names)
+
+      call2("schema", !!!codes)
+    }
   ),
   active = list(
     names = function() {
@@ -155,6 +172,12 @@ Schema <- R6Class("Schema",
 )
 Schema$create <- function(...) {
   .list <- list2(...)
+
+  # if we were provided only a list of types or fields, use that
+  if (length(.list) == 1 && is_list(.list[[1]])) {
+    .list <- .list[[1]]
+  }
+
   if (all(map_lgl(.list, ~ inherits(., "Field")))) {
     schema_(.list)
   } else {
@@ -185,8 +208,7 @@ print_schema_fields <- function(s) {
   paste(map_chr(s$fields, ~ .$ToString()), collapse = "\n")
 }
 
-#' @param ... named list containing [data types][data-type] or
-#'   a list of [fields][field] containing the fields for the schema
+#' @param ... [fields][field] or field name/[data type][data-type] pairs
 #' @export
 #' @rdname Schema
 schema <- Schema$create

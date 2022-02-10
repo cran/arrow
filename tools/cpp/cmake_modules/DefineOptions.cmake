@@ -168,6 +168,12 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   define_option(ARROW_BUILD_BENCHMARKS_REFERENCE
                 "Build the Arrow micro reference benchmarks" OFF)
 
+  define_option(ARROW_BUILD_OPENMP_BENCHMARKS
+                "Build the Arrow benchmarks that rely on OpenMP" OFF)
+
+  define_option(ARROW_BUILD_DETAILED_BENCHMARKS
+                "Build benchmarks that do a longer exploration of performance" OFF)
+
   if(ARROW_BUILD_SHARED)
     set(ARROW_TEST_LINKAGE_DEFAULT "shared")
   else()
@@ -219,10 +225,14 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 
   define_option(ARROW_DATASET "Build the Arrow Dataset Modules" OFF)
 
+  define_option(ARROW_ENGINE "Build the Arrow Execution Engine" OFF)
+
   define_option(ARROW_FILESYSTEM "Build the Arrow Filesystem Layer" OFF)
 
   define_option(ARROW_FLIGHT
                 "Build the Arrow Flight RPC System (requires GRPC, Protocol Buffers)" OFF)
+
+  define_option(ARROW_FLIGHT_SQL "Build the Arrow Flight SQL extension" OFF)
 
   define_option(ARROW_GANDIVA "Build the Gandiva libraries" OFF)
 
@@ -265,6 +275,8 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   define_option(ARROW_PYTHON "Build the Arrow CPython extensions" OFF)
 
   define_option(ARROW_S3 "Build Arrow with S3 support (requires the AWS SDK for C++)" OFF)
+
+  define_option(ARROW_SKYHOOK "Build the Skyhook libraries" OFF)
 
   define_option(ARROW_TENSORFLOW "Build Arrow with TensorFlow support enabled" OFF)
 
@@ -368,6 +380,9 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
                 OFF)
 
   define_option(ARROW_WITH_BACKTRACE "Build with backtrace support" ON)
+
+  define_option(ARROW_WITH_OPENTELEMETRY
+                "Build libraries with OpenTelemetry support for distributed tracing" OFF)
 
   define_option(ARROW_WITH_BROTLI "Build with Brotli compression" OFF)
   define_option(ARROW_WITH_BZ2 "Build with BZ2 compression" OFF)

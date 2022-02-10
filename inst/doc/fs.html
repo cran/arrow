@@ -151,48 +151,65 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <pre><code>s3://[access_key:secret_key@]bucket/path[?region=]</code></pre>
 <p>For example, one of the NYC taxi data files used in <code>vignette(&quot;dataset&quot;, package = &quot;arrow&quot;)</code> is found at</p>
 <pre><code>s3://ursa-labs-taxi-data/2019/06/data.parquet</code></pre>
-<p>Given this URI, we can pass it to <code>read_parquet()</code> just as if it were a local file path:</p>
+<p>Given this URI, you can pass it to <code>read_parquet()</code> just as if it were a local file path:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">&quot;s3://ursa-labs-taxi-data/2019/06/data.parquet&quot;</span>)</span></code></pre></div>
 <p>Note that this will be slower to read than if the file were local, though if you’re running on a machine in the same AWS region as the file in S3, the cost of reading the data over the network should be much lower.</p>
 </div>
 <div id="creating-a-filesystem-object" class="section level2">
 <h2>Creating a FileSystem object</h2>
 <p>Another way to connect to S3 is to create a <code>FileSystem</code> object once and pass that to the read/write functions. <code>S3FileSystem</code> objects can be created with the <code>s3_bucket()</code> function, which automatically detects the bucket’s AWS region. Additionally, the resulting <code>FileSystem</code> will consider paths relative to the bucket’s path (so for example you don’t need to prefix the bucket path when listing a directory). This may be convenient when dealing with long URIs, and it’s necessary for some options and authentication methods that aren’t supported in the URI format.</p>
-<p>With a <code>FileSystem</code> object, we can point to specific files in it with the <code>$path()</code> method. In the previous example, this would look like:</p>
+<p>With a <code>FileSystem</code> object, you can point to specific files in it with the <code>$path()</code> method. In the previous example, this would look like:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>bucket <span class="ot">&lt;-</span> <span class="fu">s3_bucket</span>(<span class="st">&quot;ursa-labs-taxi-data&quot;</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(bucket<span class="sc">$</span><span class="fu">path</span>(<span class="st">&quot;2019/06/data.parquet&quot;</span>))</span></code></pre></div>
-<p>See the help for <code>FileSystem</code> for a list of options that <code>s3_bucket()</code> and <code>S3FileSystem$create()</code> can take. <code>region</code>, <code>scheme</code>, and <code>endpoint_override</code> can be encoded as query parameters in the URI (though <code>region</code> will be auto-detected in <code>s3_bucket()</code> or from the URI if omitted). <code>access_key</code> and <code>secret_key</code> can also be included, but other options are not supported in the URI.</p>
-<p>The object that <code>s3_bucket()</code> returns is technically a <code>SubTreeFileSystem</code>, which holds a path and a file system to which it corresponds. <code>SubTreeFileSystem</code>s can be useful for holding a reference to a subdirectory somewhere, on S3 or elsewhere.</p>
+<p>You can list the files and/or directories in an S3 bucket or subdirectory using the <code>$ls()</code> method:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>bucket<span class="sc">$</span><span class="fu">ls</span>()</span></code></pre></div>
+<p>See <code>help(FileSystem)</code> for a list of options that <code>s3_bucket()</code> and <code>S3FileSystem$create()</code> can take. <code>region</code>, <code>scheme</code>, and <code>endpoint_override</code> can be encoded as query parameters in the URI (though <code>region</code> will be auto-detected in <code>s3_bucket()</code> or from the URI if omitted). <code>access_key</code> and <code>secret_key</code> can also be included, but other options are not supported in the URI.</p>
+<p>The object that <code>s3_bucket()</code> returns is technically a <code>SubTreeFileSystem</code>, which holds a path and a file system to which it corresponds. <code>SubTreeFileSystem</code>s can be useful for holding a reference to a subdirectory somewhere (on S3 or elsewhere).</p>
 <p>One way to get a subtree is to call the <code>$cd()</code> method on a <code>FileSystem</code></p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>june2019 <span class="ot">&lt;-</span> bucket<span class="sc">$</span><span class="fu">cd</span>(<span class="st">&quot;2019/06&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(june2019<span class="sc">$</span><span class="fu">path</span>(<span class="st">&quot;data.parquet&quot;</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>june2019 <span class="ot">&lt;-</span> bucket<span class="sc">$</span><span class="fu">cd</span>(<span class="st">&quot;2019/06&quot;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(june2019<span class="sc">$</span><span class="fu">path</span>(<span class="st">&quot;data.parquet&quot;</span>))</span></code></pre></div>
 <p><code>SubTreeFileSystem</code> can also be made from a URI:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>june2019 <span class="ot">&lt;-</span> SubTreeFileSystem<span class="sc">$</span><span class="fu">create</span>(<span class="st">&quot;s3://ursa-labs-taxi-data/2019/06&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>june2019 <span class="ot">&lt;-</span> SubTreeFileSystem<span class="sc">$</span><span class="fu">create</span>(<span class="st">&quot;s3://ursa-labs-taxi-data/2019/06&quot;</span>)</span></code></pre></div>
 </div>
 <div id="authentication" class="section level2">
 <h2>Authentication</h2>
-<p>To access private S3 buckets, you need typically need two secret parameters: a <code>access_key</code>, which is like a user id, and <code>secret_key</code>, like a token. There are a few options for passing these credentials:</p>
-<ol style="list-style-type: decimal">
-<li><p>Include them in the URI, like <code>s3://access_key:secret_key@bucket-name/path/to/file</code>. Be sure to <a href="https://en.wikipedia.org/wiki/Percent-encoding">URL-encode</a> your secrets if they contain special characters like “/”.</p></li>
+<p>To access private S3 buckets, you need typically need two secret parameters: a <code>access_key</code>, which is like a user id, and <code>secret_key</code>, which is like a token or password. There are a few options for passing these credentials:</p>
+<ul>
+<li><p>Include them in the URI, like <code>s3://access_key:secret_key@bucket-name/path/to/file</code>. Be sure to <a href="https://en.wikipedia.org/wiki/Percent-encoding">URL-encode</a> your secrets if they contain special characters like “/” (e.g., <code>URLencode(&quot;123/456&quot;, reserved = TRUE)</code>).</p></li>
 <li><p>Pass them as <code>access_key</code> and <code>secret_key</code> to <code>S3FileSystem$create()</code> or <code>s3_bucket()</code></p></li>
 <li><p>Set them as environment variables named <code>AWS_ACCESS_KEY_ID</code> and <code>AWS_SECRET_ACCESS_KEY</code>, respectively.</p></li>
 <li><p>Define them in a <code>~/.aws/credentials</code> file, according to the <a href="https://docs.aws.amazon.com/sdk-for-cpp/v1/developer-guide/credentials.html">AWS documentation</a>.</p></li>
-</ol>
-<p>You can also use an <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AccessRole</a> for temporary access by passing the <code>role_arn</code> identifier to <code>S3FileSystem$create()</code> or <code>s3_bucket()</code>.</p>
+<li><p>Use an <a href="https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html">AccessRole</a> for temporary access by passing the <code>role_arn</code> identifier to <code>S3FileSystem$create()</code> or <code>s3_bucket()</code>.</p></li>
+</ul>
+</div>
+<div id="using-a-proxy-server" class="section level2">
+<h2>Using a proxy server</h2>
+<p>If you need to use a proxy server to connect to an S3 bucket, you can provide a URI in the form <code>http://user:password@host:port</code> to <code>proxy_options</code>. For example, a local proxy server running on port 1316 can be used like this:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>bucket <span class="ot">&lt;-</span> <span class="fu">s3_bucket</span>(<span class="st">&quot;ursa-labs-taxi-data&quot;</span>, <span class="at">proxy_options =</span> <span class="st">&quot;http://localhost:1316&quot;</span>)</span></code></pre></div>
 </div>
 <div id="file-systems-that-emulate-s3" class="section level2">
 <h2>File systems that emulate S3</h2>
 <p>The <code>S3FileSystem</code> machinery enables you to work with any file system that provides an S3-compatible interface. For example, <a href="https://min.io/">MinIO</a> is and object-storage server that emulates the S3 API. If you were to run <code>minio server</code> locally with its default settings, you could connect to it with <code>arrow</code> using <code>S3FileSystem</code> like this:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>minio <span class="ot">&lt;-</span> S3FileSystem<span class="sc">$</span><span class="fu">create</span>(</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">access_key =</span> <span class="st">&quot;minioadmin&quot;</span>,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">secret_key =</span> <span class="st">&quot;minioadmin&quot;</span>,</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">scheme =</span> <span class="st">&quot;http&quot;</span>,</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">endpoint_override =</span> <span class="st">&quot;localhost:9000&quot;</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>minio <span class="ot">&lt;-</span> S3FileSystem<span class="sc">$</span><span class="fu">create</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">access_key =</span> <span class="st">&quot;minioadmin&quot;</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">secret_key =</span> <span class="st">&quot;minioadmin&quot;</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">scheme =</span> <span class="st">&quot;http&quot;</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">endpoint_override =</span> <span class="st">&quot;localhost:9000&quot;</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
 <p>or, as a URI, it would be</p>
 <pre><code>s3://minioadmin:minioadmin@?scheme=http&amp;endpoint_override=localhost%3A9000</code></pre>
 <p>(note the URL escaping of the <code>:</code> in <code>endpoint_override</code>).</p>
 <p>Among other applications, this can be useful for testing out code locally before running on a remote S3 bucket.</p>
+</div>
+<div id="disabling-the-use-of-environment-variables" class="section level2">
+<h2>Disabling the use of environment variables</h2>
+<p>As mentioned above, it is possible to make use of environment variables to configure access. However, if you wish to pass in connection details via a URI or alternative methods but also have existing AWS environment variables defined, these may interfere with your session. For example, you may see an error message like:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>Error<span class="sc">:</span> IOError<span class="sc">:</span> When resolving region <span class="cf">for</span> bucket <span class="st">&#39;analysis&#39;</span><span class="sc">:</span> AWS Error [code <span class="dv">99</span>]<span class="sc">:</span> curlCode<span class="sc">:</span> <span class="dv">6</span>, Couldn<span class="st">&#39;t resolve host name </span></span></code></pre></div>
+<p>You can unset these environment variables using <code>Sys.unsetenv()</code>, for example:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Sys.unsetenv</span>(<span class="st">&quot;AWS_DEFAULT_REGION&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">Sys.unsetenv</span>(<span class="st">&quot;AWS_S3_ENDPOINT&quot;</span>)</span></code></pre></div>
+<p>By default, the AWS SDK tries to retrieve metadata about user configuration, which can cause conficts when passing in connection details via URI (for example when accessing a MINIO bucket). To disable the use of AWS environment variables, you can set environment variable <code>AWS_EC2_METADATA_DISABLED</code> to <code>TRUE</code>.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">Sys.setenv</span>(<span class="at">AWS_EC2_METADATA_DISABLED =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
 </div>
 
 

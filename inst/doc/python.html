@@ -141,7 +141,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 
 
-<p>The <code>arrow</code> package provides <code>reticulate</code> methods for passing data between R and Python in the same process. This document provides a brief overview.</p>
+<p>The arrow package provides <a href="https://rstudio.github.io/reticulate/">reticulate</a> methods for passing data between R and Python in the same process. This document provides a brief overview.</p>
+<p>Why you might want to use <code>pyarrow</code>?</p>
+<ul>
+<li>To use some Python functionality that is not yet implemented in R, for example, the <code>concat_arrays</code> function.</li>
+<li>To transfer Python objects into R, for example, a Pandas dataframe into an R Arrow Array.</li>
+</ul>
 <div id="installing" class="section level2">
 <h2>Installing</h2>
 <p>To use <code>arrow</code> in Python, at a minimum you’ll need the <code>pyarrow</code> library. To install it in a virtualenv,</p>
@@ -150,6 +155,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">install_pyarrow</span>(<span class="st">&quot;arrow-env&quot;</span>)</span></code></pre></div>
 <p>If you want to install a development version of <code>pyarrow</code>, add <code>nightly = TRUE</code>:</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install_pyarrow</span>(<span class="st">&quot;arrow-env&quot;</span>, <span class="at">nightly =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
+<p>A virtualenv or a virtual environment is a specific Python installation created for one project or purpose. It is a good practice to use specific environments in Python so that updating a package doesn’t impact packages in other projects.</p>
 <p><code>install_pyarrow()</code> also works with <code>conda</code> environments (<code>conda_create()</code> instead of <code>virtualenv_create()</code>).</p>
 <p>For more on installing and configuring Python, see the <a href="https://rstudio.github.io/reticulate/articles/python_packages.html">reticulate docs</a>.</p>
 </div>
@@ -160,7 +166,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(reticulate)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">use_virtualenv</span>(<span class="st">&quot;arrow-env&quot;</span>)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>pa <span class="ot">&lt;-</span> <span class="fu">import</span>(<span class="st">&quot;pyarrow&quot;</span>)</span></code></pre></div>
-<p>The package includes support for sharing Arrow <code>Array</code> and <code>RecordBatch</code> objects in-process between R and Python. For example, let’s create an <code>Array</code> in <code>pyarrow</code>.</p>
+<p>The arrow R package include support for sharing Arrow <code>Array</code> and <code>RecordBatch</code> objects in-process between R and Python. For example, let’s create an <code>Array</code> in pyarrow.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>a <span class="ot">&lt;-</span> pa<span class="sc">$</span><span class="fu">array</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>))</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>a</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -171,7 +177,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="do">##   2,</span></span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="do">##   3</span></span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="do">## ]</span></span></code></pre></div>
-<p><code>a</code> is now an <code>Array</code> object in our R session, even though we created it in Python. We can apply R methods on it:</p>
+<p><code>a</code> is now an <code>Array</code> object in your R session, even though you created it in Python. You can apply R methods on it:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>a[a <span class="sc">&gt;</span> <span class="dv">1</span>]</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="do">## Array</span></span>
@@ -180,7 +186,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="do">##   2,</span></span>
 <span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="do">##   3</span></span>
 <span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="do">## ]</span></span></code></pre></div>
-<p>We can send data both ways. One reason we might want to use <code>pyarrow</code> in R is to take advantage of functionality that is better supported in Python than in R. For example, <code>pyarrow</code> has a <code>concat_arrays</code> function, but as of 0.17, this function is not implemented in the <code>arrow</code> R package. We can use <code>reticulate</code> to use it efficiently.</p>
+<p>You can send data both ways. One reason you might want to use pyarrow in R is to take advantage of functionality that is better supported in Python than in R. For example, pyarrow has a <code>concat_arrays()</code> function, but as of 0.17, this function is not implemented in the arrow R package. You can use reticulate to use it efficiently.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>b <span class="ot">&lt;-</span> Array<span class="sc">$</span><span class="fu">create</span>(<span class="fu">c</span>(<span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>, <span class="dv">8</span>, <span class="dv">9</span>))</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>a_and_b <span class="ot">&lt;-</span> pa<span class="sc">$</span><span class="fu">concat_arrays</span>(<span class="fu">list</span>(a, b))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>a_and_b</span>
@@ -197,8 +203,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="do">##   8,</span></span>
 <span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="do">##   9</span></span>
 <span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="do">## ]</span></span></code></pre></div>
-<p>Now we have a single <code>Array</code> in R.</p>
+<p>Now you have a single Array in R.</p>
+</div>
+<div id="how-this-works" class="section level2">
+<h2>How this works</h2>
 <p>“Send”, however, isn’t the correct word. Internally, we’re passing pointers to the data between the R and Python interpreters running together in the same process, without copying anything. Nothing is being sent: we’re sharing and accessing the same internal Arrow memory buffers.</p>
+</div>
+<div id="arrow-object-types" class="section level2">
+<h2>Arrow object types</h2>
+<p>For more information about Arrow object types see the “Internals” section of the “arrow” vignette:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">vignette</span>(<span class="st">&quot;arrow&quot;</span>, <span class="at">package =</span> <span class="st">&quot;arrow&quot;</span>)</span></code></pre></div>
 </div>
 <div id="troubleshooting" class="section level2">
 <h2>Troubleshooting</h2>
@@ -206,9 +220,9 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <pre><code>Error in py_get_attr_impl(x, name, silent) :
   AttributeError: &#39;pyarrow.lib.DoubleArray&#39; object has no attribute &#39;_export_to_c&#39;</code></pre>
 <p>it means that the version of <code>pyarrow</code> you’re using is too old. Support for passing data to and from R is included in versions 0.17 and greater. Check your pyarrow version like this:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>pa<span class="sc">$</span><span class="st">`</span><span class="at">__version__</span><span class="st">`</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="do">## [1] &quot;0.16.0&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>pa<span class="sc">$</span><span class="st">`</span><span class="at">__version__</span><span class="st">`</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="do">## [1] &quot;0.16.0&quot;</span></span></code></pre></div>
 <p>Note that your <code>pyarrow</code> and <code>arrow</code> versions don’t need themselves to match: they just need to be 0.17 or greater.</p>
 </div>
 

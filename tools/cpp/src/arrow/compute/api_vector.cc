@@ -97,11 +97,11 @@ namespace compute {
 // Function options
 
 bool SortKey::Equals(const SortKey& other) const {
-  return name == other.name && order == other.order;
+  return target == other.target && order == other.order;
 }
 std::string SortKey::ToString() const {
   std::stringstream ss;
-  ss << name << ' ';
+  ss << target.ToString() << ' ';
   switch (order) {
     case SortOrder::Ascending:
       ss << "ASC";
@@ -218,6 +218,14 @@ Result<std::shared_ptr<Array>> SelectKUnstable(const Datum& datum,
 Result<Datum> ReplaceWithMask(const Datum& values, const Datum& mask,
                               const Datum& replacements, ExecContext* ctx) {
   return CallFunction("replace_with_mask", {values, mask, replacements}, ctx);
+}
+
+Result<Datum> FillNullForward(const Datum& values, ExecContext* ctx) {
+  return CallFunction("fill_null_forward", {values}, ctx);
+}
+
+Result<Datum> FillNullBackward(const Datum& values, ExecContext* ctx) {
+  return CallFunction("fill_null_backward", {values}, ctx);
 }
 
 Result<std::shared_ptr<Array>> SortIndices(const Array& values,

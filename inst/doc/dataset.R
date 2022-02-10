@@ -116,3 +116,43 @@ tip_pct: expr
 See $.data for the source Arrow object
 ")
 
+## ---- eval = file.exists("nyc-taxi")------------------------------------------
+#  sampled_data <- ds %>%
+#    filter(year == 2015) %>%
+#    select(tip_amount, total_amount, passenger_count) %>%
+#    map_batches(~ sample_frac(as.data.frame(.), 1e-4)) %>%
+#    mutate(tip_pct = tip_amount / total_amount)
+#  
+#  str(sampled_data)
+
+## ---- echo = FALSE, eval = !file.exists("nyc-taxi")---------------------------
+cat("
+'data.frame':	15603 obs. of  4 variables:
+ $ tip_amount     : num  0 0 1.55 1.45 5.2 ...
+ $ total_amount   : num  5.8 16.3 7.85 8.75 26 ...
+ $ passenger_count: int  1 1 1 1 1 6 5 1 2 1 ...
+ $ tip_pct        : num  0 0 0.197 0.166 0.2 ...
+")
+
+## ---- eval = file.exists("nyc-taxi")------------------------------------------
+#  model <- lm(tip_pct ~ total_amount + passenger_count, data = sampled_data)
+#  
+#  ds %>%
+#    filter(year == 2015) %>%
+#    select(tip_amount, total_amount, passenger_count) %>%
+#    mutate(tip_pct = tip_amount / total_amount) %>%
+#    map_batches(function(batch) {
+#      batch %>%
+#        as.data.frame() %>%
+#        mutate(pred_tip_pct = predict(model, newdata = .)) %>%
+#        filter(!is.nan(tip_pct)) %>%
+#        summarize(sse_partial = sum((pred_tip_pct - tip_pct)^2), n_partial = n())
+#    }) %>%
+#    summarize(mse = sum(sse_partial) / sum(n_partial)) %>%
+#    pull(mse)
+
+## ---- echo = FALSE, eval = !file.exists("nyc-taxi")---------------------------
+cat("
+[1] 0.1304284
+")
+

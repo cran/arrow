@@ -36,7 +36,7 @@
 #include "arrow/util/unreachable.h"
 #include "arrow/util/utf8.h"
 #include "arrow/util/value_parsing.h"
-#include "arrow/visitor_inline.h"
+#include "arrow/visit_scalar_inline.h"
 
 namespace arrow {
 
@@ -230,12 +230,20 @@ struct ScalarValidateImpl {
   }
 
   Status Visit(const Decimal128Scalar& s) {
-    // XXX validate precision?
+    const auto& ty = checked_cast<const DecimalType&>(*s.type);
+    if (!s.value.FitsInPrecision(ty.precision())) {
+      return Status::Invalid("Decimal value ", s.value.ToIntegerString(),
+                             " does not fit in precision of ", ty);
+    }
     return Status::OK();
   }
 
   Status Visit(const Decimal256Scalar& s) {
-    // XXX validate precision?
+    const auto& ty = checked_cast<const DecimalType&>(*s.type);
+    if (!s.value.FitsInPrecision(ty.precision())) {
+      return Status::Invalid("Decimal value ", s.value.ToIntegerString(),
+                             " does not fit in precision of ", ty);
+    }
     return Status::OK();
   }
 
