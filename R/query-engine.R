@@ -19,7 +19,6 @@ do_exec_plan <- function(.data) {
   plan <- ExecPlan$create()
   final_node <- plan$Build(.data)
   tab <- plan$Run(final_node)
-
   # TODO (ARROW-14289): make the head/tail methods return RBR not Table
   if (inherits(tab, "RecordBatchReader")) {
     tab <- tab$read_table()
@@ -34,26 +33,15 @@ do_exec_plan <- function(.data) {
 
   if (ncol(tab)) {
     # Apply any column metadata from the original schema, where appropriate
-    original_schema <- source_data(.data)$schema
-    # TODO: do we care about other (non-R) metadata preservation?
-    # How would we know if it were meaningful?
-    r_meta <- original_schema$r_metadata
-    if (!is.null(r_meta)) {
-      # Filter r_metadata$columns on columns with name _and_ type match
-      new_schema <- tab$schema
-      common_names <- intersect(names(r_meta$columns), names(tab))
-      keep <- common_names[
-        map_lgl(common_names, ~ original_schema[[.]] == new_schema[[.]])
-      ]
-      r_meta$columns <- r_meta$columns[keep]
-      if (has_aggregation(.data)) {
-        # dplyr drops top-level attributes if you do summarize
-        r_meta$attributes <- NULL
-      }
-      tab$r_metadata <- r_meta
+    new_r_metadata <- get_r_metadata_from_old_schema(
+      tab$schema,
+      source_data(.data)$schema,
+      drop_attributes = has_aggregation(.data)
+    )
+    if (!is.null(new_r_metadata)) {
+      tab$r_metadata <- new_r_metadata
     }
   }
-
   tab
 }
 
@@ -64,7 +52,12 @@ ExecPlan <- R6Class("ExecPlan",
       # Handle arrow_dplyr_query
       if (inherits(dataset, "arrow_dplyr_query")) {
         if (inherits(dataset$.data, "RecordBatchReader")) {
-          return(ExecNode_ReadFromRecordBatchReader(self, dataset$.data))
+          return(ExecNode_SourceNode(self, dataset$.data))
+        } else if (inherits(dataset$.data, "ArrowTabular")) {
+          if (inherits(dataset$.data, "RecordBatch")) {
+            dataset$.data <- Table$create(dataset$.data)
+          }
+          return(ExecNode_TableSourceNode(self, dataset$.data))
         }
 
         filter <- dataset$filtered_rows
@@ -161,14 +154,18 @@ ExecPlan <- R6Class("ExecPlan",
         # (as when we've done collapse() and not projected after) is cheap/no-op
         projection <- c(.data$selected_columns, .data$temp_columns)
         node <- node$Project(projection)
-
         if (!is.null(.data$join)) {
+          right_node <- self$Build(.data$join$right_data)
+          left_output <- names(.data)
+          right_output <- setdiff(names(.data$join$right_data), .data$join$by)
           node <- node$Join(
             type = .data$join$type,
-            right_node = self$Build(.data$join$right_data),
+            right_node = right_node,
             by = .data$join$by,
-            left_output = names(.data),
-            right_output = setdiff(names(.data$join$right_data), .data$join$by)
+            left_output = left_output,
+            right_output = right_output,
+            left_suffix = .data$join$suffix[[1]],
+            right_suffix = .data$join$suffix[[2]]
           )
         }
       }
@@ -194,7 +191,6 @@ ExecPlan <- R6Class("ExecPlan",
       if (!is.null(.data$tail)) {
         node$tail <- .data$tail
       }
-
       node
     },
     Run = function(node) {
@@ -235,8 +231,11 @@ ExecPlan <- R6Class("ExecPlan",
         out <- out$read_table()
         out <- out[rev(seq_len(nrow(out))), , drop = FALSE]
       }
-
       out
+    },
+    Write = function(node, ...) {
+      # TODO(ARROW-16200): take FileSystemDatasetWriteOptions not ...
+      ExecPlan_Write(self, node, ...)
     },
     Stop = function() ExecPlan_StopProducing(self)
   )
@@ -278,7 +277,7 @@ ExecNode <- R6Class("ExecNode",
         ExecNode_Aggregate(self, options, target_names, out_field_names, key_names)
       )
     },
-    Join = function(type, right_node, by, left_output, right_output) {
+    Join = function(type, right_node, by, left_output, right_output, left_suffix, right_suffix) {
       self$preserve_sort(
         ExecNode_Join(
           self,
@@ -287,7 +286,9 @@ ExecNode <- R6Class("ExecNode",
           left_keys = names(by),
           right_keys = by,
           left_output = left_output,
-          right_output = right_output
+          right_output = right_output,
+          output_suffix_for_left = left_suffix,
+          output_suffix_for_right = right_suffix
         )
       )
     }
@@ -296,3 +297,16 @@ ExecNode <- R6Class("ExecNode",
     schema = function() ExecNode_output_schema(self)
   )
 )
+
+do_exec_plan_substrait <- function(substrait_plan) {
+  if (is.string(substrait_plan)) {
+    substrait_plan <- substrait__internal__SubstraitFromJSON(substrait_plan)
+  } else if (is.raw(substrait_plan)) {
+    substrait_plan <- buffer(substrait_plan)
+  } else {
+    abort("`substrait_plan` must be a JSON string or raw() vector")
+  }
+
+  plan <- ExecPlan$create()
+  ExecPlan_run_substrait(plan, substrait_plan)
+}

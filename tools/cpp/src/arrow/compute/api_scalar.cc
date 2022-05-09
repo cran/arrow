@@ -254,6 +254,26 @@ struct EnumTraits<compute::RandomOptions::Initializer>
   }
 };
 
+template <>
+struct EnumTraits<compute::MapLookupOptions::Occurrence>
+    : BasicEnumTraits<compute::MapLookupOptions::Occurrence,
+                      compute::MapLookupOptions::Occurrence::FIRST,
+                      compute::MapLookupOptions::Occurrence::LAST,
+                      compute::MapLookupOptions::Occurrence::ALL> {
+  static std::string name() { return "MapLookupOptions::Occurrence"; }
+  static std::string value_name(compute::MapLookupOptions::Occurrence value) {
+    switch (value) {
+      case compute::MapLookupOptions::Occurrence::FIRST:
+        return "FIRST";
+      case compute::MapLookupOptions::Occurrence::LAST:
+        return "LAST";
+      case compute::MapLookupOptions::Occurrence::ALL:
+        return "ALL";
+    }
+    return "<INVALID>";
+  }
+};
+
 }  // namespace internal
 
 namespace compute {
@@ -287,6 +307,9 @@ static auto kMakeStructOptionsType = GetFunctionOptionsType<MakeStructOptions>(
     DataMember("field_names", &MakeStructOptions::field_names),
     DataMember("field_nullability", &MakeStructOptions::field_nullability),
     DataMember("field_metadata", &MakeStructOptions::field_metadata));
+static auto kMapLookupOptionsType = GetFunctionOptionsType<MapLookupOptions>(
+    DataMember("occurrence", &MapLookupOptions::occurrence),
+    DataMember("query_key", &MapLookupOptions::query_key));
 static auto kMatchSubstringOptionsType = GetFunctionOptionsType<MatchSubstringOptions>(
     DataMember("pattern", &MatchSubstringOptions::pattern),
     DataMember("ignore_case", &MatchSubstringOptions::ignore_case));
@@ -308,7 +331,8 @@ static auto kRoundOptionsType = GetFunctionOptionsType<RoundOptions>(
     DataMember("round_mode", &RoundOptions::round_mode));
 static auto kRoundTemporalOptionsType = GetFunctionOptionsType<RoundTemporalOptions>(
     DataMember("multiple", &RoundTemporalOptions::multiple),
-    DataMember("unit", &RoundTemporalOptions::unit));
+    DataMember("unit", &RoundTemporalOptions::unit),
+    DataMember("week_starts_monday", &RoundTemporalOptions::week_starts_monday));
 static auto kRoundToMultipleOptionsType = GetFunctionOptionsType<RoundToMultipleOptions>(
     DataMember("multiple", &RoundToMultipleOptions::multiple),
     DataMember("round_mode", &RoundToMultipleOptions::round_mode));
@@ -329,7 +353,8 @@ static auto kStrftimeOptionsType = GetFunctionOptionsType<StrftimeOptions>(
     DataMember("format", &StrftimeOptions::format));
 static auto kStrptimeOptionsType = GetFunctionOptionsType<StrptimeOptions>(
     DataMember("format", &StrptimeOptions::format),
-    DataMember("unit", &StrptimeOptions::unit));
+    DataMember("unit", &StrptimeOptions::unit),
+    DataMember("error_is_null", &StrptimeOptions::error_is_null));
 static auto kStructFieldOptionsType = GetFunctionOptionsType<StructFieldOptions>(
     DataMember("indices", &StructFieldOptions::indices));
 static auto kTrimOptionsType = GetFunctionOptionsType<TrimOptions>(
@@ -344,6 +369,7 @@ static auto kRandomOptionsType = GetFunctionOptionsType<RandomOptions>(
     DataMember("length", &RandomOptions::length),
     DataMember("initializer", &RandomOptions::initializer),
     DataMember("seed", &RandomOptions::seed));
+
 }  // namespace
 }  // namespace internal
 
@@ -398,6 +424,15 @@ MakeStructOptions::MakeStructOptions(std::vector<std::string> n)
 
 MakeStructOptions::MakeStructOptions() : MakeStructOptions(std::vector<std::string>()) {}
 constexpr char MakeStructOptions::kTypeName[];
+
+MapLookupOptions::MapLookupOptions(std::shared_ptr<Scalar> query_key,
+                                   Occurrence occurrence)
+    : FunctionOptions(internal::kMapLookupOptionsType),
+      query_key(std::move(query_key)),
+      occurrence(occurrence) {}
+MapLookupOptions::MapLookupOptions()
+    : MapLookupOptions(std::make_shared<NullScalar>(), Occurrence::FIRST) {}
+constexpr char MapLookupOptions::kTypeName[];
 
 MatchSubstringOptions::MatchSubstringOptions(std::string pattern, bool ignore_case)
     : FunctionOptions(internal::kMatchSubstringOptionsType),
@@ -455,10 +490,12 @@ RoundOptions::RoundOptions(int64_t ndigits, RoundMode round_mode)
 }
 constexpr char RoundOptions::kTypeName[];
 
-RoundTemporalOptions::RoundTemporalOptions(int multiple, CalendarUnit unit)
+RoundTemporalOptions::RoundTemporalOptions(int multiple, CalendarUnit unit,
+                                           bool week_starts_monday)
     : FunctionOptions(internal::kRoundTemporalOptionsType),
       multiple(std::move(multiple)),
-      unit(unit) {}
+      unit(unit),
+      week_starts_monday(week_starts_monday) {}
 constexpr char RoundTemporalOptions::kTypeName[];
 
 RoundToMultipleOptions::RoundToMultipleOptions(double multiple, RoundMode round_mode)
@@ -508,11 +545,13 @@ StrftimeOptions::StrftimeOptions() : StrftimeOptions(kDefaultFormat) {}
 constexpr char StrftimeOptions::kTypeName[];
 constexpr const char* StrftimeOptions::kDefaultFormat;
 
-StrptimeOptions::StrptimeOptions(std::string format, TimeUnit::type unit)
+StrptimeOptions::StrptimeOptions(std::string format, TimeUnit::type unit,
+                                 bool error_is_null)
     : FunctionOptions(internal::kStrptimeOptionsType),
       format(std::move(format)),
-      unit(unit) {}
-StrptimeOptions::StrptimeOptions() : StrptimeOptions("", TimeUnit::SECOND) {}
+      unit(unit),
+      error_is_null(error_is_null) {}
+StrptimeOptions::StrptimeOptions() : StrptimeOptions("", TimeUnit::MICRO, false) {}
 constexpr char StrptimeOptions::kTypeName[];
 
 StructFieldOptions::StructFieldOptions(std::vector<int> indices)
@@ -554,6 +593,7 @@ void RegisterScalarOptions(FunctionRegistry* registry) {
   DCHECK_OK(registry->AddFunctionOptionsType(kExtractRegexOptionsType));
   DCHECK_OK(registry->AddFunctionOptionsType(kJoinOptionsType));
   DCHECK_OK(registry->AddFunctionOptionsType(kMakeStructOptionsType));
+  DCHECK_OK(registry->AddFunctionOptionsType(kMapLookupOptionsType));
   DCHECK_OK(registry->AddFunctionOptionsType(kMatchSubstringOptionsType));
   DCHECK_OK(registry->AddFunctionOptionsType(kNullOptionsType));
   DCHECK_OK(registry->AddFunctionOptionsType(kPadOptionsType));
@@ -603,6 +643,7 @@ SCALAR_ARITHMETIC_UNARY(Ln, "ln", "ln_checked")
 SCALAR_ARITHMETIC_UNARY(Log10, "log10", "log10_checked")
 SCALAR_ARITHMETIC_UNARY(Log1p, "log1p", "log1p_checked")
 SCALAR_ARITHMETIC_UNARY(Log2, "log2", "log2_checked")
+SCALAR_ARITHMETIC_UNARY(Sqrt, "sqrt", "sqrt_checked")
 SCALAR_ARITHMETIC_UNARY(Negate, "negate", "negate_checked")
 SCALAR_ARITHMETIC_UNARY(Sin, "sin", "sin_checked")
 SCALAR_ARITHMETIC_UNARY(Tan, "tan", "tan_checked")
@@ -739,6 +780,8 @@ SCALAR_EAGER_UNARY(Day, "day")
 SCALAR_EAGER_UNARY(DayOfYear, "day_of_year")
 SCALAR_EAGER_UNARY(Hour, "hour")
 SCALAR_EAGER_UNARY(YearMonthDay, "year_month_day")
+SCALAR_EAGER_UNARY(IsDaylightSavings, "is_dst")
+SCALAR_EAGER_UNARY(IsLeapYear, "is_leap_year")
 SCALAR_EAGER_UNARY(ISOCalendar, "iso_calendar")
 SCALAR_EAGER_UNARY(ISOWeek, "iso_week")
 SCALAR_EAGER_UNARY(ISOYear, "iso_year")
@@ -751,6 +794,7 @@ SCALAR_EAGER_UNARY(Quarter, "quarter")
 SCALAR_EAGER_UNARY(Second, "second")
 SCALAR_EAGER_UNARY(Subsecond, "subsecond")
 SCALAR_EAGER_UNARY(USWeek, "us_week")
+SCALAR_EAGER_UNARY(USYear, "us_year")
 SCALAR_EAGER_UNARY(Year, "year")
 
 Result<Datum> AssumeTimezone(const Datum& arg, AssumeTimezoneOptions options,
@@ -781,9 +825,21 @@ Result<Datum> Strftime(const Datum& arg, StrftimeOptions options, ExecContext* c
   return CallFunction("strftime", {arg}, &options, ctx);
 }
 
+Result<Datum> Strptime(const Datum& arg, StrptimeOptions options, ExecContext* ctx) {
+  return CallFunction("strptime", {arg}, &options, ctx);
+}
+
 Result<Datum> Week(const Datum& arg, WeekOptions options, ExecContext* ctx) {
   return CallFunction("week", {arg}, &options, ctx);
 }
+
+// ----------------------------------------------------------------------
+// Structural transforms
+Result<Datum> MapLookup(const Datum& arg, MapLookupOptions options, ExecContext* ctx) {
+  return CallFunction("map_lookup", {arg}, &options, ctx);
+}
+
+// ----------------------------------------------------------------------
 
 }  // namespace compute
 }  // namespace arrow

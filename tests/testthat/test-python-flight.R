@@ -18,7 +18,7 @@
 # Assumes:
 # * We've already done arrow::install_pyarrow()
 # * R -e 'arrow::load_flight_server("demo_flight_server")$DemoFlightServer(port = 8089)$serve()'
-# TODO: set up CI job to test this, or some way of running a background process
+
 if (process_is_running("demo_flight_server")) {
   client <- flight_connect(port = 8089)
   flight_obj <- tempfile()
@@ -56,6 +56,12 @@ if (process_is_running("demo_flight_server")) {
     # Default is TRUE so this will overwrite
     flight_put(client, example_with_times, path = flight_obj)
     expect_identical(as.data.frame(flight_get(client, flight_obj)), example_with_times)
+  })
+
+  test_that("flight_disconnect", {
+    flight_disconnect(client)
+    # Idempotent
+    flight_disconnect(client)
   })
 } else {
   # Kinda hacky, let's put a skipped test here, just so we note that the tests

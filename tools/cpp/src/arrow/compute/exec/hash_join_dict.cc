@@ -576,6 +576,7 @@ bool HashJoinDictProbeMulti::BatchRemapNeeded(
     size_t thread_index, const SchemaProjectionMaps<HashJoinProjection>& proj_map_probe,
     const SchemaProjectionMaps<HashJoinProjection>& proj_map_build, ExecContext* ctx) {
   InitLocalStateIfNeeded(thread_index, proj_map_probe, proj_map_build, ctx);
+  DCHECK_LT(thread_index, local_states_.size());
   return local_states_[thread_index].any_needs_remap;
 }
 

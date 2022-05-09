@@ -20,6 +20,7 @@ register_bindings_type <- function() {
   register_bindings_type_cast()
   register_bindings_type_inspect()
   register_bindings_type_elementwise()
+  register_bindings_type_format()
 }
 
 register_bindings_type_cast <- function() {
@@ -43,13 +44,13 @@ register_bindings_type_cast <- function() {
   # as.* type casting functions
   # as.factor() is mapped in expression.R
   register_binding("as.character", function(x) {
-    Expression$create("cast", x, options = cast_options(to_type = string()))
+    build_expr("cast", x, options = cast_options(to_type = string()))
   })
   register_binding("as.double", function(x) {
-    Expression$create("cast", x, options = cast_options(to_type = float64()))
+    build_expr("cast", x, options = cast_options(to_type = float64()))
   })
   register_binding("as.integer", function(x) {
-    Expression$create(
+    build_expr(
       "cast",
       x,
       options = cast_options(
@@ -60,7 +61,7 @@ register_bindings_type_cast <- function() {
     )
   })
   register_binding("as.integer64", function(x) {
-    Expression$create(
+    build_expr(
       "cast",
       x,
       options = cast_options(
@@ -71,10 +72,75 @@ register_bindings_type_cast <- function() {
     )
   })
   register_binding("as.logical", function(x) {
-    Expression$create("cast", x, options = cast_options(to_type = boolean()))
+    build_expr("cast", x, options = cast_options(to_type = boolean()))
   })
   register_binding("as.numeric", function(x) {
-    Expression$create("cast", x, options = cast_options(to_type = float64()))
+    build_expr("cast", x, options = cast_options(to_type = float64()))
+  })
+  register_binding("as.Date", function(x,
+                                       format = NULL,
+                                       tryFormats = "%Y-%m-%d",
+                                       origin = "1970-01-01",
+                                       tz = "UTC") {
+    # base::as.Date() and lubridate::as_date() differ in the way they use the
+    # `tz` argument. Both cast to the desired timezone, if present. The
+    # difference appears when the `tz` argument is not set: `as.Date()` uses the
+    # default value ("UTC"), while `as_date()` keeps the original attribute
+    # => we only cast when we want the behaviour of the base version or when
+    # `tz` is set (i.e. not NULL)
+    if (call_binding("is.POSIXct", x)) {
+      x <- build_expr("cast", x, options = cast_options(to_type = timestamp(timezone = tz)))
+    }
+
+    binding_as_date(
+      x = x,
+      format = format,
+      tryFormats = tryFormats,
+      origin = origin
+    )
+  })
+
+  register_binding("as_date", function(x,
+                                       format = NULL,
+                                       origin = "1970-01-01",
+                                       tz = NULL) {
+    # base::as.Date() and lubridate::as_date() differ in the way they use the
+    # `tz` argument. Both cast to the desired timezone, if present. The
+    # difference appears when the `tz` argument is not set: `as.Date()` uses the
+    # default value ("UTC"), while `as_date()` keeps the original attribute
+    # => we only cast when we want the behaviour of the base version or when
+    # `tz` is set (i.e. not NULL)
+    if (call_binding("is.POSIXct", x) && !is.null(tz)) {
+      x <- build_expr("cast", x, options = cast_options(to_type = timestamp(timezone = tz)))
+    }
+    binding_as_date(
+      x = x,
+      format = format,
+      origin = origin
+    )
+  })
+
+  register_binding("as_datetime", function(x,
+                                           origin = "1970-01-01",
+                                           tz = "UTC",
+                                           format = NULL) {
+    if (call_binding("is.numeric", x)) {
+      delta <- call_binding("difftime", origin, "1970-01-01")
+      delta <- build_expr("cast", delta, options = cast_options(to_type = int64()))
+      x <- build_expr("cast", x, options = cast_options(to_type = int64()))
+      x <- build_expr("+", x, delta)
+    }
+
+    if (call_binding("is.character", x) && !is.null(format)) {
+      # unit = 0L is the identifier for seconds in valid_time32_units
+      x <- build_expr(
+        "strptime",
+        x,
+        options = list(format = format, unit = 0L, error_is_null = TRUE)
+      )
+    }
+    output <- build_expr("cast", x, options = cast_options(to_type = timestamp()))
+    build_expr("assume_timezone", output, options = list(timezone = tz))
   })
 
   register_binding("is", function(object, class2) {
@@ -246,5 +312,22 @@ register_bindings_type_elementwise <- function() {
     is_inf <- Expression$create("is_inf", x)
     # for compatibility with base::is.infinite(), return FALSE for NA_real_
     is_inf & !call_binding("is.na", is_inf)
+  })
+}
+
+register_bindings_type_format <- function() {
+  register_binding("format", function(x, ...) {
+    # We use R's format if we get a single R object here since we don't (yet)
+    # support all of the possible options for casting to string
+    if (!inherits(x, "Expression")) {
+      return(format(x, ...))
+    }
+
+    if (inherits(x, "Expression") &&
+        x$type_id() %in% Type[c("TIMESTAMP", "DATE32", "DATE64")]) {
+      binding_format_datetime(x, ...)
+    } else {
+      build_expr("cast", x, options = cast_options(to_type = string()))
+    }
   })
 }

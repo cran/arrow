@@ -404,8 +404,13 @@ class NumPyStridedConverter {
     ARROW_ASSIGN_OR_RAISE(buffer_, AllocateBuffer(sizeof(T) * length_, pool_));
 
     const int64_t stride = PyArray_STRIDES(arr)[0];
-    if (stride % sizeof(T) == 0) {
-      const int64_t stride_elements = stride / sizeof(T);
+    // ARROW-16013: convert sizeof(T) to signed int64 first, otherwise dividing by it
+    // would do an unsigned division. This cannot be caught by tests without ubsan, since
+    // common signed overflow behavior and the fact that the sizeof(T) is currently always
+    // a power of two here cause CopyStridedNatural to still produce correct results
+    const int64_t element_size = sizeof(T);
+    if (stride % element_size == 0) {
+      const int64_t stride_elements = stride / element_size;
       CopyStridedNatural(reinterpret_cast<T*>(PyArray_DATA(arr)), length_,
                          stride_elements, reinterpret_cast<T*>(buffer_->mutable_data()));
     } else {
@@ -787,20 +792,9 @@ Status NumPyConverter::Visit(const StructType& type) {
   for (auto& converter : sub_converters) {
     RETURN_NOT_OK(converter.Convert());
     groups.push_back(converter.result());
-    const auto& group = groups.back();
-    int64_t n = 0;
-    for (const auto& array : group) {
-      n += array->length();
-    }
   }
   // Ensure the different array groups are chunked consistently
   groups = ::arrow::internal::RechunkArraysConsistently(groups);
-  for (const auto& group : groups) {
-    int64_t n = 0;
-    for (const auto& array : group) {
-      n += array->length();
-    }
-  }
 
   // Make struct array chunks by combining groups
   size_t ngroups = groups.size();

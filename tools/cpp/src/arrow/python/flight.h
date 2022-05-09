@@ -186,7 +186,7 @@ class ARROW_PYFLIGHT_EXPORT PyFlightResultStream : public arrow::flight::ResultS
   /// Must only be called while holding the GIL.
   explicit PyFlightResultStream(PyObject* generator,
                                 PyFlightResultStreamCallback callback);
-  Status Next(std::unique_ptr<arrow::flight::Result>* result) override;
+  arrow::Result<std::unique_ptr<arrow::flight::Result>> Next() override;
 
  private:
   OwnedRefNoGIL generator_;
@@ -203,8 +203,8 @@ class ARROW_PYFLIGHT_EXPORT PyFlightDataStream : public arrow::flight::FlightDat
                               std::unique_ptr<arrow::flight::FlightDataStream> stream);
 
   std::shared_ptr<Schema> schema() override;
-  Status GetSchemaPayload(arrow::flight::FlightPayload* payload) override;
-  Status Next(arrow::flight::FlightPayload* payload) override;
+  arrow::Result<arrow::flight::FlightPayload> GetSchemaPayload() override;
+  arrow::Result<arrow::flight::FlightPayload> Next() override;
 
  private:
   OwnedRefNoGIL data_source_;
@@ -322,8 +322,8 @@ class ARROW_PYFLIGHT_EXPORT PyGeneratorFlightDataStream
                                        PyGeneratorFlightDataStreamCallback callback,
                                        const ipc::IpcWriteOptions& options);
   std::shared_ptr<Schema> schema() override;
-  Status GetSchemaPayload(arrow::flight::FlightPayload* payload) override;
-  Status Next(arrow::flight::FlightPayload* payload) override;
+  arrow::Result<arrow::flight::FlightPayload> GetSchemaPayload() override;
+  arrow::Result<arrow::flight::FlightPayload> Next() override;
 
  private:
   OwnedRefNoGIL generator_;
@@ -339,13 +339,6 @@ Status CreateFlightInfo(const std::shared_ptr<arrow::Schema>& schema,
                         const std::vector<arrow::flight::FlightEndpoint>& endpoints,
                         int64_t total_records, int64_t total_bytes,
                         std::unique_ptr<arrow::flight::FlightInfo>* out);
-
-ARROW_PYFLIGHT_EXPORT
-Status DeserializeBasicAuth(const std::string& buf,
-                            std::unique_ptr<arrow::flight::BasicAuth>* out);
-
-ARROW_PYFLIGHT_EXPORT
-Status SerializeBasicAuth(const arrow::flight::BasicAuth& basic_auth, std::string* out);
 
 /// \brief Create a SchemaResult from schema.
 ARROW_PYFLIGHT_EXPORT

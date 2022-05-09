@@ -38,6 +38,7 @@
 
 #cmakedefine ARROW_COMPUTE
 #cmakedefine ARROW_CSV
+#cmakedefine ARROW_CUDA
 #cmakedefine ARROW_DATASET
 #cmakedefine ARROW_FILESYSTEM
 #cmakedefine ARROW_FLIGHT
@@ -47,5 +48,6 @@
 #cmakedefine ARROW_S3
 #cmakedefine ARROW_USE_NATIVE_INT128
 #cmakedefine ARROW_WITH_OPENTELEMETRY
+#cmakedefine ARROW_WITH_UCX
 
 #cmakedefine GRPCPP_PP_INCLUDE

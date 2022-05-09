@@ -225,7 +225,7 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 
   define_option(ARROW_DATASET "Build the Arrow Dataset Modules" OFF)
 
-  define_option(ARROW_ENGINE "Build the Arrow Execution Engine" OFF)
+  define_option(ARROW_SUBSTRAIT "Build the Arrow Substrait Consumer Module" OFF)
 
   define_option(ARROW_FILESYSTEM "Build the Arrow Filesystem Layer" OFF)
 
@@ -390,6 +390,10 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   define_option(ARROW_WITH_SNAPPY "Build with Snappy compression" OFF)
   define_option(ARROW_WITH_ZLIB "Build with zlib compression" OFF)
   define_option(ARROW_WITH_ZSTD "Build with zstd compression" OFF)
+
+  define_option(ARROW_WITH_UCX
+                "Build with UCX transport for Arrow Flight;(only used if ARROW_FLIGHT is ON)"
+                OFF)
 
   define_option(ARROW_WITH_UTF8PROC
                 "Build with support for Unicode properties using the utf8proc library;(only used if ARROW_COMPUTE is ON or ARROW_GANDIVA is ON)"

@@ -165,8 +165,9 @@ struct ScalarFromArraySlotImpl {
 
   Result<std::shared_ptr<Scalar>> Finish() && {
     if (index_ >= array_.length()) {
-      return Status::IndexError("tried to refer to element ", index_,
-                                " but array is only ", array_.length(), " long");
+      return Status::IndexError("index with value of ", index_,
+                                " is out-of-bounds for array of length ",
+                                array_.length());
     }
 
     if (array_.IsNull(index_)) {
@@ -281,6 +282,8 @@ std::string Array::ToString() const {
   ARROW_CHECK_OK(PrettyPrint(*this, 0, &ss));
   return ss.str();
 }
+
+void PrintTo(const Array& x, std::ostream* os) { *os << x.ToString(); }
 
 Result<std::shared_ptr<Array>> Array::View(
     const std::shared_ptr<DataType>& out_type) const {

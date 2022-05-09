@@ -260,17 +260,38 @@ test_that("array supports POSIXct (ARROW-3340)", {
   expect_array_roundtrip(times2, timestamp("us", "US/Eastern"))
 })
 
-test_that("array supports POSIXct without timezone", {
-  # Make sure timezone is not set
+test_that("array uses local timezone for POSIXct without timezone", {
   withr::with_envvar(c(TZ = ""), {
     times <- strptime("2019-02-03 12:34:56", format = "%Y-%m-%d %H:%M:%S") + 1:10
-    expect_array_roundtrip(times, timestamp("us", ""))
+    expect_equal(attr(times, "tzone"), NULL)
+    expect_array_roundtrip(times, timestamp("us", Sys.timezone()))
 
     # Also test the INTSXP code path
     skip("Ingest_POSIXct only implemented for REALSXP")
     times_int <- as.integer(times)
     attributes(times_int) <- attributes(times)
     expect_array_roundtrip(times_int, timestamp("us", ""))
+  })
+
+  # If there is a timezone set, we record that
+  withr::with_timezone("Pacific/Marquesas", {
+    times <- strptime("2019-02-03 12:34:56", format = "%Y-%m-%d %H:%M:%S") + 1:10
+    expect_equal(attr(times, "tzone"), "Pacific/Marquesas")
+    expect_array_roundtrip(times, timestamp("us", "Pacific/Marquesas"))
+
+    times_with_tz <- strptime(
+      "2019-02-03 12:34:56",
+      format = "%Y-%m-%d %H:%M:%S",
+      tz = "Asia/Katmandu") + 1:10
+    expect_equal(attr(times, "tzone"), "Asia/Katmandu")
+    expect_array_roundtrip(times, timestamp("us", "Asia/Katmandu"))
+  })
+
+  # and although the TZ is NULL in R, we set it to the Sys.timezone()
+  withr::with_timezone(NA, {
+    times <- strptime("2019-02-03 12:34:56", format = "%Y-%m-%d %H:%M:%S") + 1:10
+    expect_equal(attr(times, "tzone"), NULL)
+    expect_array_roundtrip(times, timestamp("us", Sys.timezone()))
   })
 })
 
@@ -481,7 +502,7 @@ test_that("Array$create() handles data frame -> struct arrays (ARROW-3811)", {
   expect_as_vector(a, df)
 
   df <- structure(
-    list(col = structure(list(structure(list(list(structure(1))), class = "inner")), class = "outer")),
+    list(col = list(list(list(1)))),
     class = "data.frame", row.names = c(NA, -1L)
   )
   a <- Array$create(df)
@@ -989,6 +1010,204 @@ test_that("auto int64 conversion to int can be disabled (ARROW-10093)", {
   })
 })
 
+test_that("as_arrow_array() default method calls Array$create()", {
+  expect_equal(
+    as_arrow_array(1:10),
+    Array$create(1:10)
+  )
+
+  expect_equal(
+    as_arrow_array(1:10, type = float64()),
+    Array$create(1:10, type = float64())
+  )
+})
+
+test_that("as_arrow_array() works for Array", {
+  array <- Array$create(logical(), type = null())
+  expect_identical(as_arrow_array(array), array)
+  expect_equal(
+    as_arrow_array(array, type = int32()),
+    Array$create(integer())
+  )
+})
+
+test_that("as_arrow_array() works for Array", {
+  scalar <- Scalar$create(TRUE)
+  expect_equal(as_arrow_array(scalar), Array$create(TRUE))
+  expect_equal(
+    as_arrow_array(scalar, type = int32()),
+    Array$create(1L)
+  )
+})
+
+test_that("as_arrow_array() works for ChunkedArray", {
+  expect_equal(
+    as_arrow_array(chunked_array(type = null())),
+    Array$create(logical(), type = null())
+  )
+
+  expect_equal(
+    as_arrow_array(chunked_array(1:3, 4:6)),
+    Array$create(1:6)
+  )
+
+  expect_equal(
+    as_arrow_array(chunked_array(1:3, 4:6), type = float64()),
+    Array$create(1:6, type = float64())
+  )
+})
+
+test_that("as_arrow_array() works for vctrs_vctr types", {
+  vctr <- vctrs::new_vctr(1:5, class = "custom_vctr")
+  expect_equal(
+    as_arrow_array(vctr),
+    vctrs_extension_array(vctr)
+  )
+
+  # with explicit type
+  expect_equal(
+    as_arrow_array(
+      vctr,
+      type = vctrs_extension_type(
+        vctrs::vec_ptype(vctr),
+        storage_type = float64()
+      )
+    ),
+    vctrs_extension_array(
+      vctr,
+      storage_type = float64()
+    )
+  )
+
+  # with impossible type
+  expect_snapshot_error(as_arrow_array(vctr, type = float64()))
+})
+
+test_that("as_arrow_array() works for nested extension types", {
+  vctr <- vctrs::new_vctr(1:5, class = "custom_vctr")
+
+  nested <- tibble::tibble(x = vctr)
+  type <- infer_type(nested)
+
+  # with type = NULL
+  nested_array <- as_arrow_array(nested)
+  expect_identical(as.vector(nested_array), nested)
+
+  # with explicit type
+  expect_equal(as_arrow_array(nested, type = type), nested_array)
+
+  # with extension type
+  extension_array <- vctrs_extension_array(nested)
+  expect_equal(
+    as_arrow_array(nested, type = extension_array$type),
+    extension_array
+  )
+
+  # with an extension type for the data.frame but no extension columns
+  nested_plain <- tibble::tibble(x = 1:5)
+  extension_array <- vctrs_extension_array(nested_plain)
+  expect_equal(
+    as_arrow_array(nested, type = extension_array$type),
+    extension_array
+  )
+})
+
+test_that("Array$create() calls as_arrow_array() for nested extension types", {
+  vctr <- vctrs::new_vctr(1:5, class = "custom_vctr")
+
+  nested <- tibble::tibble(x = vctr)
+  type <- infer_type(nested)
+
+  # with type = NULL
+  nested_array <- Array$create(nested)
+  expect_identical(as.vector(nested_array), nested)
+
+  # with explicit type
+  expect_equal(Array$create(nested, type = type), nested_array)
+
+  # with extension type
+  extension_array <- vctrs_extension_array(nested)
+  expect_equal(
+    Array$create(nested, type = extension_array$type),
+    extension_array
+  )
+
+  # with an extension type for the data.frame but no extension columns
+  nested_plain <- tibble::tibble(x = 1:5)
+  extension_array <- vctrs_extension_array(nested_plain)
+  expect_equal(
+    Array$create(nested, type = extension_array$type),
+    extension_array
+  )
+})
+
+test_that("as_arrow_array() default method errors", {
+  vec <- structure(list(), class = "class_not_supported")
+
+  # check errors simulating a call from C++
+  expect_snapshot_error(as_arrow_array(vec, from_vec_to_array = TRUE))
+  expect_snapshot_error(
+    as_arrow_array(vec, type = float64(), from_vec_to_array = TRUE)
+  )
+
+  # check errors actually coming through C++
+  expect_snapshot_error(Array$create(vec, type = float64()))
+  expect_snapshot_error(
+    RecordBatch$create(col = vec, schema = schema(col = float64()))
+  )
+})
+
+test_that("concat_arrays works", {
+  concat_empty <- concat_arrays()
+  expect_true(concat_empty$type == null())
+  expect_equal(concat_empty$length(), 0L)
+
+  concat_empty_typed <- concat_arrays(type = int64())
+  expect_true(concat_empty_typed$type == int64())
+  expect_equal(concat_empty$length(), 0L)
+
+  concat_int <- concat_arrays(Array$create(1:3), Array$create(4:5))
+  expect_true(concat_int$type == int32())
+  expect_true(all(concat_int == Array$create(1:5)))
+
+  concat_int64 <- concat_arrays(
+    Array$create(1:3),
+    Array$create(4:5, type = int64()),
+    type = int64()
+  )
+  expect_true(concat_int64$type == int64())
+  expect_true(all(concat_int == Array$create(1:5)))
+
+  expect_error(
+    concat_arrays(
+      Array$create(1:3),
+      Array$create(4:5, type = int64())
+    ),
+    "must be identically typed"
+  )
+})
+
+test_that("concat_arrays() coerces its input to Array", {
+  concat_ints <- concat_arrays(1L, 2L)
+  expect_true(concat_ints$type == int32())
+  expect_true(all(concat_ints == Array$create(c(1L, 2L))))
+
+  expect_error(
+    concat_arrays(1L, "not a number", type = int32()),
+    "cannot convert"
+  )
+
+  expect_error(
+    concat_arrays(1L, "not a number"),
+    "must be identically typed"
+  )
+})
+
+test_that("Array doesn't support c()", {
+  expect_snapshot_error(
+    c(Array$create(1:2), Array$create(3:5))
+  )
+})
 
 test_that("Array to C-interface", {
   # create a struct array since that's one of the more complicated array types

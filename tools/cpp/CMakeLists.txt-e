@@ -47,7 +47,7 @@ if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ARROW_VERSION "7.0.0")
+set(ARROW_VERSION "8.0.0")
 
 string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" ARROW_BASE_VERSION "${ARROW_VERSION}")
 
@@ -111,6 +111,7 @@ set(ARROW_CMAKE_INSTALL_DIR "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
 set(ARROW_DOC_DIR "share/doc/${PROJECT_NAME}")
 
 set(ARROW_LLVM_VERSIONS
+    "14.0"
     "13.0"
     "12.0"
     "11.1"
@@ -191,12 +192,14 @@ else()
   set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
 endif()
 
-if(ARROW_USE_CCACHE)
+if(ARROW_USE_CCACHE
+   AND NOT CMAKE_C_COMPILER_LAUNCHER
+   AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
   find_program(CCACHE_FOUND ccache)
   if(CCACHE_FOUND)
     message(STATUS "Using ccache: ${CCACHE_FOUND}")
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ${CCACHE_FOUND})
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ${CCACHE_FOUND})
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_FOUND})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_FOUND})
     # ARROW-3985: let ccache preserve C++ comments, because some of them may be
     # meaningful to the compiler
     set(ENV{CCACHE_COMMENTS} "1")
@@ -350,8 +353,11 @@ if(ARROW_CUDA
   set(ARROW_IPC ON)
 endif()
 
-if(ARROW_ENGINE)
+if(ARROW_SUBSTRAIT)
+  set(ARROW_PARQUET ON)
+  set(ARROW_IPC ON)
   set(ARROW_COMPUTE ON)
+  set(ARROW_DATASET ON)
 endif()
 
 if(ARROW_SKYHOOK)

@@ -50,6 +50,22 @@
 #'   partitions which data is not written to.
 #' @param max_partitions maximum number of partitions any batch may be
 #' written into. Default is 1024L.
+#' @param max_open_files maximum number of files that can be left opened
+#' during a write operation. If greater than 0 then this will limit the
+#' maximum number of files that can be left open. If an attempt is made to open
+#' too many files then the least recently used file will be closed.
+#' If this setting is set too low you may end up fragmenting your data
+#' into many small files. The default is 900 which also allows some # of files to be
+#' open by the scanner before hitting the default Linux limit of 1024.
+#' @param max_rows_per_file maximum number of rows per file.
+#' If greater than 0 then this will limit how many rows are placed in any single file.
+#' Default is 0L.
+#' @param min_rows_per_group write the row groups to the disk when this number of
+#' rows have accumulated. Default is 0L.
+#' @param max_rows_per_group maximum rows allowed in a single
+#' group and when this number of rows is exceeded, it is split and the next set
+#' of rows is written to the next group. This value must be set such that it is
+#' greater than `min_rows_per_group`. Default is 1024 * 1024.
 #' @param ... additional format-specific arguments. For available Parquet
 #' options, see [write_parquet()]. The available Feather options are:
 #' - `use_legacy_format` logical: write data formatted so that Arrow libraries
@@ -111,41 +127,109 @@ write_dataset <- function(dataset,
                           hive_style = TRUE,
                           existing_data_behavior = c("overwrite", "error", "delete_matching"),
                           max_partitions = 1024L,
+                          max_open_files = 900L,
+                          max_rows_per_file = 0L,
+                          min_rows_per_group = 0L,
+                          max_rows_per_group = bitwShiftL(1, 20),
                           ...) {
   format <- match.arg(format)
   if (inherits(dataset, "arrow_dplyr_query")) {
     # partitioning vars need to be in the `select` schema
     dataset <- ensure_group_vars(dataset)
-  } else if (inherits(dataset, "grouped_df")) {
-    force(partitioning)
-    # Drop the grouping metadata before writing; we've already consumed it
-    # now to construct `partitioning` and don't want it in the metadata$r
-    dataset <- dplyr::ungroup(dataset)
+  } else {
+    if (inherits(dataset, "grouped_df")) {
+      force(partitioning)
+      # Drop the grouping metadata before writing; we've already consumed it
+      # now to construct `partitioning` and don't want it in the metadata$r
+      dataset <- dplyr::ungroup(dataset)
+    }
+    dataset <- tryCatch(
+      as_adq(dataset),
+      error = function(e) {
+        supported <- c(
+          "Dataset", "RecordBatch", "Table", "arrow_dplyr_query", "data.frame"
+        )
+        stop(
+          "'dataset' must be a ",
+          oxford_paste(supported, "or", quote = FALSE),
+          ", not ",
+          deparse(class(dataset)),
+          call. = FALSE
+        )
+      }
+    )
   }
 
-  scanner <- Scanner$create(dataset)
+  plan <- ExecPlan$create()
+  final_node <- plan$Build(dataset)
+  if (!is.null(final_node$sort %||% final_node$head %||% final_node$tail)) {
+    # Because sorting and topK are only handled in the SinkNode (or in R!),
+    # they wouldn't get picked up in the WriteNode. So let's Run this ExecPlan
+    # to capture those, and then create a new plan for writing
+    # TODO(ARROW-15681): do sorting in WriteNode in C++
+    dataset <- as_adq(plan$Run(final_node))
+    plan <- ExecPlan$create()
+    final_node <- plan$Build(dataset)
+  }
+
   if (!inherits(partitioning, "Partitioning")) {
-    partition_schema <- scanner$schema[partitioning]
+    partition_schema <- final_node$schema[partitioning]
     if (isTRUE(hive_style)) {
-      partitioning <- HivePartitioning$create(partition_schema, null_fallback = list(...)$null_fallback)
+      partitioning <- HivePartitioning$create(
+        partition_schema,
+        null_fallback = list(...)$null_fallback
+      )
     } else {
       partitioning <- DirectoryPartitioning$create(partition_schema)
     }
   }
 
   path_and_fs <- get_path_and_filesystem(path)
-  options <- FileWriteOptions$create(format, table = scanner, ...)
+  output_schema <- final_node$schema
+  options <- FileWriteOptions$create(
+    format,
+    column_names = names(output_schema),
+    ...
+  )
 
+  # TODO(ARROW-16200): expose FileSystemDatasetWriteOptions in R
+  # and encapsulate this logic better
   existing_data_behavior_opts <- c("delete_matching", "overwrite", "error")
   existing_data_behavior <- match(match.arg(existing_data_behavior), existing_data_behavior_opts) - 1L
 
-  if (!is_integerish(max_partitions, n = 1) || is.na(max_partitions) || max_partitions < 0) {
-    abort("max_partitions must be a positive, non-missing integer")
+  if (!missing(max_rows_per_file) && missing(max_rows_per_group) && max_rows_per_group > max_rows_per_file) {
+    max_rows_per_group <- max_rows_per_file
   }
 
-  dataset___Dataset__Write(
-    options, path_and_fs$fs, path_and_fs$path,
-    partitioning, basename_template, scanner,
-    existing_data_behavior, max_partitions
+  validate_positive_int_value(max_partitions)
+  validate_positive_int_value(max_open_files)
+  validate_positive_int_value(min_rows_per_group)
+  validate_positive_int_value(max_rows_per_group)
+
+  source_schema <- source_data(dataset)$schema
+  # For backwards compatibility with Scanner-based writer (arrow <= 7.0.0):
+  # retain metadata from source dataset
+  output_schema$metadata <- source_schema$metadata
+  new_r_meta <- get_r_metadata_from_old_schema(
+    output_schema,
+    source_schema,
+    drop_attributes = has_aggregation(dataset)
   )
+  if (!is.null(new_r_meta)) {
+    output_schema$r_metadata <- new_r_meta
+  }
+  plan$Write(
+    final_node, prepare_key_value_metadata(output_schema$metadata),
+    options, path_and_fs$fs, path_and_fs$path,
+    partitioning, basename_template,
+    existing_data_behavior, max_partitions,
+    max_open_files, max_rows_per_file,
+    min_rows_per_group, max_rows_per_group
+  )
+}
+
+validate_positive_int_value <- function(value, msg) {
+  if (!is_integerish(value, n = 1) || is.na(value) || value < 0) {
+    abort(paste(substitute(value), "must be a positive, non-missing integer"))
+  }
 }

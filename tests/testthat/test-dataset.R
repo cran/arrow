@@ -310,6 +310,19 @@ test_that("Simple interface for datasets", {
   )
 })
 
+test_that("Can set schema on dataset", {
+  ds <- open_dataset(dataset_dir)
+  expected_schema <- schema(x = int32(), y = utf8())
+  expect_false(ds$schema == expected_schema)
+
+  ds_new <- ds$WithSchema(expected_schema)
+  expect_equal(ds_new$schema, expected_schema)
+  expect_false(ds$schema == expected_schema)
+
+  ds$schema <- expected_schema
+  expect_equal(ds$schema, expected_schema)
+})
+
 test_that("dim method returns the correct number of rows and columns", {
   ds <- open_dataset(dataset_dir, partitioning = schema(part = uint8()))
   expect_identical(dim(ds), c(20L, 7L))
@@ -544,6 +557,44 @@ test_that("Creating UnionDataset", {
   expect_error(c(ds1, 42), "character")
 })
 
+test_that("UnionDataset can merge schemas", {
+  sub_df1 <- Table$create(
+    x = Array$create(c(1, 2, 3)),
+    y = Array$create(c("a", "b", "c"))
+  )
+  sub_df2 <- Table$create(
+    x = Array$create(c(4, 5)),
+    z = Array$create(c("d", "e"))
+  )
+
+  path1 <- make_temp_dir()
+  path2 <- make_temp_dir()
+  write_dataset(sub_df1, path1, format = "parquet")
+  write_dataset(sub_df2, path2, format = "parquet")
+
+  ds1 <- open_dataset(path1, format = "parquet")
+  ds2 <- open_dataset(path2, format = "parquet")
+
+  ds <- c(ds1, ds2)
+  actual <- ds %>%
+    collect() %>%
+    arrange(x)
+  expect_equal(colnames(actual), c("x", "y", "z"))
+  expect_equal(
+    actual,
+    union_all(as_tibble(sub_df1), as_tibble(sub_df2))
+  )
+
+  # without unifying schemas, takes the first schema and discards any columns
+  # in the second which aren't in the first
+  ds <- open_dataset(list(ds1, ds2), unify_schemas = FALSE)
+  expected <- as_tibble(sub_df1) %>%
+    union_all(sub_df2 %>% as_tibble() %>% select(x))
+  actual <- ds %>% collect() %>% arrange(x)
+  expect_equal(colnames(actual), c("x", "y"))
+  expect_equal(actual, expected)
+})
+
 test_that("map_batches", {
   ds <- open_dataset(dataset_dir, partitioning = "part")
 
@@ -568,6 +619,14 @@ test_that("map_batches", {
     c(5, 10)
   )
 
+  # Can take a raw dataset as X argument
+  expect_equal(
+    ds %>%
+      map_batches(~ count(., part)) %>%
+      arrange(part),
+    tibble(part = c(1, 2), n = c(10, 10))
+  )
+
   # $Take returns RecordBatch, which gets binded into a tibble
   expect_equal(
     ds %>%
@@ -582,17 +641,25 @@ test_that("map_batches", {
 test_that("head/tail", {
   # head/tail with no query are still deterministic order
   ds <- open_dataset(dataset_dir)
-  expect_equal(as.data.frame(head(ds)), head(df1))
-  expect_equal(
-    as.data.frame(head(ds, 12)),
-    rbind(df1, df2[1:2, ])
-  )
+  big_df <- rbind(df1, df2)
 
+  # No n provided (default is 6, all from one batch)
+  expect_equal(as.data.frame(head(ds)), head(df1))
   expect_equal(as.data.frame(tail(ds)), tail(df2))
-  expect_equal(
-    as.data.frame(tail(ds, 12)),
-    rbind(df1[9:10, ], df2)
-  )
+
+  # n = 0: have to drop `fct` because factor levels don't come through from
+  # arrow when there are 0 rows
+  zero_df <- big_df[FALSE, names(big_df) != "fct"]
+  expect_equal(as.data.frame(head(ds, 0))[, names(ds) != "fct"], zero_df)
+  expect_equal(as.data.frame(tail(ds, 0))[, names(ds) != "fct"], zero_df)
+
+  # Two more cases: more than 1 batch, and more than nrow
+  for (n in c(12, 1000)) {
+    expect_equal(as.data.frame(head(ds, n)), head(big_df, n))
+    expect_equal(as.data.frame(tail(ds, n)), tail(big_df, n))
+  }
+  expect_error(head(ds, -1)) # Not yet implemented
+  expect_error(tail(ds, -1)) # Not yet implemented
 })
 
 test_that("Dataset [ (take by index)", {
@@ -829,6 +896,10 @@ test_that("Assembling multiple DatasetFactories with DatasetFactory", {
   expect_scan_result(ds, schm)
 })
 
+# By default, snappy encoding will be used, and
+# Snappy has a UBSan issue: https://github.com/google/snappy/pull/148
+skip_on_linux_devel()
+
 # see https://issues.apache.org/jira/browse/ARROW-11328
 test_that("Collecting zero columns from a dataset doesn't return entire dataset", {
   tmp <- tempfile()
@@ -839,13 +910,46 @@ test_that("Collecting zero columns from a dataset doesn't return entire dataset"
   )
 })
 
-
 test_that("dataset RecordBatchReader to C-interface to arrow_dplyr_query", {
-  ds <- open_dataset(ipc_dir, partitioning = "part", format = "feather")
+  ds <- open_dataset(hive_dir)
 
   # export the RecordBatchReader via the C-interface
   stream_ptr <- allocate_arrow_array_stream()
   scan <- Scanner$create(ds)
+  reader <- scan$ToRecordBatchReader()
+  reader$export_to_c(stream_ptr)
+
+  expect_equal(
+    RecordBatchStreamReader$import_from_c(stream_ptr) %>%
+      filter(int < 8 | int > 55) %>%
+      mutate(part_plus = group + 6) %>%
+      arrange(dbl) %>%
+      collect(),
+    ds %>%
+      filter(int < 8 | int > 55) %>%
+      mutate(part_plus = group + 6) %>%
+      arrange(dbl) %>%
+      collect()
+  )
+
+  # must clean up the pointer or we leak
+  delete_arrow_array_stream(stream_ptr)
+})
+
+test_that("dataset to C-interface to arrow_dplyr_query with proj/filter", {
+  ds <- open_dataset(hive_dir)
+
+  # filter the dataset
+  ds <- ds %>%
+    filter(int > 2)
+
+  # export the RecordBatchReader via the C-interface
+  stream_ptr <- allocate_arrow_array_stream()
+  scan <- Scanner$create(
+    ds,
+    projection = names(ds),
+    filter = Expression$create("less", Expression$field_ref("int"), Expression$scalar(8L))
+  )
   reader <- scan$ToRecordBatchReader()
   reader$export_to_c(stream_ptr)
 
@@ -855,21 +959,44 @@ test_that("dataset RecordBatchReader to C-interface to arrow_dplyr_query", {
   # create an arrow_dplyr_query() from the recordbatch reader
   reader_adq <- arrow_dplyr_query(circle)
 
-  # TODO: ARROW-14321 should be able to arrange then collect
-  tab_from_c_new <- reader_adq %>%
-    filter(int < 8, int > 55) %>%
-    mutate(part_plus = part + 6) %>%
-    collect()
   expect_equal(
-    tab_from_c_new %>%
-      arrange(dbl),
+    reader_adq %>%
+      mutate(part_plus = group + 6) %>%
+      arrange(dbl) %>%
+      collect(),
     ds %>%
-      filter(int < 8, int > 55) %>%
-      mutate(part_plus = part + 6) %>%
-      collect() %>%
-      arrange(dbl)
+      filter(int < 8, int > 2) %>%
+      mutate(part_plus = group + 6) %>%
+      arrange(dbl) %>%
+      collect()
   )
 
   # must clean up the pointer or we leak
   delete_arrow_array_stream(stream_ptr)
+})
+
+
+test_that("Filter parquet dataset with is.na ARROW-15312", {
+  ds_path <- make_temp_dir()
+
+  df <- tibble(x = 1:3, y = c(0L, 0L, NA_integer_), z = c(0L, 1L, NA_integer_))
+  write_dataset(df, ds_path)
+
+  # OK: Collect then filter: returns row 3, as expected
+  expect_identical(
+    open_dataset(ds_path) %>% collect() %>% filter(is.na(y)),
+    df %>% collect() %>% filter(is.na(y))
+  )
+
+  # Before the fix: Filter then collect on y returned a 0-row tibble
+  expect_identical(
+    open_dataset(ds_path) %>% filter(is.na(y)) %>% collect(),
+    df %>% filter(is.na(y)) %>% collect()
+  )
+
+  # OK: Filter then collect (on z) returns row 3, as expected
+  expect_identical(
+    open_dataset(ds_path) %>% filter(is.na(z)) %>% collect(),
+    df %>% filter(is.na(z)) %>% collect()
+  )
 })

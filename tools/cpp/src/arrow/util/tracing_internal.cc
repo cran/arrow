@@ -16,6 +16,9 @@
 // under the License.
 
 #include "arrow/util/tracing_internal.h"
+#include "arrow/io/interfaces.h"
+#include "arrow/util/thread_pool.h"
+#include "arrow/util/tracing.h"
 
 #include <iostream>
 #include <sstream>
@@ -106,7 +109,7 @@ class ThreadIdSpanProcessor : public sdktrace::BatchSpanProcessor {
   void OnEnd(std::unique_ptr<sdktrace::Recordable>&& span) noexcept override {
     std::stringstream thread_id;
     thread_id << std::this_thread::get_id();
-    span->SetAttribute("thread_id", thread_id.str());
+    span->SetAttribute("thread.id", thread_id.str());
     sdktrace::BatchSpanProcessor::OnEnd(std::move(span));
   }
 };
@@ -133,7 +136,23 @@ std::unique_ptr<sdktrace::SpanExporter> InitializeExporter() {
   return nullptr;
 }
 
+struct StorageSingleton : public Executor::Resource {
+  StorageSingleton()
+      : storage_(otel::context::RuntimeContext::GetConstRuntimeContextStorage()) {}
+  nostd::shared_ptr<const otel::context::RuntimeContextStorage> storage_;
+};
+
+std::shared_ptr<Executor::Resource> GetStorageSingleton() {
+  static std::shared_ptr<StorageSingleton> storage_singleton =
+      std::make_shared<StorageSingleton>();
+  return storage_singleton;
+}
+
 nostd::shared_ptr<sdktrace::TracerProvider> InitializeSdkTracerProvider() {
+  // Bind the lifetime of the OT runtime context to the CPU and I/O thread
+  // pools.  This will keep OT alive until all thread tasks have finished.
+  internal::GetCpuThreadPool()->KeepAlive(GetStorageSingleton());
+  io::default_io_context().executor()->KeepAlive(GetStorageSingleton());
   auto exporter = InitializeExporter();
   if (exporter) {
     sdktrace::BatchSpanProcessorOptions options;
@@ -152,9 +171,10 @@ class FlushLog {
   explicit FlushLog(nostd::shared_ptr<sdktrace::TracerProvider> provider)
       : provider_(std::move(provider)) {}
   ~FlushLog() {
-    if (provider_) {
-      provider_->ForceFlush(std::chrono::microseconds(1000000));
-    }
+    // TODO: ForceFlush apparently sends data that OTLP connector can't handle
+    // if (provider_) {
+    //   provider_->ForceFlush(std::chrono::microseconds(1000000));
+    // }
   }
   nostd::shared_ptr<sdktrace::TracerProvider> provider_;
 };
@@ -181,6 +201,15 @@ opentelemetry::trace::Tracer* GetTracer() {
       GetTracerProvider()->GetTracer("arrow");
   return tracer.get();
 }
+
+#ifdef ARROW_WITH_OPENTELEMETRY
+opentelemetry::trace::StartSpanOptions SpanOptionsWithParent(
+    const util::tracing::Span& parent_span) {
+  opentelemetry::trace::StartSpanOptions options;
+  options.parent = parent_span.Get().span->GetContext();
+  return options;
+}
+#endif
 
 }  // namespace tracing
 }  // namespace internal
