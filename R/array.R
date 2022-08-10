@@ -155,12 +155,6 @@ Array <- R6Class("Array",
       assert_is(i, "Array")
       call_function("filter", self, i, options = list(keep_na = keep_na))
     },
-    SortIndices = function(descending = FALSE) {
-      assert_that(is.logical(descending))
-      assert_that(length(descending) == 1L)
-      assert_that(!is.na(descending))
-      call_function("array_sort_indices", self, options = list(order = descending))
-    },
     RangeEquals = function(other, start_idx, end_idx, other_start_idx = 0L) {
       assert_is(other, "Array")
       Array__RangeEquals(self, other, start_idx, end_idx, other_start_idx)
@@ -288,7 +282,7 @@ as_arrow_array.Scalar <- function(x, ..., type = NULL) {
 #' @rdname as_arrow_array
 #' @export
 as_arrow_array.ChunkedArray <- function(x, ..., type = NULL) {
-  concat_arrays(!!! x$chunks, type = type)
+  concat_arrays(!!!x$chunks, type = type)
 }
 
 # data.frame conversion can happen in C++ when all the columns can be
@@ -310,7 +304,7 @@ as_arrow_array.data.frame <- function(x, ..., type = NULL) {
     names(arrays) <- names
 
     # TODO(ARROW-16266): a hack because there is no StructArray$create() yet
-    batch <- record_batch(!!! arrays)
+    batch <- record_batch(!!!arrays)
     array_ptr <- allocate_arrow_array()
     schema_ptr <- allocate_arrow_schema()
     on.exit({
