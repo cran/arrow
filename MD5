@@ -1,6 +1,6 @@
-b87e786f53f7562c3be57954dde1bd29 *DESCRIPTION
+8930f37804fd6de1a93136d5a5efa361 *DESCRIPTION
 200d1b74da794f1bb4ab57e8ea0270e1 *NAMESPACE
-ad889c45bd1efe3c6890e212116ee219 *NEWS.md
+17b84bb360fbb810cbf74fb185c04dab *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 d46859f933d2ff54038033c3b871ec7a *R/array.R
 8f15f6793f58fd69115dcae600dee892 *R/arrow-datum.R
@@ -322,9 +322,9 @@ b3e36b0af64e466d8495e7d28fd74242 *tests/testthat/test-dataset.R
 450734edb70ba6cc96d3114d622aa628 *tests/testthat/test-dplyr-distinct.R
 0eb13b7d05f8df90c9963e4368b33a0f *tests/testthat/test-dplyr-filter.R
 90455151455843d0a5ffd1911026c7b5 *tests/testthat/test-dplyr-funcs-conditional.R
-c45fc273f1d0e179ed1d29ea9e0c4f41 *tests/testthat/test-dplyr-funcs-datetime.R
+3a4dddf519c79a92bbabd260546290f6 *tests/testthat/test-dplyr-funcs-datetime.R
 fa73fa088f033959c32f1fdab6ca1982 *tests/testthat/test-dplyr-funcs-math.R
-6dde029ce81b6e29dcdeaf45c4310c37 *tests/testthat/test-dplyr-funcs-string.R
+7e8fd3374bf73cead0e1cd545b80a5af *tests/testthat/test-dplyr-funcs-string.R
 29c62712bd23055aa4bbdbbf50450a43 *tests/testthat/test-dplyr-funcs-type.R
 10015807d30b36a69f532638fba79deb *tests/testthat/test-dplyr-funcs.R
 d9306e6ad9a3b284559f675217691075 *tests/testthat/test-dplyr-glimpse.R

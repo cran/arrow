@@ -62,7 +62,8 @@ test_that("paste, paste0, and str_c", {
     .input %>%
       transmute(
         a = paste0(v, w),
-        a2 = base::paste0(v, w)) %>%
+        a2 = base::paste0(v, w)
+      ) %>%
       collect(),
     df
   )
@@ -905,7 +906,7 @@ test_that("str_like", {
   )
 
   # This will give an error until a new version of stringr with str_like has been released
-  skip_if_not(packageVersion("stringr") > "1.4.0")
+  skip_if_not("str_like" %in% getNamespaceExports("stringr"))
   compare_dplyr_binding(
     .input %>%
       mutate(x = str_like(x, "%baz%")) %>%
