@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 9.0.0.1
+Version: 9.0.0.2
 Authors@R: c(
     person("Neal", "Richardson", email = "neal@ursalabs.org", role = c("aut", "cre")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -31,7 +31,7 @@ SystemRequirements: C++11; for AWS S3 support on Linux, libcurl and
 Biarch: true
 Imports: assertthat, bit64 (>= 0.9-7), methods, purrr, R6, rlang,
         stats, tidyselect (>= 1.0.0), utils, vctrs
-RoxygenNote: 7.2.0
+RoxygenNote: 7.2.1
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Suggests: cli, DBI, dbplyr, decor, distro, dplyr, duckdb (>= 0.2.8),
@@ -60,7 +60,7 @@ Collate: 'arrowExports.R' 'enums.R' 'arrow-object.R' 'type.R'
         'record-batch-writer.R' 'reexports-bit64.R'
         'reexports-tidyselect.R' 'schema.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2022-09-09 17:16:30 UTC; enpiar
+Packaged: 2022-10-01 01:10:45 UTC; enpiar
 Author: Neal Richardson [aut, cre],
   Ian Cook [aut],
   Nic Crane [aut],
@@ -75,4 +75,4 @@ Author: Neal Richardson [aut, cre],
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2022-09-14 08:10:02 UTC
+Date/Publication: 2022-10-02 02:40:05 UTC

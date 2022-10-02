@@ -17,6 +17,10 @@
   under the License.
 -->
 
+# arrow 9.0.0.2
+
+* Test suite patches to accommodate POSIXt changes in R devel
+
 # arrow 9.0.0.1
 
 * Test suite patches to accommodate optional dependencies and more platforms
