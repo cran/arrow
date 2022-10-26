@@ -8,18 +8,19 @@ arrow::arrow_with_s3()
 
 ## ---- eval = FALSE------------------------------------------------------------
 #  bucket <- "https://voltrondata-labs-datasets.s3.us-east-2.amazonaws.com"
-#  for (year in 2009:2019) {
-#    if (year == 2019) {
-#      # We only have through June 2019 there
-#      months <- 1:6
+#  for (year in 2009:2022) {
+#    if (year == 2022) {
+#      # We only have through Feb 2022 there
+#      months <- 1:2
 #    } else {
 #      months <- 1:12
 #    }
-#    for (month in sprintf("%02d", months)) {
-#      dir.create(file.path("nyc-taxi", year, month), recursive = TRUE)
+#    for (month in months) {
+#      dataset_path <- file.path("nyc-taxi", paste0("year=", year), paste0("month=", month))
+#      dir.create(dataset_path, recursive = TRUE)
 #      try(download.file(
-#        paste(bucket, "nyc-taxi", paste0("year=", year), paste0("month=", month), "data.parquet", sep = "/"),
-#        file.path("nyc-taxi", paste0("year=", year), paste0("month=", month), "data.parquet"),
+#        paste(bucket, dataset_path, "part-0.parquet", sep = "/"),
+#        file.path(dataset_path, "part-0.parquet"),
 #        mode = "wb"
 #      ), silent = TRUE)
 #    }

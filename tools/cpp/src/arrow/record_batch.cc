@@ -30,7 +30,6 @@
 #include "arrow/status.h"
 #include "arrow/table.h"
 #include "arrow/type.h"
-#include "arrow/util/atomic_shared_ptr.h"
 #include "arrow/util/iterator.h"
 #include "arrow/util/logging.h"
 #include "arrow/util/vector.h"
@@ -78,10 +77,10 @@ class SimpleRecordBatch : public RecordBatch {
   }
 
   std::shared_ptr<Array> column(int i) const override {
-    std::shared_ptr<Array> result = internal::atomic_load(&boxed_columns_[i]);
+    std::shared_ptr<Array> result = std::atomic_load(&boxed_columns_[i]);
     if (!result) {
       result = MakeArray(columns_[i]);
-      internal::atomic_store(&boxed_columns_[i], result);
+      std::atomic_store(&boxed_columns_[i], result);
     }
     return result;
   }
@@ -385,6 +384,15 @@ Result<std::shared_ptr<RecordBatchReader>> RecordBatchReader::Make(
     }
 
     schema = batches[0]->schema();
+  }
+
+  return std::make_shared<SimpleRecordBatchReader>(std::move(batches), schema);
+}
+
+Result<std::shared_ptr<RecordBatchReader>> RecordBatchReader::MakeFromIterator(
+    Iterator<std::shared_ptr<RecordBatch>> batches, std::shared_ptr<Schema> schema) {
+  if (schema == nullptr) {
+    return Status::Invalid("Schema cannot be nullptr");
   }
 
   return std::make_shared<SimpleRecordBatchReader>(std::move(batches), schema);

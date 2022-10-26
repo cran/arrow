@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 9.0.0.2
+Version: 10.0.0
 Authors@R: c(
     person("Neal", "Richardson", email = "neal@ursalabs.org", role = c("aut", "cre")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -26,17 +26,18 @@ URL: https://github.com/apache/arrow/, https://arrow.apache.org/docs/r/
 BugReports: https://issues.apache.org/jira/projects/ARROW/issues
 Encoding: UTF-8
 Language: en-US
-SystemRequirements: C++11; for AWS S3 support on Linux, libcurl and
+SystemRequirements: C++17; for AWS S3 support on Linux, libcurl and
         openssl (optional)
 Biarch: true
-Imports: assertthat, bit64 (>= 0.9-7), methods, purrr, R6, rlang,
+Imports: assertthat, bit64 (>= 0.9-7), glue, methods, purrr, R6, rlang,
         stats, tidyselect (>= 1.0.0), utils, vctrs
 RoxygenNote: 7.2.1
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-Suggests: cli, DBI, dbplyr, decor, distro, dplyr, duckdb (>= 0.2.8),
-        hms, knitr, lubridate, pillar, pkgload, reticulate, rmarkdown,
-        stringi, stringr, testthat (>= 3.1.0), tibble, tzdb, withr
+Suggests: blob, cli, DBI, dbplyr, decor, distro, dplyr, duckdb (>=
+        0.2.8), hms, knitr, lubridate, pillar, pkgload, reticulate,
+        rmarkdown, stringi, stringr, sys, testthat (>= 3.1.0), tibble,
+        tzdb, withr
 LinkingTo: cpp11 (>= 0.4.2)
 Collate: 'arrowExports.R' 'enums.R' 'arrow-object.R' 'type.R'
         'array-data.R' 'arrow-datum.R' 'array.R' 'arrow-info.R'
@@ -44,23 +45,24 @@ Collate: 'arrowExports.R' 'enums.R' 'arrow-object.R' 'type.R'
         'chunked-array.R' 'io.R' 'compression.R' 'scalar.R' 'compute.R'
         'config.R' 'csv.R' 'dataset.R' 'dataset-factory.R'
         'dataset-format.R' 'dataset-partition.R' 'dataset-scan.R'
-        'dataset-write.R' 'dictionary.R' 'dplyr-arrange.R'
-        'dplyr-collect.R' 'dplyr-count.R' 'dplyr-datetime-helpers.R'
-        'dplyr-distinct.R' 'dplyr-eval.R' 'dplyr-filter.R'
+        'dataset-write.R' 'dictionary.R' 'dplyr-across.R'
+        'dplyr-arrange.R' 'dplyr-collect.R' 'dplyr-count.R'
+        'dplyr-datetime-helpers.R' 'dplyr-distinct.R' 'dplyr-eval.R'
+        'dplyr-filter.R' 'dplyr-funcs-augmented.R'
         'dplyr-funcs-conditional.R' 'dplyr-funcs-datetime.R'
-        'dplyr-funcs-math.R' 'dplyr-funcs-string.R'
+        'dplyr-funcs-doc.R' 'dplyr-funcs-math.R' 'dplyr-funcs-string.R'
         'dplyr-funcs-type.R' 'expression.R' 'dplyr-funcs.R'
         'dplyr-glimpse.R' 'dplyr-group-by.R' 'dplyr-join.R'
-        'dplyr-mutate.R' 'dplyr-select.R' 'dplyr-summarize.R'
-        'dplyr-union.R' 'record-batch.R' 'table.R' 'dplyr.R' 'duckdb.R'
-        'extension.R' 'feather.R' 'field.R' 'filesystem.R' 'flight.R'
-        'install-arrow.R' 'ipc-stream.R' 'json.R' 'memory-pool.R'
-        'message.R' 'metadata.R' 'parquet.R' 'python.R'
-        'query-engine.R' 'record-batch-reader.R'
+        'dplyr-mutate.R' 'dplyr-select.R' 'dplyr-slice.R'
+        'dplyr-summarize.R' 'dplyr-union.R' 'record-batch.R' 'table.R'
+        'dplyr.R' 'duckdb.R' 'extension.R' 'feather.R' 'field.R'
+        'filesystem.R' 'flight.R' 'install-arrow.R' 'ipc-stream.R'
+        'json.R' 'memory-pool.R' 'message.R' 'metadata.R' 'parquet.R'
+        'python.R' 'query-engine.R' 'record-batch-reader.R'
         'record-batch-writer.R' 'reexports-bit64.R'
         'reexports-tidyselect.R' 'schema.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2022-10-01 01:10:45 UTC; enpiar
+Packaged: 2022-10-25 14:00:07 UTC; enpiar
 Author: Neal Richardson [aut, cre],
   Ian Cook [aut],
   Nic Crane [aut],
@@ -75,4 +77,4 @@ Author: Neal Richardson [aut, cre],
   Apache Arrow [aut, cph]
 Maintainer: Neal Richardson <neal@ursalabs.org>
 Repository: CRAN
-Date/Publication: 2022-10-02 02:40:05 UTC
+Date/Publication: 2022-10-26 13:25:07 UTC

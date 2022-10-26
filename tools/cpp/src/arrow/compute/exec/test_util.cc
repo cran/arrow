@@ -25,6 +25,7 @@
 #include <iterator>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <utility>
@@ -33,20 +34,19 @@
 #include "arrow/compute/api_vector.h"
 #include "arrow/compute/exec.h"
 #include "arrow/compute/exec/exec_plan.h"
-#include "arrow/compute/exec/ir_consumer.h"
 #include "arrow/compute/exec/options.h"
 #include "arrow/compute/exec/util.h"
 #include "arrow/compute/function_internal.h"
 #include "arrow/datum.h"
 #include "arrow/record_batch.h"
 #include "arrow/table.h"
+#include "arrow/testing/builder.h"
 #include "arrow/testing/gtest_util.h"
 #include "arrow/testing/random.h"
 #include "arrow/type.h"
 #include "arrow/util/async_generator.h"
 #include "arrow/util/iterator.h"
 #include "arrow/util/logging.h"
-#include "arrow/util/optional.h"
 #include "arrow/util/unreachable.h"
 #include "arrow/util/vector.h"
 
@@ -142,8 +142,7 @@ ExecNode* MakeDummyNode(ExecPlan* plan, std::string label, std::vector<ExecNode*
   return node;
 }
 
-ExecBatch ExecBatchFromJSON(const std::vector<TypeHolder>& types,
-                            util::string_view json) {
+ExecBatch ExecBatchFromJSON(const std::vector<TypeHolder>& types, std::string_view json) {
   auto fields = ::arrow::internal::MapVector(
       [](const TypeHolder& th) { return field("", th.GetSharedPtr()); }, types);
 
@@ -153,7 +152,7 @@ ExecBatch ExecBatchFromJSON(const std::vector<TypeHolder>& types,
 }
 
 ExecBatch ExecBatchFromJSON(const std::vector<TypeHolder>& types,
-                            const std::vector<ArgShape>& shapes, util::string_view json) {
+                            const std::vector<ArgShape>& shapes, std::string_view json) {
   DCHECK_EQ(types.size(), shapes.size());
 
   ExecBatch batch = ExecBatchFromJSON(types, json);
@@ -180,17 +179,17 @@ Future<> StartAndFinish(ExecPlan* plan) {
 }
 
 Future<std::vector<ExecBatch>> StartAndCollect(
-    ExecPlan* plan, AsyncGenerator<util::optional<ExecBatch>> gen) {
+    ExecPlan* plan, AsyncGenerator<std::optional<ExecBatch>> gen) {
   RETURN_NOT_OK(plan->Validate());
   RETURN_NOT_OK(plan->StartProducing());
 
   auto collected_fut = CollectAsyncGenerator(gen);
 
-  return AllComplete({plan->finished(), Future<>(collected_fut)})
+  return AllFinished({plan->finished(), Future<>(collected_fut)})
       .Then([collected_fut]() -> Result<std::vector<ExecBatch>> {
         ARROW_ASSIGN_OR_RAISE(auto collected, collected_fut.result());
         return ::arrow::internal::MapVector(
-            [](util::optional<ExecBatch> batch) { return std::move(*batch); },
+            [](std::optional<ExecBatch> batch) { return std::move(*batch); },
             std::move(collected));
       });
 }
@@ -235,9 +234,9 @@ BatchesWithSchema MakeRandomBatches(const std::shared_ptr<Schema>& schema,
   return out;
 }
 
-BatchesWithSchema MakeBatchesFromString(
-    const std::shared_ptr<Schema>& schema,
-    const std::vector<util::string_view>& json_strings, int multiplicity) {
+BatchesWithSchema MakeBatchesFromString(const std::shared_ptr<Schema>& schema,
+                                        const std::vector<std::string_view>& json_strings,
+                                        int multiplicity) {
   BatchesWithSchema out_batches{{}, schema};
 
   std::vector<TypeHolder> types;
@@ -307,18 +306,6 @@ bool operator==(const Declaration& l, const Declaration& r) {
   if (l.inputs != r.inputs) return false;
   if (l.label != r.label) return false;
 
-  if (l.factory_name == "catalog_source") {
-    auto l_opts = &OptionsAs<CatalogSourceNodeOptions>(l);
-    auto r_opts = &OptionsAs<CatalogSourceNodeOptions>(r);
-
-    bool schemas_equal = l_opts->schema == nullptr
-                             ? r_opts->schema == nullptr
-                             : l_opts->schema->Equals(r_opts->schema);
-
-    return l_opts->name == r_opts->name && schemas_equal &&
-           l_opts->filter == r_opts->filter && l_opts->projection == r_opts->projection;
-  }
-
   if (l.factory_name == "filter") {
     return OptionsAs<FilterNodeOptions>(l).filter_expression ==
            OptionsAs<FilterNodeOptions>(r).filter_expression;
@@ -366,22 +353,6 @@ bool operator==(const Declaration& l, const Declaration& r) {
 
 static inline void PrintToImpl(const std::string& factory_name,
                                const ExecNodeOptions& opts, std::ostream* os) {
-  if (factory_name == "catalog_source") {
-    auto o = &OptionsAs<CatalogSourceNodeOptions>(opts);
-    *os << o->name << ", schema=" << o->schema->ToString();
-    if (o->filter != literal(true)) {
-      *os << ", filter=" << o->filter.ToString();
-    }
-    if (!o->projection.empty()) {
-      *os << ", projection=[";
-      for (const auto& ref : o->projection) {
-        *os << ref.ToString() << ",";
-      }
-      *os << "]";
-    }
-    return;
-  }
-
   if (factory_name == "filter") {
     return PrintTo(OptionsAs<FilterNodeOptions>(opts).filter_expression, os);
   }
@@ -452,11 +423,48 @@ void PrintTo(const Declaration& decl, std::ostream* os) {
 
   *os << "{";
   for (const auto& input : decl.inputs) {
-    if (auto decl = util::get_if<Declaration>(&input)) {
+    if (auto decl = std::get_if<Declaration>(&input)) {
       PrintTo(*decl, os);
     }
   }
   *os << "}";
+}
+
+Result<std::shared_ptr<Table>> MakeRandomTimeSeriesTable(
+    const TableGenerationProperties& properties) {
+  int total_columns = properties.num_columns + 2;
+  std::vector<std::shared_ptr<Array>> columns;
+  columns.reserve(total_columns);
+  arrow::FieldVector field_vector;
+  field_vector.reserve(total_columns);
+
+  field_vector.push_back(field("time", int64()));
+  field_vector.push_back(field("id", int32()));
+  Int64Builder time_column_builder;
+  Int32Builder id_column_builder;
+  for (int64_t time = properties.start; time <= properties.end;
+       time += properties.time_frequency) {
+    for (int32_t id = 0; id < properties.num_ids; id++) {
+      ARROW_RETURN_NOT_OK(time_column_builder.Append(time));
+      ARROW_RETURN_NOT_OK(id_column_builder.Append(id));
+    }
+  }
+
+  int64_t num_rows = time_column_builder.length();
+  ARROW_ASSIGN_OR_RAISE(auto time_column, time_column_builder.Finish());
+  ARROW_ASSIGN_OR_RAISE(auto id_column, id_column_builder.Finish());
+  columns.push_back(std::move(time_column));
+  columns.push_back(std::move(id_column));
+
+  for (int i = 0; i < properties.num_columns; i++) {
+    field_vector.push_back(
+        field(properties.column_prefix + std::to_string(i), float64()));
+    random::RandomArrayGenerator rand(properties.seed + i);
+    columns.push_back(
+        rand.Float64(num_rows, properties.min_column_value, properties.max_column_value));
+  }
+  std::shared_ptr<arrow::Schema> schema = arrow::schema(std::move(field_vector));
+  return Table::Make(schema, columns, num_rows);
 }
 
 }  // namespace compute

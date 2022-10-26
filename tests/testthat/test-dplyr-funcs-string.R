@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-skip_if(on_old_windows())
 skip_if_not_available("utf8proc")
 
 library(dplyr, warn.conflicts = FALSE)
@@ -141,12 +140,10 @@ test_that("paste, paste0, and str_c", {
     call_binding("paste", x, y, sep = NA_character_),
     "Invalid separator"
   )
-  # emits null in str_c() (consistent with stringr::str_c())
-  compare_dplyr_binding(
-    .input %>%
-      transmute(str_c(x, y, sep = NA_character_)) %>%
-      collect(),
-    df
+  # In next release of stringr (late 2022), str_c also errors
+  expect_error(
+    call_binding("str_c", x, y, sep = NA_character_),
+    "`sep` must be a single string, not `NA`."
   )
 
   # sep passed in dots to paste0 (which doesn't take a sep argument)
@@ -905,7 +902,7 @@ test_that("str_like", {
     tibble(x = c(FALSE, TRUE))
   )
 
-  # This will give an error until a new version of stringr with str_like has been released
+  # TODO: remove this skip once a new version of stringr is released (maybe 1.5.0?)
   skip_if_not("str_like" %in% getNamespaceExports("stringr"))
   compare_dplyr_binding(
     .input %>%

@@ -839,16 +839,16 @@ struct ScalarParseImpl {
     return std::move(out_);
   }
 
-  ScalarParseImpl(std::shared_ptr<DataType> type, util::string_view s)
+  ScalarParseImpl(std::shared_ptr<DataType> type, std::string_view s)
       : type_(std::move(type)), s_(s) {}
 
   std::shared_ptr<DataType> type_;
-  util::string_view s_;
+  std::string_view s_;
   std::shared_ptr<Scalar> out_;
 };
 
 Result<std::shared_ptr<Scalar>> Scalar::Parse(const std::shared_ptr<DataType>& type,
-                                              util::string_view s) {
+                                              std::string_view s) {
   return ScalarParseImpl{type, s}.Finish();
 }
 
@@ -871,9 +871,8 @@ std::shared_ptr<Buffer> FormatToBuffer(Formatter&& formatter, const ScalarType& 
   if (!from.is_valid) {
     return Buffer::FromString("null");
   }
-  return formatter(from.value, [&](util::string_view v) {
-    return Buffer::FromString(std::string(v));
-  });
+  return formatter(
+      from.value, [&](std::string_view v) { return Buffer::FromString(std::string(v)); });
 }
 
 // error fallback
@@ -993,8 +992,7 @@ Status CastImpl(const DateScalar<D>& from, TimestampScalar* to) {
 // string to any
 template <typename ScalarType>
 Status CastImpl(const StringScalar& from, ScalarType* to) {
-  ARROW_ASSIGN_OR_RAISE(auto out,
-                        Scalar::Parse(to->type, util::string_view(*from.value)));
+  ARROW_ASSIGN_OR_RAISE(auto out, Scalar::Parse(to->type, std::string_view(*from.value)));
   to->value = std::move(checked_cast<ScalarType&>(*out).value);
   return Status::OK();
 }
@@ -1037,6 +1035,20 @@ Status CastImpl(const StructScalar& from, StringScalar* to) {
        << " = " << from.value[i]->ToString();
   }
   ss << '}';
+  to->value = Buffer::FromString(ss.str());
+  return Status::OK();
+}
+
+// list based types (list, large list and map (fixed sized list too)) to string
+Status CastImpl(const BaseListScalar& from, StringScalar* to) {
+  std::stringstream ss;
+  ss << from.type->ToString() << "[";
+  for (int64_t i = 0; i < from.value->length(); i++) {
+    if (i > 0) ss << ", ";
+    ARROW_ASSIGN_OR_RAISE(auto value, from.value->GetScalar(i));
+    ss << value->ToString();
+  }
+  ss << ']';
   to->value = Buffer::FromString(ss.str());
   return Status::OK();
 }
