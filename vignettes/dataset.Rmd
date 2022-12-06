@@ -15,7 +15,7 @@ This vignette introduces Datasets and shows how to use dplyr to analyze them.
 
 ## Example: NYC taxi data
 
-The [New York City taxi trip record data](https://www1.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
+The [New York City taxi trip record data](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page)
 is widely used in big data exercises and competitions.
 For demonstration purposes, we have hosted a Parquet-formatted version
 of about ten years of the trip data in a public Amazon S3 bucket.
