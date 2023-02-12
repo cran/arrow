@@ -254,7 +254,11 @@ tail.arrow_dplyr_query <- function(x, n = 6L, ...) {
 
   if (!missing(i)) {
     out <- take_dataset_rows(x, i)
-    x <- restore_dplyr_features(out, x)
+    x <- set_group_attributes(
+      out,
+      dplyr::group_vars(x),
+      dplyr::group_by_drop_default(x)
+    )
   }
   x
 }
@@ -291,8 +295,13 @@ show_exec_plan <- function(x) {
   }
 
   result <- as_record_batch_reader(adq)
-  cat(result$Plan()$ToString())
-  result$Close()
+  plan <- result$Plan()
+  on.exit({
+    plan$.unsafe_delete()
+    result$.unsafe_delete()
+  })
+
+  cat(plan$ToString())
 
   invisible(x)
 }

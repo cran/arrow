@@ -189,7 +189,7 @@ Future<std::vector<ExecBatch>> StartAndCollect(
       .Then([collected_fut]() -> Result<std::vector<ExecBatch>> {
         ARROW_ASSIGN_OR_RAISE(auto collected, collected_fut.result());
         return ::arrow::internal::MapVector(
-            [](std::optional<ExecBatch> batch) { return std::move(*batch); },
+            [](std::optional<ExecBatch> batch) { return batch.value_or(ExecBatch()); },
             std::move(collected));
       });
 }
@@ -218,16 +218,16 @@ BatchesWithSchema MakeNestedBatches() {
 }
 
 BatchesWithSchema MakeRandomBatches(const std::shared_ptr<Schema>& schema,
-                                    int num_batches, int batch_size) {
+                                    int num_batches, int batch_size, int64_t alignment,
+                                    MemoryPool* memory_pool) {
   BatchesWithSchema out;
 
   random::RandomArrayGenerator rng(42);
   out.batches.resize(num_batches);
 
   for (int i = 0; i < num_batches; ++i) {
-    out.batches[i] = ExecBatch(*rng.BatchOf(schema->fields(), batch_size));
-    // add a tag scalar to ensure the batches are unique
-    out.batches[i].values.emplace_back(i);
+    out.batches[i] =
+        ExecBatch(*rng.BatchOf(schema->fields(), batch_size, alignment, memory_pool));
   }
 
   out.schema = schema;
@@ -258,18 +258,61 @@ BatchesWithSchema MakeBatchesFromString(const std::shared_ptr<Schema>& schema,
   return out_batches;
 }
 
+Result<std::vector<std::shared_ptr<ArrayVector>>> ToArrayVectors(
+    const BatchesWithSchema& batches_with_schema) {
+  std::vector<std::shared_ptr<ArrayVector>> arrayvecs;
+  for (auto batch : batches_with_schema.batches) {
+    ARROW_ASSIGN_OR_RAISE(auto record_batch,
+                          batch.ToRecordBatch(batches_with_schema.schema));
+    arrayvecs.push_back(std::make_shared<ArrayVector>(record_batch->columns()));
+  }
+  return arrayvecs;
+}
+
+Result<std::vector<std::shared_ptr<ExecBatch>>> ToExecBatches(
+    const BatchesWithSchema& batches_with_schema) {
+  std::vector<std::shared_ptr<ExecBatch>> exec_batches;
+  for (auto batch : batches_with_schema.batches) {
+    exec_batches.push_back(std::make_shared<ExecBatch>(batch));
+  }
+  return exec_batches;
+}
+
+Result<std::vector<std::shared_ptr<RecordBatch>>> ToRecordBatches(
+    const BatchesWithSchema& batches_with_schema) {
+  std::vector<std::shared_ptr<RecordBatch>> record_batches;
+  for (auto batch : batches_with_schema.batches) {
+    ARROW_ASSIGN_OR_RAISE(auto record_batch,
+                          batch.ToRecordBatch(batches_with_schema.schema));
+    record_batches.push_back(std::move(record_batch));
+  }
+  return record_batches;
+}
+
+Result<std::shared_ptr<RecordBatchReader>> ToRecordBatchReader(
+    const BatchesWithSchema& batches_with_schema) {
+  std::vector<std::shared_ptr<RecordBatch>> record_batches;
+  for (auto batch : batches_with_schema.batches) {
+    ARROW_ASSIGN_OR_RAISE(auto record_batch,
+                          batch.ToRecordBatch(batches_with_schema.schema));
+    record_batches.push_back(std::move(record_batch));
+  }
+  ARROW_ASSIGN_OR_RAISE(auto table, Table::FromRecordBatches(std::move(record_batches)));
+  return std::make_shared<arrow::TableBatchReader>(std::move(table));
+}
+
 Result<std::shared_ptr<Table>> SortTableOnAllFields(const std::shared_ptr<Table>& tab) {
   std::vector<SortKey> sort_keys;
-  for (auto&& f : tab->schema()->fields()) {
-    sort_keys.emplace_back(f->name());
+  for (int i = 0; i < tab->num_columns(); i++) {
+    sort_keys.emplace_back(i);
   }
   ARROW_ASSIGN_OR_RAISE(auto sort_ids, SortIndices(tab, SortOptions(sort_keys)));
   ARROW_ASSIGN_OR_RAISE(auto tab_sorted, Take(tab, sort_ids));
   return tab_sorted.table();
 }
 
-void AssertTablesEqual(const std::shared_ptr<Table>& exp,
-                       const std::shared_ptr<Table>& act) {
+void AssertTablesEqualIgnoringOrder(const std::shared_ptr<Table>& exp,
+                                    const std::shared_ptr<Table>& act) {
   ASSERT_EQ(exp->num_columns(), act->num_columns());
   if (exp->num_rows() == 0) {
     ASSERT_EQ(exp->num_rows(), act->num_rows());
@@ -282,12 +325,12 @@ void AssertTablesEqual(const std::shared_ptr<Table>& exp,
   }
 }
 
-void AssertExecBatchesEqual(const std::shared_ptr<Schema>& schema,
-                            const std::vector<ExecBatch>& exp,
-                            const std::vector<ExecBatch>& act) {
+void AssertExecBatchesEqualIgnoringOrder(const std::shared_ptr<Schema>& schema,
+                                         const std::vector<ExecBatch>& exp,
+                                         const std::vector<ExecBatch>& act) {
   ASSERT_OK_AND_ASSIGN(auto exp_tab, TableFromExecBatches(schema, exp));
   ASSERT_OK_AND_ASSIGN(auto act_tab, TableFromExecBatches(schema, act));
-  AssertTablesEqual(exp_tab, act_tab);
+  AssertTablesEqualIgnoringOrder(exp_tab, act_tab);
 }
 
 template <typename T>

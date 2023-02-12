@@ -47,7 +47,7 @@ if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ARROW_VERSION "10.0.1")
+set(ARROW_VERSION "11.0.0")
 
 string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" ARROW_BASE_VERSION "${ARROW_VERSION}")
 
@@ -384,8 +384,9 @@ if(NOT ARROW_BUILD_EXAMPLES)
   set(NO_EXAMPLES 1)
 endif()
 
-if(NOT ARROW_FUZZING)
-  set(NO_FUZZING 1)
+if(ARROW_FUZZING)
+  # Fuzzing builds enable ASAN without setting our home-grown option for it.
+  add_definitions(-DADDRESS_SANITIZER)
 endif()
 
 if(ARROW_LARGE_MEMORY_TESTS)
@@ -488,10 +489,11 @@ endif()
 include(BuildUtils)
 enable_testing()
 
-# For arrow.pc. Requires.private and Libs.private are used when
-# "pkg-config --libs --static arrow" is used.
-set(ARROW_PC_REQUIRES_PRIVATE)
-set(ARROW_PC_LIBS_PRIVATE)
+# For arrow.pc. Cflags.private, Libs.private and Requires.private are
+# used when "pkg-config --cflags --libs --static arrow" is used.
+set(ARROW_PC_CFLAGS_PRIVATE " -DARROW_STATIC")
+set(ARROW_PC_LIBS_PRIVATE "")
+set(ARROW_PC_REQUIRES_PRIVATE "")
 
 include(ThirdpartyToolchain)
 
@@ -524,6 +526,10 @@ endif()
 # CMAKE_CXX_FLAGS now fully assembled
 message(STATUS "CMAKE_C_FLAGS: ${CMAKE_C_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_C_FLAGS_${UPPERCASE_BUILD_TYPE}: ${CMAKE_C_FLAGS_${UPPERCASE_BUILD_TYPE}}"
+)
+message(STATUS "CMAKE_CXX_FLAGS_${UPPERCASE_BUILD_TYPE}: ${CMAKE_CXX_FLAGS_${UPPERCASE_BUILD_TYPE}}"
+)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 include_directories(src)
@@ -882,8 +888,8 @@ if(ARROW_BUILD_BENCHMARKS)
 endif()
 
 if(ARROW_JEMALLOC)
-  list(APPEND ARROW_SHARED_LINK_LIBS jemalloc)
-  list(APPEND ARROW_STATIC_LINK_LIBS jemalloc)
+  list(APPEND ARROW_SHARED_LINK_LIBS jemalloc::jemalloc)
+  list(APPEND ARROW_STATIC_LINK_LIBS jemalloc::jemalloc)
 endif()
 
 if(ARROW_MIMALLOC)

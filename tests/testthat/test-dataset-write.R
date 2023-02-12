@@ -708,7 +708,9 @@ test_that("Dataset write max rows per files", {
 })
 
 test_that("Dataset min_rows_per_group", {
+  skip_if_not(CanRunWithCapturedR())
   skip_if_not_available("parquet")
+
   rb1 <- record_batch(
     c1 = c(1, 2, 3, 4),
     c2 = c("a", "b", "e", "a")
@@ -757,7 +759,9 @@ test_that("Dataset min_rows_per_group", {
 })
 
 test_that("Dataset write max rows per group", {
+  skip_if_not(CanRunWithCapturedR())
   skip_if_not_available("parquet")
+
   num_of_records <- 30
   max_rows_per_group <- 18
   df <- tibble::tibble(
@@ -783,4 +787,22 @@ test_that("Dataset write max rows per group", {
     sort()
 
   expect_equal(row_group_sizes, c(12, 18))
+})
+
+test_that("Can delete filesystem dataset after write_dataset", {
+  # While this test should pass on all platforms, this is primarily
+  # a test for Windows because that platform won't allow open files
+  # to be deleted.
+  dataset_dir2 <- tempfile()
+  ds0 <- open_dataset(hive_dir)
+  write_dataset(ds0, dataset_dir2)
+
+  dataset_dir3 <- tempfile()
+  on.exit(unlink(dataset_dir3, recursive = TRUE))
+
+  ds <- open_dataset(dataset_dir2)
+  write_dataset(ds, dataset_dir3)
+
+  unlink(dataset_dir2, recursive = TRUE)
+  expect_false(dir.exists(dataset_dir2))
 })

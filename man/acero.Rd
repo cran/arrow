@@ -53,9 +53,9 @@ Table into an R \code{data.frame}.
 \item \code{\link[dplyr:slice]{slice_tail()}}: slicing within groups not supported; Arrow datasets do not have row order, so tail is non-deterministic; \code{prop} only supported on queries where \code{nrow()} is knowable without evaluating
 \item \code{\link[dplyr:summarise]{summarise()}}: window functions not currently supported; arguments \code{.drop = FALSE} and `.groups = "rowwise" not supported
 \item \code{\link[dplyr:count]{tally()}}
-\item \code{\link[dplyr:mutate]{transmute()}}
+\item \code{\link[dplyr:transmute]{transmute()}}
 \item \code{\link[dplyr:group_by]{ungroup()}}
-\item \code{\link[dplyr:reexports]{union()}}
+\item \code{\link[dplyr:setops]{union()}}
 \item \code{\link[dplyr:setops]{union_all()}}
 }
 }
@@ -85,30 +85,31 @@ as \code{arrow_ascii_is_decimal}.
 
 \subsection{base}{
 \itemize{
-\item \code{\link[=-]{-}}
 \item \code{\link[=!]{!}}
 \item \code{\link[=!=]{!=}}
-\item \code{\link[=*]{*}}
-\item \code{\link[=/]{/}}
-\item \code{\link[=&]{&}}
-\item \code{\link[=\%/\%]{\%/\%}}
 \item \code{\link[=\%\%]{\%\%}}
+\item \code{\link[=\%/\%]{\%/\%}}
 \item \code{\link[=\%in\%]{\%in\%}}
-\item \code{\link[=^]{^}}
+\item \code{\link[=&]{&}}
+\item \code{\link[=*]{*}}
 \item \code{\link[=+]{+}}
+\item \code{\link[=-]{-}}
+\item \code{\link[=/]{/}}
 \item \code{\link[=<]{<}}
 \item \code{\link[=<=]{<=}}
 \item \code{\link[===]{==}}
 \item \code{\link[=>]{>}}
 \item \code{\link[=>=]{>=}}
-\item \code{\link[=|]{|}}
+\item \code{\link[base:ISOdatetime]{ISOdate()}}
+\item \code{\link[base:ISOdatetime]{ISOdatetime()}}
+\item \code{\link[=^]{^}}
 \item \code{\link[base:MathFun]{abs()}}
 \item \code{\link[base:Trig]{acos()}}
 \item \code{\link[base:all]{all()}}
 \item \code{\link[base:any]{any()}}
-\item \code{\link[base:character]{as.character()}}
 \item \code{\link[base:as.Date]{as.Date()}}: Multiple \code{tryFormats} not supported in Arrow.
 Consider using the lubridate specialised parsing functions \code{ymd()}, \code{ymd()}, etc.
+\item \code{\link[base:character]{as.character()}}
 \item \code{\link[base:difftime]{as.difftime()}}: only supports \code{units = "secs"} (the default)
 \item \code{\link[base:double]{as.double()}}
 \item \code{\link[base:integer]{as.integer()}}
@@ -139,8 +140,6 @@ Consider using the lubridate specialised parsing functions \code{ymd()}, \code{y
 \item \code{\link[base:NA]{is.na()}}
 \item \code{\link[base:is.finite]{is.nan()}}
 \item \code{\link[base:numeric]{is.numeric()}}
-\item \code{\link[base:ISOdatetime]{ISOdate()}}
-\item \code{\link[base:ISOdatetime]{ISOdatetime()}}
 \item \code{\link[base:Log]{log()}}
 \item \code{\link[base:Log]{log10()}}
 \item \code{\link[base:Log]{log1p()}}
@@ -172,6 +171,7 @@ Valid values are "s", "ms" (default), "us", "ns".
 \item \code{\link[base:chartr]{tolower()}}
 \item \code{\link[base:chartr]{toupper()}}
 \item \code{\link[base:Round]{trunc()}}
+\item \code{\link[=|]{|}}
 }
 }
 
@@ -231,8 +231,8 @@ Valid values are "s", "ms" (default), "us", "ns".
 \item \code{\link[lubridate:format_ISO8601]{format_ISO8601()}}
 \item \code{\link[lubridate:hour]{hour()}}
 \item \code{\link[lubridate:date_utils]{is.Date()}}
-\item \code{\link[lubridate:is.instant]{is.instant()}}
 \item \code{\link[lubridate:posix_utils]{is.POSIXct()}}
+\item \code{\link[lubridate:is.instant]{is.instant()}}
 \item \code{\link[lubridate:is.instant]{is.timepoint()}}
 \item \code{\link[lubridate:week]{isoweek()}}
 \item \code{\link[lubridate:year]{isoyear()}}
@@ -317,7 +317,7 @@ Pattern modifiers \code{coll()} and \code{boundary()} are not supported in any f
 \item \code{\link[stringr:str_dup]{str_dup()}}
 \item \code{\link[stringr:str_starts]{str_ends()}}
 \item \code{\link[stringr:str_length]{str_length()}}
-\item \code{str_like()}: not yet in a released version of \code{stringr}, but it is supported in \code{arrow}
+\item \code{\link[stringr:str_like]{str_like()}}: not yet in a released version of \code{stringr}, but it is supported in \code{arrow}
 \item \code{\link[stringr:str_pad]{str_pad()}}
 \item \code{\link[stringr:str_replace]{str_replace()}}
 \item \code{\link[stringr:str_replace]{str_replace_all()}}

@@ -324,6 +324,11 @@ test_that("Can set schema on dataset", {
   expect_equal(ds$schema, expected_schema)
 })
 
+test_that("as.data.frame.Dataset", {
+  ds <- open_dataset(dataset_dir, partitioning = schema(part = uint8()))
+  expect_identical(dim(as.data.frame(ds)), c(20L, 7L))
+})
+
 test_that("dim method returns the correct number of rows and columns", {
   ds <- open_dataset(dataset_dir, partitioning = schema(part = uint8()))
   expect_identical(dim(ds), c(20L, 7L))
@@ -581,16 +586,25 @@ test_that("UnionDataset can merge schemas", {
     collect() %>%
     arrange(x)
   expect_equal(colnames(actual), c("x", "y", "z"))
-  expect_equal(
-    actual,
-    union_all(as_tibble(sub_df1), as_tibble(sub_df2))
+
+  union_all_common <- function(...) {
+    common <- vctrs::vec_cast_common(...)
+    rlang::inject(union_all(!!!common))
+  }
+
+  expected <- union_all_common(
+    as_tibble(sub_df1),
+    as_tibble(sub_df2)
   )
+  expect_equal(actual, expected)
 
   # without unifying schemas, takes the first schema and discards any columns
   # in the second which aren't in the first
   ds <- open_dataset(list(ds1, ds2), unify_schemas = FALSE)
-  expected <- as_tibble(sub_df1) %>%
-    union_all(sub_df2 %>% as_tibble() %>% select(x))
+  expected <- union_all_common(
+    as_tibble(sub_df1),
+    as_tibble(sub_df2) %>% select(x)
+  )
   actual <- ds %>%
     collect() %>%
     arrange(x)
@@ -637,7 +651,9 @@ test_that("scalar aggregates with many batches (ARROW-16904)", {
   )
 })
 
-test_that("map_batches", {
+test_that("streaming map_batches into an ExecPlan", {
+  skip_if_not(CanRunWithCapturedR())
+
   ds <- open_dataset(dataset_dir, partitioning = "part")
 
   # summarize returns arrow_dplyr_query, which gets collected into a tibble
@@ -929,6 +945,39 @@ test_that("Dataset and query print methods", {
       sep = "\n"
     ),
     fixed = TRUE
+  )
+})
+
+test_that("Can delete filesystem dataset files after collection", {
+  # While this test should pass on all platforms, this is primarily
+  # a test for Windows because that platform won't allow open files
+  # to be deleted.
+  dataset_dir2 <- tempfile()
+  ds0 <- open_dataset(dataset_dir)
+  write_dataset(ds0, dataset_dir2)
+
+  ds <- open_dataset(dataset_dir2)
+  collected <- ds %>% arrange(int) %>% collect()
+  unlink(dataset_dir2, recursive = TRUE)
+  expect_false(dir.exists(dataset_dir2))
+
+  expect_identical(
+    collected,
+    ds0 %>% arrange(int) %>% collect()
+  )
+
+  # Also try with head(), since this creates a nested query whose interior
+  # components should also be cleaned up to allow deleting the original
+  # dataset
+  write_dataset(ds0, dataset_dir2)
+  ds <- open_dataset(dataset_dir2)
+  collected <- ds %>% arrange(int) %>% head() %>% arrange(int) %>% collect()
+  unlink(dataset_dir2, recursive = TRUE)
+  expect_false(dir.exists(dataset_dir2))
+
+  expect_identical(
+    collected,
+    ds0 %>% arrange(int) %>% head() %>% arrange(int) %>% collect()
   )
 })
 

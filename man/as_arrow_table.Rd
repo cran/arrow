@@ -7,6 +7,7 @@
 \alias{as_arrow_table.RecordBatch}
 \alias{as_arrow_table.data.frame}
 \alias{as_arrow_table.RecordBatchReader}
+\alias{as_arrow_table.Dataset}
 \alias{as_arrow_table.arrow_dplyr_query}
 \alias{as_arrow_table.Schema}
 \title{Convert an object to an Arrow Table}
@@ -22,6 +23,8 @@ as_arrow_table(x, ..., schema = NULL)
 \method{as_arrow_table}{data.frame}(x, ..., schema = NULL)
 
 \method{as_arrow_table}{RecordBatchReader}(x, ...)
+
+\method{as_arrow_table}{Dataset}(x, ...)
 
 \method{as_arrow_table}{arrow_dplyr_query}(x, ...)
 

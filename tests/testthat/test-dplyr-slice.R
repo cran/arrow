@@ -89,6 +89,8 @@ test_that("slice_min/max, ungrouped", {
 })
 
 test_that("slice_sample, ungrouped", {
+  skip_if_not(CanRunWithCapturedR())
+
   tab <- arrow_table(tbl)
   expect_error(
     tab %>% slice_sample(replace = TRUE),
@@ -143,11 +145,11 @@ test_that("slice_* not supported with groups", {
     "Slicing grouped data not supported in Arrow"
   )
   expect_error(
-    slice_min(grouped, n = 5),
+    slice_min(grouped, int, n = 5),
     "Slicing grouped data not supported in Arrow"
   )
   expect_error(
-    slice_max(grouped, n = 5),
+    slice_max(grouped, int, n = 5),
     "Slicing grouped data not supported in Arrow"
   )
   expect_error(

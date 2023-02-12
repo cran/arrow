@@ -18,6 +18,8 @@
 library(dplyr, warn.conflicts = FALSE)
 
 test_that("ExecPlanReader does not start evaluating a query", {
+  skip_if_not(CanRunWithCapturedR())
+
   rbr <- as_record_batch_reader(
     function(x) stop("This query will error if started"),
     schema = schema(a = int32())
@@ -75,6 +77,17 @@ test_that("ExecPlanReader evaluates head() lazily", {
   # Depending on exactly how quickly background threads respond to the
   # request to cancel, reader$read_table()$num_rows > 0 may or may not
   # evaluate to TRUE (i.e., the reader may or may not be completely drained).
+})
+
+test_that("head() of an ExecPlanReader is an ExecPlanReader", {
+  reader <- as_record_batch_reader(as_adq(arrow_table(x = 1:10)))
+  expect_r6_class(reader, "ExecPlanReader")
+  reader_head <- head(reader, 6)
+  expect_r6_class(reader_head, "ExecPlanReader")
+  expect_equal(
+    as_arrow_table(reader_head),
+    arrow_table(x = 1:6)
+  )
 })
 
 test_that("do_exec_plan_substrait can evaluate a simple plan", {

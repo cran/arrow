@@ -294,9 +294,9 @@ class SerializedFile : public ParquetFileReader::Contents {
   }
 
   std::shared_ptr<RowGroupReader> GetRowGroup(int i) override {
-    std::unique_ptr<SerializedRowGroup> contents(
-        new SerializedRowGroup(source_, cached_source_, source_size_,
-                               file_metadata_.get(), i, properties_, file_decryptor_));
+    std::unique_ptr<SerializedRowGroup> contents = std::make_unique<SerializedRowGroup>(
+        source_, cached_source_, source_size_, file_metadata_.get(), i, properties_,
+        file_decryptor_);
     return std::make_shared<RowGroupReader>(std::move(contents));
   }
 
@@ -434,7 +434,8 @@ class SerializedFile : public ParquetFileReader::Contents {
     END_PARQUET_CATCH_EXCEPTIONS
     // Assumes this is kept alive externally
     return source_->ReadAsync(source_size_ - footer_read_size, footer_read_size)
-        .Then([=](const std::shared_ptr<::arrow::Buffer>& footer_buffer)
+        .Then([this,
+               footer_read_size](const std::shared_ptr<::arrow::Buffer>& footer_buffer)
                   -> ::arrow::Future<> {
           uint32_t metadata_len;
           BEGIN_PARQUET_CATCH_EXCEPTIONS
@@ -452,7 +453,8 @@ class SerializedFile : public ParquetFileReader::Contents {
                                                     footer_read_size, metadata_len);
           }
           return source_->ReadAsync(metadata_start, metadata_len)
-              .Then([=](const std::shared_ptr<::arrow::Buffer>& metadata_buffer) {
+              .Then([this, footer_buffer, footer_read_size, metadata_len](
+                        const std::shared_ptr<::arrow::Buffer>& metadata_buffer) {
                 return ParseMaybeEncryptedMetaDataAsync(footer_buffer, metadata_buffer,
                                                         footer_read_size, metadata_len);
               });
@@ -478,7 +480,8 @@ class SerializedFile : public ParquetFileReader::Contents {
       int64_t metadata_start = read_size.first;
       metadata_len = read_size.second;
       return source_->ReadAsync(metadata_start, metadata_len)
-          .Then([=](const std::shared_ptr<::arrow::Buffer>& metadata_buffer) {
+          .Then([this, metadata_len, is_encrypted_footer](
+                    const std::shared_ptr<::arrow::Buffer>& metadata_buffer) {
             // Continue and read the file footer
             return ParseMetaDataFinal(metadata_buffer, metadata_len, is_encrypted_footer);
           });
@@ -725,7 +728,7 @@ std::unique_ptr<ParquetFileReader> ParquetFileReader::Open(
     std::shared_ptr<::arrow::io::RandomAccessFile> source, const ReaderProperties& props,
     std::shared_ptr<FileMetaData> metadata) {
   auto contents = SerializedFile::Open(std::move(source), props, std::move(metadata));
-  std::unique_ptr<ParquetFileReader> result(new ParquetFileReader());
+  std::unique_ptr<ParquetFileReader> result = std::make_unique<ParquetFileReader>();
   result->Open(std::move(contents));
   return result;
 }
@@ -759,7 +762,7 @@ std::unique_ptr<ParquetFileReader> ParquetFileReader::OpenFile(
       completed.MarkFinished(contents.status());
       return;
     }
-    std::unique_ptr<ParquetFileReader> result(new ParquetFileReader());
+    std::unique_ptr<ParquetFileReader> result = std::make_unique<ParquetFileReader>();
     result->Open(fut.MoveResult().MoveValueUnsafe());
     completed.MarkFinished(std::move(result));
   });

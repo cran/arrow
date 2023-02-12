@@ -99,30 +99,31 @@
 #'
 #' ## base
 #'
-#' * [`-`][-()]
 #' * [`!`][!()]
 #' * [`!=`][!=()]
-#' * [`*`][*()]
-#' * [`/`][/()]
-#' * [`&`][&()]
-#' * [`%/%`][%/%()]
 #' * [`%%`][%%()]
+#' * [`%/%`][%/%()]
 #' * [`%in%`][%in%()]
-#' * [`^`][^()]
+#' * [`&`][&()]
+#' * [`*`][*()]
 #' * [`+`][+()]
+#' * [`-`][-()]
+#' * [`/`][/()]
 #' * [`<`][<()]
 #' * [`<=`][<=()]
 #' * [`==`][==()]
 #' * [`>`][>()]
 #' * [`>=`][>=()]
-#' * [`|`][|()]
+#' * [`ISOdate()`][base::ISOdate()]
+#' * [`ISOdatetime()`][base::ISOdatetime()]
+#' * [`^`][^()]
 #' * [`abs()`][base::abs()]
 #' * [`acos()`][base::acos()]
 #' * [`all()`][base::all()]
 #' * [`any()`][base::any()]
-#' * [`as.character()`][base::as.character()]
 #' * [`as.Date()`][base::as.Date()]: Multiple `tryFormats` not supported in Arrow.
 #' Consider using the lubridate specialised parsing functions `ymd()`, `ymd()`, etc.
+#' * [`as.character()`][base::as.character()]
 #' * [`as.difftime()`][base::as.difftime()]: only supports `units = "secs"` (the default)
 #' * [`as.double()`][base::as.double()]
 #' * [`as.integer()`][base::as.integer()]
@@ -153,8 +154,6 @@
 #' * [`is.na()`][base::is.na()]
 #' * [`is.nan()`][base::is.nan()]
 #' * [`is.numeric()`][base::is.numeric()]
-#' * [`ISOdate()`][base::ISOdate()]
-#' * [`ISOdatetime()`][base::ISOdatetime()]
 #' * [`log()`][base::log()]
 #' * [`log10()`][base::log10()]
 #' * [`log1p()`][base::log1p()]
@@ -186,6 +185,7 @@
 #' * [`tolower()`][base::tolower()]
 #' * [`toupper()`][base::toupper()]
 #' * [`trunc()`][base::trunc()]
+#' * [`|`][|()]
 #'
 #' ## bit64
 #'
@@ -239,8 +239,8 @@
 #' * [`format_ISO8601()`][lubridate::format_ISO8601()]
 #' * [`hour()`][lubridate::hour()]
 #' * [`is.Date()`][lubridate::is.Date()]
-#' * [`is.instant()`][lubridate::is.instant()]
 #' * [`is.POSIXct()`][lubridate::is.POSIXct()]
+#' * [`is.instant()`][lubridate::is.instant()]
 #' * [`is.timepoint()`][lubridate::is.timepoint()]
 #' * [`isoweek()`][lubridate::isoweek()]
 #' * [`isoyear()`][lubridate::isoyear()]
@@ -315,7 +315,7 @@
 #' * [`str_dup()`][stringr::str_dup()]
 #' * [`str_ends()`][stringr::str_ends()]
 #' * [`str_length()`][stringr::str_length()]
-#' * `str_like()`: not yet in a released version of `stringr`, but it is supported in `arrow`
+#' * [`str_like()`][stringr::str_like()]: not yet in a released version of `stringr`, but it is supported in `arrow`
 #' * [`str_pad()`][stringr::str_pad()]
 #' * [`str_replace()`][stringr::str_replace()]
 #' * [`str_replace_all()`][stringr::str_replace_all()]

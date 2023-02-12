@@ -23,11 +23,13 @@ set(ARROW_SUBSTRAIT_SRCS
     substrait/expression_internal.cc
     substrait/extension_set.cc
     substrait/extension_types.cc
+    substrait/options.cc
     substrait/plan_internal.cc
     substrait/relation_internal.cc
     substrait/serde.cc
     substrait/test_plan_builder.cc
     substrait/type_internal.cc
+    substrait/util_internal.cc
     substrait/util.cc)
 
 add_arrow_lib(arrow_substrait
@@ -72,6 +74,7 @@ add_arrow_test(substrait_test
                substrait/ext_test.cc
                substrait/function_test.cc
                substrait/serde_test.cc
+               substrait/protobuf_test_util.cc
                EXTRA_LINK_LIBS
                ${ARROW_SUBSTRAIT_TEST_LINK_LIBS}
                PREFIX

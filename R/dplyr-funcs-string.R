@@ -202,6 +202,14 @@ register_bindings_string_join <- function() {
     },
     notes = "the `collapse` argument is not yet supported"
   )
+
+  register_binding("base::strrep", function(x, times) {
+    Expression$create("binary_repeat", x, times)
+  })
+
+  register_binding("stringr::str_dup", function(string, times) {
+    Expression$create("binary_repeat", string, times)
+  })
 }
 
 register_bindings_string_regex <- function() {
@@ -250,8 +258,7 @@ register_bindings_string_regex <- function() {
         string,
         options = list(pattern = pattern, ignore_case = ignore_case)
       )
-    },
-    notes = "not yet in a released version of `stringr`, but it is supported in `arrow`"
+    }
   )
 
   register_binding(
@@ -352,10 +359,26 @@ register_bindings_string_regex <- function() {
     }
   }
 
+  arrow_stringr_string_remove_function <- function(max_replacements) {
+    force(max_replacements)
+    function(string, pattern) {
+      opts <- get_stringr_pattern_options(enexpr(pattern))
+      arrow_r_string_replace_function(max_replacements)(
+        pattern = opts$pattern,
+        replacement = "",
+        x = string,
+        ignore.case = opts$ignore_case,
+        fixed = opts$fixed
+      )
+    }
+  }
+
   register_binding("base::sub", arrow_r_string_replace_function(1L))
   register_binding("base::gsub", arrow_r_string_replace_function(-1L))
   register_binding("stringr::str_replace", arrow_stringr_string_replace_function(1L))
   register_binding("stringr::str_replace_all", arrow_stringr_string_replace_function(-1L))
+  register_binding("stringr::str_remove", arrow_stringr_string_remove_function(1L))
+  register_binding("stringr::str_remove_all", arrow_stringr_string_remove_function(-1L))
 
   register_binding("base::strsplit", function(x, split, fixed = FALSE, perl = FALSE,
                                               useBytes = FALSE) {
@@ -487,8 +510,19 @@ register_bindings_string_other <- function() {
         stop <- 0
       }
 
+      # if the input is a string we use "utf8_slice_codeunits"; if the
+      # input is binary we use "binary_slice". This does not consider
+      # a binary Scalar.
+      x_is_binary <- inherits(x, "ArrowObject") &&
+        x$type_id() %in% c(Type$BINARY, Type$LARGE_BINARY, Type$FIXED_SIZE_BINARY)
+      if (x_is_binary) {
+        fun <- "binary_slice"
+      } else {
+        fun <- "utf8_slice_codeunits"
+      }
+
       Expression$create(
-        "utf8_slice_codeunits",
+        fun,
         x,
         # we don't need to subtract 1 from `stop` as C++ counts exclusively
         # which effectively cancels out the difference in indexing between R & C++

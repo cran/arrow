@@ -332,8 +332,23 @@ as_arrow_table.RecordBatchReader <- function(x, ...) {
 
 #' @rdname as_arrow_table
 #' @export
+as_arrow_table.Dataset <- function(x, ...) {
+  Scanner$create(x)$ToTable()
+}
+
+#' @rdname as_arrow_table
+#' @export
 as_arrow_table.arrow_dplyr_query <- function(x, ...) {
-  as_arrow_table(as_record_batch_reader(x))
+  reader <- as_record_batch_reader(x)
+  on.exit(reader$.unsafe_delete())
+
+  out <- as_arrow_table(reader)
+  # arrow_dplyr_query holds group_by information. Set it on the table metadata.
+  set_group_attributes(
+    out,
+    dplyr::group_vars(x),
+    dplyr::group_by_drop_default(x)
+  )
 }
 
 #' @rdname as_arrow_table

@@ -306,6 +306,9 @@ Result<bool> IsSupportedParquetFile(const ParquetFileFormat& format,
 
 }  // namespace
 
+ParquetFileFormat::ParquetFileFormat()
+    : FileFormat(std::make_shared<ParquetFragmentScanOptions>()) {}
+
 bool ParquetFileFormat::Equals(const FileFormat& other) const {
   if (other.type_name() != type_name()) return false;
 
@@ -318,10 +321,11 @@ bool ParquetFileFormat::Equals(const FileFormat& other) const {
               other_reader_options.coerce_int96_timestamp_unit);
 }
 
-ParquetFileFormat::ParquetFileFormat(const parquet::ReaderProperties& reader_properties) {
-  auto parquet_scan_options = std::make_shared<ParquetFragmentScanOptions>();
-  *parquet_scan_options->reader_properties = reader_properties;
-  default_fragment_scan_options = std::move(parquet_scan_options);
+ParquetFileFormat::ParquetFileFormat(const parquet::ReaderProperties& reader_properties)
+    : FileFormat(std::make_shared<ParquetFragmentScanOptions>()) {
+  auto* default_scan_opts =
+      static_cast<ParquetFragmentScanOptions*>(default_fragment_scan_options.get());
+  *default_scan_opts->reader_properties = reader_properties;
 }
 
 Result<bool> ParquetFileFormat::IsSupported(const FileSource& source) const {
@@ -445,10 +449,10 @@ Result<RecordBatchGenerator> ParquetFileFormat::ScanBatchesAsync(
     pre_filtered = true;
     if (row_groups.empty()) return MakeEmptyGenerator<std::shared_ptr<RecordBatch>>();
   }
-  int64_t batch_size = options->batch_size;
   // Open the reader and pay the real IO cost.
   auto make_generator =
-      [=](const std::shared_ptr<parquet::arrow::FileReader>& reader) mutable
+      [this, options, parquet_fragment, pre_filtered,
+       row_groups](const std::shared_ptr<parquet::arrow::FileReader>& reader) mutable
       -> Result<RecordBatchGenerator> {
     // Ensure that parquet_fragment has FileMetaData
     RETURN_NOT_OK(parquet_fragment->EnsureCompleteMetadata(reader.get()));
@@ -465,12 +469,16 @@ Result<RecordBatchGenerator> ParquetFileFormat::ScanBatchesAsync(
         GetFragmentScanOptions<ParquetFragmentScanOptions>(
             kParquetTypeName, options.get(), default_fragment_scan_options));
     int batch_readahead = options->batch_readahead;
-    int64_t rows_to_readahead = batch_readahead * batch_size;
+    int64_t rows_to_readahead = batch_readahead * options->batch_size;
     ARROW_ASSIGN_OR_RAISE(auto generator,
                           reader->GetRecordBatchGenerator(
                               reader, row_groups, column_projection,
                               ::arrow::internal::GetCpuThreadPool(), rows_to_readahead));
-    RecordBatchGenerator sliced = SlicingGenerator(std::move(generator), batch_size);
+    RecordBatchGenerator sliced =
+        SlicingGenerator(std::move(generator), options->batch_size);
+    if (batch_readahead == 0) {
+      return sliced;
+    }
     RecordBatchGenerator sliced_readahead =
         MakeSerialReadaheadGenerator(std::move(sliced), batch_readahead);
     return sliced_readahead;
@@ -538,9 +546,10 @@ Result<std::shared_ptr<FileWriter>> ParquetFileFormat::MakeWriter(
   auto parquet_options = checked_pointer_cast<ParquetFileWriteOptions>(options);
 
   std::unique_ptr<parquet::arrow::FileWriter> parquet_writer;
-  RETURN_NOT_OK(parquet::arrow::FileWriter::Open(
-      *schema, default_memory_pool(), destination, parquet_options->writer_properties,
-      parquet_options->arrow_writer_properties, &parquet_writer));
+  ARROW_ASSIGN_OR_RAISE(parquet_writer, parquet::arrow::FileWriter::Open(
+                                            *schema, default_memory_pool(), destination,
+                                            parquet_options->writer_properties,
+                                            parquet_options->arrow_writer_properties));
 
   return std::shared_ptr<FileWriter>(
       new ParquetFileWriter(std::move(destination), std::move(parquet_writer),
