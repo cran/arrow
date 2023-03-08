@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 11.0.0.2
+Version: 11.0.0.3
 Authors@R: c(
     person("Neal", "Richardson", email = "neal.p.richardson@gmail.com", role = c("aut")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -23,7 +23,7 @@ Description: 'Apache' 'Arrow' <https://arrow.apache.org/> is a cross-language
 Depends: R (>= 3.4)
 License: Apache License (>= 2.0)
 URL: https://github.com/apache/arrow/, https://arrow.apache.org/docs/r/
-BugReports: https://issues.apache.org/jira/projects/ARROW/issues
+BugReports: https://github.com/apache/arrow/issues
 Encoding: UTF-8
 Language: en-US
 SystemRequirements: C++17; for AWS S3 support on Linux, libcurl and
@@ -62,7 +62,7 @@ Collate: 'arrowExports.R' 'enums.R' 'arrow-object.R' 'type.R'
         'record-batch-writer.R' 'reexports-bit64.R'
         'reexports-tidyselect.R' 'schema.R' 'udf.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2023-02-10 07:29:17 UTC; nic2
+Packaged: 2023-03-07 08:12:46 UTC; nic2
 Author: Neal Richardson [aut],
   Ian Cook [aut],
   Nic Crane [aut, cre],
@@ -77,4 +77,4 @@ Author: Neal Richardson [aut],
   Apache Arrow [aut, cph]
 Maintainer: Nic Crane <thisisnic@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-02-12 14:12:07 UTC
+Date/Publication: 2023-03-08 09:40:13 UTC

@@ -1,12 +1,12 @@
-934e57cbe1cda4f5be707c501ad1cf3c *DESCRIPTION
-56a09e970dbe163859313a155783a8dd *NAMESPACE
-c66e8928ff5c8721a9d1ca0334e27736 *NEWS.md
+ec5f36ef93d9da5c305281b73f79b1ef *DESCRIPTION
+55e1a072beb93c450acc206bbf007cc3 *NAMESPACE
+0d679896ef8ae985b90f8e61ee6069d0 *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 802960c319a34e7f37abd11adeef7159 *R/array.R
 8b83a28926ebbb088fada9c739ae2511 *R/arrow-datum.R
 4c016981d19065f810e7fb76ba8f65ba *R/arrow-info.R
 f1b7a592d68817bfa4daec09fc4ab5f9 *R/arrow-object.R
-53638a28f7a579baceb496185c52d6b8 *R/arrow-package.R
+7eced146838248ab512cbb9904eea97d *R/arrow-package.R
 6aa2e17d1c270f904fd16663068d8432 *R/arrow-tabular.R
 28a3e1ef0db04edbf3b261539d88f7dc *R/arrowExports.R
 5788f960a94faad5be3ec3c3f5623360 *R/buffer.R
@@ -16,7 +16,7 @@ a4d0b82a1fc20588b279a6710422228d *R/compute.R
 ab5c91627c7a8d80bcba2073bac701e7 *R/config.R
 6e7416b0318eb6e76e13473faaba59d0 *R/csv.R
 3c3535796974c72af7e8cd8d968b454e *R/dataset-factory.R
-96baa45e07feaf4a466ea3d269f7c446 *R/dataset-format.R
+eae0d60ada1eb6e3c6b35e1e957fd143 *R/dataset-format.R
 4c930ef3ac88902aac661c170462a75b *R/dataset-partition.R
 0b9289272a86484d49bb8630dff0f41b *R/dataset-scan.R
 d52a1eeb5f43f42bb987a8a5c3549175 *R/dataset-write.R
@@ -25,7 +25,7 @@ d52a1eeb5f43f42bb987a8a5c3549175 *R/dataset-write.R
 1c11c3967ed5cd11f70fac831a3d5942 *R/dplyr-across.R
 2b9e0dbfd96b1ae2b9e90f3d7ca6aa81 *R/dplyr-arrange.R
 f731ccee6d434093e1462128934afbdd *R/dplyr-collect.R
-b0d9a1113bda7b1c01291f41551a3ebe *R/dplyr-count.R
+d7e49cfb159c56c8ee9dcb6e6f51dde4 *R/dplyr-count.R
 0107d08a9ca967eb6dcf1d0b06abf2ed *R/dplyr-datetime-helpers.R
 2d6680a7873fea61f07719e1dc5505fa *R/dplyr-distinct.R
 e4262f9fa2a55e01ea8c419c3f7ee376 *R/dplyr-eval.R
@@ -33,7 +33,7 @@ e4262f9fa2a55e01ea8c419c3f7ee376 *R/dplyr-eval.R
 7a772498ea2b2e8d5fb6a0b792a99abb *R/dplyr-funcs-augmented.R
 4ec66bdd96af1a9ba3e616f37ddff93f *R/dplyr-funcs-conditional.R
 b949fa9fe3863355abac0fccab100d1b *R/dplyr-funcs-datetime.R
-8989f6353244a06a924aeeb23eada706 *R/dplyr-funcs-doc.R
+640d3a4de767dd16f69908fc430e2f5d *R/dplyr-funcs-doc.R
 8445517fe652947afda7a24808b64ab9 *R/dplyr-funcs-math.R
 4d41ac497cf6f08b73eb86b01ff2da9f *R/dplyr-funcs-simple.R
 64ef34b91195c4bf3bf3a193ccecf5e8 *R/dplyr-funcs-string.R
@@ -56,7 +56,7 @@ f6554528edf54ccccab11157eccc1cc8 *R/expression.R
 bbed1f0c0649e6dd1e7db954a2a1bb69 *R/field.R
 512231024eee3ad4c1effbe6c2b6d456 *R/filesystem.R
 941ad5a9be9cccccc01d507470be37f8 *R/flight.R
-cdf6ed8b77a1ec04662a17bb75ad3e62 *R/install-arrow.R
+3c20e660d6800e0e8c4e3c389b573b19 *R/install-arrow.R
 bf052db9f575b2d42af51b9d899d522e *R/io.R
 44cdaa37d9c0141ddca83f7f42994540 *R/ipc-stream.R
 4bd671007cd7bd41438523a1aa52a981 *R/json.R
@@ -83,7 +83,7 @@ e9d30238f3b67d136367997201dbfea8 *R/util.R
 ecb95bece7db734491d01aef95da0536 *configure.win
 56b91f89083404add6d82d9e2618b386 *inst/NOTICE.txt
 041e7ef9fede1fdf88d97e4defda0838 *inst/build_arrow_static.sh
-79bb38785e12b66036f6fb381a0a664c *inst/demo_flight_server.py
+c533d44b9d685b617f3b995a83076521 *inst/demo_flight_server.py
 198ecbee77c8d179546b9bd407bda83e *inst/v0.7.1.parquet
 efb9faf7238352ea27990fdd2d5056f0 *man/ArrayData.Rd
 dabb94dfec5e1ef9fb5287237f849777 *man/ChunkedArray.Rd
@@ -123,10 +123,10 @@ c5a2875483314e300c7e54da4c376177 *man/RecordBatchWriter.Rd
 e56123546d58f4d0603d14b6b19df394 *man/Scanner.Rd
 c0000320968ee5732458d86ff36cd617 *man/Schema.Rd
 c5fae6deb511bb8d81ce2029274ae91a *man/Table.Rd
-059bb67cb13cd71e1c909928dd86b2cd *man/acero.Rd
+7d74826f68b9d32079055811fd15b31b *man/acero.Rd
 e2c17b95d450b922be2c2debe0551fef *man/add_filename.Rd
 1f99880ee7e6ee616ccc839006b9e2c2 *man/array.Rd
-9e5448a2c660ee2f26c70620b0587cca *man/arrow-package.Rd
+9dea9afe0fc61184a6f981864fede6cc *man/arrow-package.Rd
 141cc07ad9602494a53d75a4b1c05d0e *man/arrow_info.Rd
 fda67045832dc0b953b873e8f3b0fec4 *man/as_arrow_array.Rd
 542bc75b172cadef1fd8a33a802ffaea *man/as_arrow_table.Rd
@@ -146,7 +146,7 @@ d97803d992f8a4fb793f1130918145c5 *man/concat_arrays.Rd
 ff6c515e7c980fc1cd90299d03057c5f *man/contains_regex.Rd
 3c3b5de8ee98d3667afdb956e255fa2d *man/copy_files.Rd
 b999ed9d2df0c95051d79a82f0faf637 *man/cpu_count.Rd
-46ea6472d58fbe75c298604c14631b13 *man/create_package_with_all_dependencies.Rd
+28c2f072b73adf9725eeb6b7330d9f8b *man/create_package_with_all_dependencies.Rd
 31726ec5e4d168f6a726d86c5a876036 *man/data-type.Rd
 0264558274b1d965c2ef890542abe477 *man/dataset_factory.Rd
 e29692fdf3e6a5cd7d79cf2b08e6fa4f *man/default_memory_pool.Rd
@@ -304,7 +304,7 @@ cdbaa8528d769349e6cfa1e5b3f86fca *tests/testthat/test-compute-sort.R
 465610415fd709103de8fb38f1ce82e1 *tests/testthat/test-config.R
 09c20209c593b0ff1715001874eafe62 *tests/testthat/test-csv.R
 d75543cd05478c0f9937ef1ea2855e3a *tests/testthat/test-data-type.R
-44a59a27282089cd3af54bf931c9afea *tests/testthat/test-dataset-csv.R
+7ab9ed3403bde959471a7fd835d55fbc *tests/testthat/test-dataset-csv.R
 15d01b6452bf43b6b6d35f100204fde1 *tests/testthat/test-dataset-dplyr.R
 c41d8435bbfd312997d53e160d988abd *tests/testthat/test-dataset-uri.R
 5f8520718aed1d5aac3e38622663b1e1 *tests/testthat/test-dataset-write.R
@@ -312,7 +312,7 @@ bc00f628d5f3c6259ded32143d6b5248 *tests/testthat/test-dataset.R
 c6c348c71b63e426de0c191eb245f8f8 *tests/testthat/test-dplyr-across.R
 5ad82ad4938a2252a8589c46f242c11e *tests/testthat/test-dplyr-arrange.R
 610ba1454deb79393e98c8d9baa29082 *tests/testthat/test-dplyr-collapse.R
-aa052777b50665f6610a60a44bef2494 *tests/testthat/test-dplyr-count.R
+39d26e10038458b8e85dcb008689f25a *tests/testthat/test-dplyr-count.R
 3ad006c6c3d0ac1f82c00c0e37dfdd2e *tests/testthat/test-dplyr-distinct.R
 c2c243d3423841eafd6b47beae8a9cb2 *tests/testthat/test-dplyr-filter.R
 49ed92048ca9971972d09caac7ec979a *tests/testthat/test-dplyr-funcs-conditional.R
@@ -338,7 +338,7 @@ c19cc33465d25646556e802c47255045 *tests/testthat/test-dplyr-select.R
 b1a920b9e55a469a1130e42787447394 *tests/testthat/test-filesystem.R
 f3abe7b0ba0d83d8b5ca1a155d371ee2 *tests/testthat/test-gcs.R
 a21db7ae5c3ab75cf98c1948a13621f6 *tests/testthat/test-install-arrow.R
-3159c922fc4e8979b05d605924b7fbc2 *tests/testthat/test-io.R
+0667078720a243eb00b03e70f43ee8b1 *tests/testthat/test-io.R
 91e635e149d72591b2cae8d1daa653ea *tests/testthat/test-ipc-stream.R
 b7583941d839ae349996f7f115064df4 *tests/testthat/test-json.R
 897723d93983ac14337d2bdd1f3da3c3 *tests/testthat/test-memory-pool.R
@@ -371,7 +371,7 @@ b458325a485b2f95f675f58bdd6e1130 *tests/testthat/test-util.R
 70c5d892e62fc2869439661ec30d2a26 *tools/cpp/CMakeLists.txt
 a8093de5251e83958556c19859722ced *tools/cpp/CMakePresets.json
 523a3c0ceee7a9620e1e36263ccc5b7c *tools/cpp/CMakeSettings.json
-a4e39e9ad4dde0b77b99c632944d8165 *tools/cpp/README.md
+61b948484b120625b03dd14ae5c02127 *tools/cpp/README.md
 87af419a4d3b30b65df3f32b1a920704 *tools/cpp/build-support/__pycache__/lintutils.cpython-36.pyc
 ded3aaed35a9dd8d7bb232676a4cfeda *tools/cpp/build-support/__pycache__/lintutils.cpython-38.pyc
 2c3039ce83865a67687441c03b69f285 *tools/cpp/build-support/asan_symbolize.py
@@ -380,7 +380,7 @@ ded3aaed35a9dd8d7bb232676a4cfeda *tools/cpp/build-support/__pycache__/lintutils.
 77e924327ea29b040fb7d6d6436070e9 *tools/cpp/build-support/cpplint.py
 9fa4c2253747f0511a5077db1592f243 *tools/cpp/build-support/fuzzing/generate_corpuses.sh
 d37189656039389f1726fbe33d60046f *tools/cpp/build-support/fuzzing/pack_corpus.py
-b360f8faea0d195f03cdeb80a90da209 *tools/cpp/build-support/get-upstream-commit.sh
+6495ee5105fd23b9efa88543a07a8340 *tools/cpp/build-support/get-upstream-commit.sh
 05f589ce28eb2e39a548d4fb88a1e54b *tools/cpp/build-support/google-cloud-cpp-curl-static-windows.patch
 9b40f0271b713e2283b021314fcc81f5 *tools/cpp/build-support/iwyu/iwyu-filter.awk
 3b9b330a8ee696b47926c51adb2026c4 *tools/cpp/build-support/iwyu/iwyu.sh
@@ -804,7 +804,7 @@ b3c4843264bb1e424bbebfedbfa8754c *tools/cpp/src/arrow/engine/substrait/api.h
 892f1cb47807bb8dd3bc66a4911477ec *tools/cpp/src/arrow/engine/substrait/expression_internal.cc
 e7205ac267e0ff92980ded5e057c07a9 *tools/cpp/src/arrow/engine/substrait/expression_internal.h
 bccb4899ecec63be2c0e35194120e19e *tools/cpp/src/arrow/engine/substrait/extension_set.cc
-af3ae62d2163fd889d05a78fb8ad8297 *tools/cpp/src/arrow/engine/substrait/extension_set.h
+6349f3d18b6734e001e9678b08b1848b *tools/cpp/src/arrow/engine/substrait/extension_set.h
 daafd312619f98c1dad8def300285e05 *tools/cpp/src/arrow/engine/substrait/extension_types.cc
 0d8acd4b50bba766c492f818ea7368e5 *tools/cpp/src/arrow/engine/substrait/extension_types.h
 ca6c314bff24271d0b27721ef4b29080 *tools/cpp/src/arrow/engine/substrait/options.cc
@@ -1549,7 +1549,7 @@ cdacc16dca850431d7622013c7ebeb48 *tools/cpp/src/parquet/types.cc
 9aee7910f65ec0d9807c715069c3ca89 *tools/cpp/src/parquet/types.h
 b787cf690a63b1f2f9bbe3f7be3570c6 *tools/cpp/src/parquet/windows_compatibility.h
 8dfd093f763a29b43311225aa5a32ad8 *tools/cpp/src/parquet/windows_fixup.h
-4197d55e5410f48884458c1f01d35651 *tools/cpp/thirdparty/README.md
+5187ad5edd7a751425b635b37c808ffd *tools/cpp/thirdparty/README.md
 efba1145f2ea0339f5345e8120cfc902 *tools/cpp/thirdparty/download_dependencies.sh
 5993a964633bc6f3f5ba5e0f0e9ccc8f *tools/cpp/thirdparty/flatbuffers/README.md
 9e1c5e380dbc7dd032f544e73ce4f269 *tools/cpp/thirdparty/flatbuffers/include/flatbuffers/base.h
@@ -1567,7 +1567,7 @@ effc50093dfb2ef1a842acd5b96c5627 *tools/cpp/vcpkg.json
 9e9e0411c738b942070f2fefc9ffa1bf *tools/dotenv
 bca75013464f53de56445661ed46ed2f *tools/download_dependencies_R.sh
 b18db2275374041d98dcde4f3eda2fda *tools/nixlibs-allowlist.txt
-ec1581c0d0f117637a8ac686f3e2bb4b *tools/nixlibs.R
+030a73a1eebc4b46fe0f38015f41f88f *tools/nixlibs.R
 ed88ef69d3f5ad84a121f3c56978a6ae *tools/test-nixlibs.R
 46fdc2ac792a6730d71bdd7b6b4d0780 *tools/ubsan.supp
 d47dd4374888ed1e85379f9ddb8cf93e *tools/winlibs.R
