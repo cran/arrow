@@ -20,7 +20,7 @@
 #include <sstream>
 
 #include "arrow/compute/api_scalar.h"
-#include "arrow/compute/kernels/common.h"
+#include "arrow/compute/kernels/common_internal.h"
 
 namespace arrow {
 namespace compute {
@@ -221,7 +221,7 @@ struct StringPredicateFunctor {
     EnsureUtf8LookupTablesFilled();
     const ArraySpan& input = batch[0].array;
     ArrayIterator<Type> input_it(input);
-    ArraySpan* out_arr = out->array_span();
+    ArraySpan* out_arr = out->array_span_mutable();
     ::arrow::internal::GenerateBitsUnrolled(
         out_arr->buffers[1].data, out_arr->offset, input.length, [&]() -> bool {
           std::string_view val = input_it();
@@ -351,8 +351,7 @@ struct StringSplitExec {
     return Status::OK();
   }
 
-  Status SplitString(const std::string_view& s, SplitFinder* finder,
-                     BuilderType* builder) {
+  Status SplitString(std::string_view s, SplitFinder* finder, BuilderType* builder) {
     const uint8_t* begin = reinterpret_cast<const uint8_t*>(s.data());
     const uint8_t* end = begin + s.length();
 

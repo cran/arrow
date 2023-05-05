@@ -381,7 +381,7 @@ NestedType <- R6Class("NestedType", inherit = DataType)
 #' @return An Arrow type object inheriting from [DataType].
 #' @export
 #' @seealso [dictionary()] for creating a dictionary (factor-like) type.
-#' @examples
+#' @examplesIf arrow_with_acero()
 #' bool()
 #' struct(a = int32(), b = double())
 #' timestamp("ms", timezone = "CEST")
@@ -640,6 +640,9 @@ StructType$create <- function(...) struct__(.fields(list(...)))
 #' @rdname data-type
 #' @export
 struct <- StructType$create
+
+#' @export
+names.StructType <- function(x) StructType__field_names(x)
 
 ListType <- R6Class("ListType",
   inherit = NestedType,

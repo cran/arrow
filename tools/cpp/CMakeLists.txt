@@ -47,7 +47,7 @@ if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
 
-set(ARROW_VERSION "11.0.0")
+set(ARROW_VERSION "12.0.0")
 
 string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" ARROW_BASE_VERSION "${ARROW_VERSION}")
 
@@ -128,6 +128,7 @@ set(ARROW_DOC_DIR "share/doc/${PROJECT_NAME}")
 set(BUILD_SUPPORT_DIR "${CMAKE_SOURCE_DIR}/build-support")
 
 set(ARROW_LLVM_VERSIONS
+    "16.0"
     "15.0"
     "14.0"
     "13.0"
@@ -491,9 +492,16 @@ enable_testing()
 
 # For arrow.pc. Cflags.private, Libs.private and Requires.private are
 # used when "pkg-config --cflags --libs --static arrow" is used.
+set(ARROW_PC_CFLAGS "")
 set(ARROW_PC_CFLAGS_PRIVATE " -DARROW_STATIC")
 set(ARROW_PC_LIBS_PRIVATE "")
 set(ARROW_PC_REQUIRES_PRIVATE "")
+
+# For arrow-testing.pc.
+set(ARROW_TESTING_PC_CFLAGS "")
+set(ARROW_TESTING_PC_CFLAGS_PRIVATE " -DARROW_TESTING_STATIC")
+set(ARROW_TESTING_PC_LIBS "")
+set(ARROW_TESTING_PC_REQUIRES "")
 
 include(ThirdpartyToolchain)
 
@@ -798,8 +806,8 @@ if(ARROW_WITH_RAPIDJSON)
 endif()
 
 if(ARROW_USE_XSIMD)
-  list(APPEND ARROW_SHARED_LINK_LIBS xsimd)
-  list(APPEND ARROW_STATIC_LINK_LIBS xsimd)
+  list(APPEND ARROW_SHARED_LINK_LIBS ${ARROW_XSIMD})
+  list(APPEND ARROW_STATIC_LINK_LIBS ${ARROW_XSIMD})
 endif()
 
 add_custom_target(arrow_dependencies)
@@ -831,8 +839,8 @@ if(NOT MSVC_TOOLCHAIN)
   list(APPEND ARROW_SHARED_LINK_LIBS ${CMAKE_DL_LIBS})
 endif()
 
-set(ARROW_TEST_LINK_TOOLCHAIN arrow::flatbuffers GTest::gtest_main GTest::gtest
-                              GTest::gmock)
+set(ARROW_TEST_LINK_TOOLCHAIN arrow::flatbuffers ${ARROW_GTEST_GTEST_MAIN}
+                              ${ARROW_GTEST_GTEST} ${ARROW_GTEST_GMOCK})
 
 if(ARROW_BUILD_TESTS)
   add_dependencies(arrow_test_dependencies ${ARROW_TEST_LINK_TOOLCHAIN})
@@ -925,10 +933,6 @@ list(APPEND ARROW_STATIC_INSTALL_INTERFACE_LIBS ${ARROW_SYSTEM_LINK_LIBS})
 #
 # Subdirectories
 #
-
-if(NOT WIN32 AND ARROW_PLASMA)
-  add_subdirectory(src/plasma)
-endif()
 
 add_subdirectory(src/arrow)
 

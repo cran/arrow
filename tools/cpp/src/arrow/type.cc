@@ -37,6 +37,7 @@
 #include "arrow/record_batch.h"
 #include "arrow/result.h"
 #include "arrow/status.h"
+#include "arrow/table.h"
 #include "arrow/util/checked_cast.h"
 #include "arrow/util/hash_util.h"
 #include "arrow/util/hashing.h"
@@ -135,7 +136,8 @@ std::vector<Type::type> AllTypeIds() {
           Type::SPARSE_UNION,
           Type::DICTIONARY,
           Type::EXTENSION,
-          Type::INTERVAL_MONTH_DAY_NANO};
+          Type::INTERVAL_MONTH_DAY_NANO,
+          Type::RUN_END_ENCODED};
 }
 
 namespace internal {
@@ -200,6 +202,7 @@ std::string ToString(Type::type id) {
     TO_STRING_CASE(DENSE_UNION)
     TO_STRING_CASE(SPARSE_UNION)
     TO_STRING_CASE(DICTIONARY)
+    TO_STRING_CASE(RUN_END_ENCODED)
     TO_STRING_CASE(EXTENSION)
 
 #undef TO_STRING_CASE
@@ -450,6 +453,16 @@ std::string TypeHolder::ToString(const std::vector<TypeHolder>& types) {
   }
   ss << ")";
   return ss.str();
+}
+
+std::vector<TypeHolder> TypeHolder::FromTypes(
+    const std::vector<std::shared_ptr<DataType>>& types) {
+  std::vector<TypeHolder> type_holders;
+  type_holders.reserve(types.size());
+  for (const auto& type : types) {
+    type_holders.emplace_back(type);
+  }
+  return type_holders;
 }
 
 // ----------------------------------------------------------------------
@@ -776,6 +789,28 @@ Result<std::shared_ptr<DataType>> DenseUnionType::Make(
 }
 
 // ----------------------------------------------------------------------
+// Run-end encoded type
+
+RunEndEncodedType::RunEndEncodedType(std::shared_ptr<DataType> run_end_type,
+                                     std::shared_ptr<DataType> value_type)
+    : NestedType(Type::RUN_END_ENCODED) {
+  DCHECK(RunEndTypeValid(*run_end_type));
+  children_ = {std::make_shared<Field>("run_ends", std::move(run_end_type), false),
+               std::make_shared<Field>("values", std::move(value_type), true)};
+}
+
+std::string RunEndEncodedType::ToString() const {
+  std::stringstream s;
+  s << name() << "<run_ends: " << run_end_type()->ToString()
+    << ", values: " << value_type()->ToString() << ">";
+  return s.str();
+}
+
+bool RunEndEncodedType::RunEndTypeValid(const DataType& run_end_type) {
+  return is_run_end_type(run_end_type.id());
+}
+
+// ----------------------------------------------------------------------
 // Struct type
 
 namespace {
@@ -1029,8 +1064,94 @@ std::string FieldPath::ToString() const {
   return repr;
 }
 
+class ChunkedColumn;
+using ChunkedColumnVector = std::vector<std::shared_ptr<ChunkedColumn>>;
+
+class ChunkedColumn {
+ public:
+  virtual ~ChunkedColumn() = default;
+
+  explicit ChunkedColumn(const std::shared_ptr<DataType>& type = nullptr) : type_(type) {}
+
+  virtual int num_chunks() const = 0;
+  virtual const std::shared_ptr<ArrayData>& chunk(int i) const = 0;
+
+  const std::shared_ptr<DataType>& type() const { return type_; }
+
+  ChunkedColumnVector Flatten() const;
+
+  Result<std::shared_ptr<ChunkedArray>> ToChunkedArray() const {
+    if (num_chunks() == 0) {
+      return ChunkedArray::MakeEmpty(type());
+    }
+    ArrayVector chunks(num_chunks());
+    for (int i = 0; i < num_chunks(); ++i) {
+      chunks[i] = MakeArray(chunk(i));
+    }
+    return ChunkedArray::Make(std::move(chunks), type());
+  }
+
+ private:
+  const std::shared_ptr<DataType>& type_;
+};
+
+// References a chunk vector owned by another ChunkedArray.
+// This can be used to avoid transforming a top-level ChunkedArray's ArrayVector into an
+// ArrayDataVector if flattening isn't needed.
+class ChunkedArrayRef : public ChunkedColumn {
+ public:
+  explicit ChunkedArrayRef(const ChunkedArray& chunked_array)
+      : ChunkedColumn(chunked_array.type()), chunks_(chunked_array.chunks()) {}
+
+  int num_chunks() const override { return static_cast<int>(chunks_.size()); }
+  const std::shared_ptr<ArrayData>& chunk(int i) const override {
+    return chunks_[i]->data();
+  }
+
+ private:
+  const ArrayVector& chunks_;
+};
+
+// Owns a chunked ArrayDataVector (created after flattening its parent).
+class ChunkedArrayData : public ChunkedColumn {
+ public:
+  explicit ChunkedArrayData(const std::shared_ptr<DataType>& type,
+                            ArrayDataVector chunks = {})
+      : ChunkedColumn(type), chunks_(std::move(chunks)) {}
+
+  int num_chunks() const override { return static_cast<int>(chunks_.size()); }
+  const std::shared_ptr<ArrayData>& chunk(int i) const override { return chunks_[i]; }
+
+ private:
+  ArrayDataVector chunks_;
+};
+
+// Return a vector of ChunkedColumns - one for each struct field.
+// Unlike ChunkedArray::Flatten, this is zero-copy and doesn't merge parent/child
+// validity bitmaps.
+ChunkedColumnVector ChunkedColumn::Flatten() const {
+  DCHECK_EQ(type()->id(), Type::STRUCT);
+
+  ChunkedColumnVector columns(type()->num_fields());
+  for (int column_idx = 0; column_idx < type()->num_fields(); ++column_idx) {
+    const auto& child_type = type()->field(column_idx)->type();
+    ArrayDataVector chunks(num_chunks());
+    for (int chunk_idx = 0; chunk_idx < num_chunks(); ++chunk_idx) {
+      const auto& child_data = chunk(chunk_idx)->child_data;
+      DCHECK_EQ(columns.size(), child_data.size());
+      DCHECK(child_type->Equals(child_data[column_idx]->type));
+      chunks[chunk_idx] = child_data[column_idx];
+    }
+    columns[column_idx] =
+        std::make_shared<ChunkedArrayData>(child_type, std::move(chunks));
+  }
+
+  return columns;
+}
+
 struct FieldPathGetImpl {
   static const DataType& GetType(const ArrayData& data) { return *data.type; }
+  static const DataType& GetType(const ChunkedColumn& column) { return *column.type(); }
 
   static void Summarize(const FieldVector& fields, std::stringstream* ss) {
     *ss << "{ ";
@@ -1086,19 +1207,22 @@ struct FieldPathGetImpl {
 
     int depth = 0;
     const T* out;
-    for (int index : path->indices()) {
+    while (true) {
       if (children == nullptr) {
         return Status::NotImplemented("Get child data of non-struct array");
       }
 
+      auto index = (*path)[depth];
       if (index < 0 || static_cast<size_t>(index) >= children->size()) {
         *out_of_range_depth = depth;
         return nullptr;
       }
 
       out = &children->at(index);
+      if (static_cast<size_t>(++depth) == path->indices().size()) {
+        break;
+      }
       children = get_children(*out);
-      ++depth;
     }
 
     return *out;
@@ -1122,6 +1246,25 @@ struct FieldPathGetImpl {
     return FieldPathGetImpl::Get(path, &fields, [](const std::shared_ptr<Field>& field) {
       return &field->type()->fields();
     });
+  }
+
+  static Result<std::shared_ptr<ChunkedArray>> Get(
+      const FieldPath* path, const ChunkedColumnVector& toplevel_children) {
+    ChunkedColumnVector children;
+
+    ARROW_ASSIGN_OR_RAISE(
+        auto child,
+        FieldPathGetImpl::Get(path, &toplevel_children,
+                              [&children](const std::shared_ptr<ChunkedColumn>& parent)
+                                  -> const ChunkedColumnVector* {
+                                if (parent->type()->id() != Type::STRUCT) {
+                                  return nullptr;
+                                }
+                                children = parent->Flatten();
+                                return &children;
+                              }));
+
+    return child->ToChunkedArray();
   }
 
   static Result<std::shared_ptr<ArrayData>> Get(const FieldPath* path,
@@ -1169,6 +1312,15 @@ Result<std::shared_ptr<Array>> FieldPath::Get(const RecordBatch& batch) const {
   return MakeArray(std::move(data));
 }
 
+Result<std::shared_ptr<ChunkedArray>> FieldPath::Get(const Table& table) const {
+  ChunkedColumnVector columns(table.num_columns());
+  std::transform(table.columns().cbegin(), table.columns().cend(), columns.begin(),
+                 [](const std::shared_ptr<ChunkedArray>& chunked_array) {
+                   return std::make_shared<ChunkedArrayRef>(*chunked_array);
+                 });
+  return FieldPathGetImpl::Get(this, columns);
+}
+
 Result<std::shared_ptr<Array>> FieldPath::Get(const Array& array) const {
   ARROW_ASSIGN_OR_RAISE(auto data, Get(*array.data()));
   return MakeArray(std::move(data));
@@ -1179,6 +1331,15 @@ Result<std::shared_ptr<ArrayData>> FieldPath::Get(const ArrayData& data) const {
     return Status::NotImplemented("Get child data of non-struct array");
   }
   return FieldPathGetImpl::Get(this, data.child_data);
+}
+
+Result<std::shared_ptr<ChunkedArray>> FieldPath::Get(
+    const ChunkedArray& chunked_array) const {
+  if (chunked_array.type()->id() != Type::STRUCT) {
+    return Status::NotImplemented("Get child data of non-struct chunked array");
+  }
+  auto columns = ChunkedArrayRef(chunked_array).Flatten();
+  return FieldPathGetImpl::Get(this, columns);
 }
 
 FieldRef::FieldRef(FieldPath indices) : impl_(std::move(indices)) {}
@@ -1499,8 +1660,16 @@ std::vector<FieldPath> FieldRef::FindAll(const Array& array) const {
   return FindAll(*array.type());
 }
 
+std::vector<FieldPath> FieldRef::FindAll(const ChunkedArray& chunked_array) const {
+  return FindAll(*chunked_array.type());
+}
+
 std::vector<FieldPath> FieldRef::FindAll(const RecordBatch& batch) const {
   return FindAll(*batch.schema());
+}
+
+std::vector<FieldPath> FieldRef::FindAll(const Table& table) const {
+  return FindAll(*table.schema());
 }
 
 void PrintTo(const FieldRef& ref, std::ostream* os) { *os << ref.ToString(); }
@@ -1702,6 +1871,21 @@ bool Schema::HasDistinctFieldNames() const {
   auto fields = field_names();
   std::unordered_set<std::string> names{fields.cbegin(), fields.cend()};
   return names.size() == fields.size();
+}
+
+Result<std::shared_ptr<Schema>> Schema::WithNames(
+    const std::vector<std::string>& names) const {
+  if (names.size() != impl_->fields_.size()) {
+    return Status::Invalid("attempted to rename schema with ", impl_->fields_.size(),
+                           " fields but only ", names.size(), " new names were given");
+  }
+  FieldVector new_fields;
+  new_fields.reserve(names.size());
+  auto names_itr = names.begin();
+  for (const auto& field : impl_->fields_) {
+    new_fields.push_back(field->WithName(*names_itr++));
+  }
+  return schema(std::move(new_fields));
 }
 
 std::shared_ptr<Schema> Schema::WithMetadata(
@@ -2239,6 +2423,15 @@ std::string DecimalType::ComputeFingerprint() const {
   return ss.str();
 }
 
+std::string RunEndEncodedType::ComputeFingerprint() const {
+  std::stringstream ss;
+  ss << TypeIdFingerprint(*this) << "{";
+  ss << run_end_type()->fingerprint() << ";";
+  ss << value_type()->fingerprint() << ";";
+  ss << "}";
+  return ss.str();
+}
+
 std::string StructType::ComputeFingerprint() const {
   std::stringstream ss;
   ss << TypeIdFingerprint(*this) << "{";
@@ -2416,6 +2609,12 @@ std::shared_ptr<DataType> fixed_size_list(const std::shared_ptr<Field>& value_fi
 
 std::shared_ptr<DataType> struct_(const std::vector<std::shared_ptr<Field>>& fields) {
   return std::make_shared<StructType>(fields);
+}
+
+std::shared_ptr<DataType> run_end_encoded(std::shared_ptr<arrow::DataType> run_end_type,
+                                          std::shared_ptr<DataType> value_type) {
+  return std::make_shared<RunEndEncodedType>(std::move(run_end_type),
+                                             std::move(value_type));
 }
 
 std::shared_ptr<DataType> sparse_union(FieldVector child_fields,

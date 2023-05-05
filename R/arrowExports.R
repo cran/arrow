@@ -444,8 +444,8 @@ ExecPlanReader__PlanStatus <- function(reader) {
   .Call(`_arrow_ExecPlanReader__PlanStatus`, reader)
 }
 
-ExecPlan_run <- function(plan, final_node, sort_options, metadata, head) {
-  .Call(`_arrow_ExecPlan_run`, plan, final_node, sort_options, metadata, head)
+ExecPlan_run <- function(plan, final_node, metadata) {
+  .Call(`_arrow_ExecPlan_run`, plan, final_node, metadata)
 }
 
 ExecPlan_ToString <- function(plan) {
@@ -460,8 +460,12 @@ ExecNode_output_schema <- function(node) {
   .Call(`_arrow_ExecNode_output_schema`, node)
 }
 
-ExecNode_Scan <- function(plan, dataset, filter, materialized_field_names) {
-  .Call(`_arrow_ExecNode_Scan`, plan, dataset, filter, materialized_field_names)
+ExecNode_has_ordered_batches <- function(node) {
+  .Call(`_arrow_ExecNode_has_ordered_batches`, node)
+}
+
+ExecNode_Scan <- function(plan, dataset, filter, projection) {
+  .Call(`_arrow_ExecNode_Scan`, plan, dataset, filter, projection)
 }
 
 ExecPlan_Write <- function(plan, final_node, metadata, file_write_options, filesystem, base_dir, partitioning, basename_template, existing_data_behavior, max_partitions, max_open_files, max_rows_per_file, min_rows_per_group, max_rows_per_group) {
@@ -486,6 +490,14 @@ ExecNode_Join <- function(input, join_type, right_data, left_keys, right_keys, l
 
 ExecNode_Union <- function(input, right_data) {
   .Call(`_arrow_ExecNode_Union`, input, right_data)
+}
+
+ExecNode_Fetch <- function(input, offset, limit) {
+  .Call(`_arrow_ExecNode_Fetch`, input, offset, limit)
+}
+
+ExecNode_OrderBy <- function(input, sort_options) {
+  .Call(`_arrow_ExecNode_OrderBy`, input, sort_options)
 }
 
 ExecNode_SourceNode <- function(plan, reader) {
@@ -1084,8 +1096,8 @@ compute___expr__call <- function(func_name, argument_list, options) {
   .Call(`_arrow_compute___expr__call`, func_name, argument_list, options)
 }
 
-field_names_in_expression <- function(x) {
-  .Call(`_arrow_field_names_in_expression`, x)
+compute___expr__is_field_ref <- function(x) {
+  .Call(`_arrow_compute___expr__is_field_ref`, x)
 }
 
 compute___expr__get_field_ref_name <- function(x) {
@@ -1094,6 +1106,10 @@ compute___expr__get_field_ref_name <- function(x) {
 
 compute___expr__field_ref <- function(name) {
   .Call(`_arrow_compute___expr__field_ref`, name)
+}
+
+compute___expr__nested_field_ref <- function(x, name) {
+  .Call(`_arrow_compute___expr__nested_field_ref`, x, name)
 }
 
 compute___expr__scalar <- function(x) {
@@ -1336,8 +1352,16 @@ fs___S3FileSystem__region <- function(fs) {
   .Call(`_arrow_fs___S3FileSystem__region`, fs)
 }
 
+FinalizeS3 <- function() {
+  invisible(.Call(`_arrow_FinalizeS3`))
+}
+
 fs___GcsFileSystem__Make <- function(anonymous, options) {
   .Call(`_arrow_fs___GcsFileSystem__Make`, anonymous, options)
+}
+
+fs___GcsFileSystem__options <- function(fs) {
+  .Call(`_arrow_fs___GcsFileSystem__options`, fs)
 }
 
 io___Readable__Read <- function(x, nbytes) {

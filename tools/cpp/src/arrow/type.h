@@ -264,6 +264,9 @@ struct ARROW_EXPORT TypeHolder {
   }
 
   static std::string ToString(const std::vector<TypeHolder>&);
+
+  static std::vector<TypeHolder> FromTypes(
+      const std::vector<std::shared_ptr<DataType>>& types);
 };
 
 ARROW_EXPORT
@@ -1220,6 +1223,34 @@ class ARROW_EXPORT DenseUnionType : public UnionType {
   std::string name() const override { return "dense_union"; }
 };
 
+/// \brief Type class for run-end encoded data
+class ARROW_EXPORT RunEndEncodedType : public NestedType {
+ public:
+  static constexpr Type::type type_id = Type::RUN_END_ENCODED;
+
+  static constexpr const char* type_name() { return "run_end_encoded"; }
+
+  explicit RunEndEncodedType(std::shared_ptr<DataType> run_end_type,
+                             std::shared_ptr<DataType> value_type);
+
+  DataTypeLayout layout() const override {
+    // A lot of existing code expects at least one buffer
+    return DataTypeLayout({DataTypeLayout::AlwaysNull()});
+  }
+
+  const std::shared_ptr<DataType>& run_end_type() const { return fields()[0]->type(); }
+  const std::shared_ptr<DataType>& value_type() const { return fields()[1]->type(); }
+
+  std::string ToString() const override;
+
+  std::string name() const override { return "run_end_encoded"; }
+
+  static bool RunEndTypeValid(const DataType& run_end_type);
+
+ private:
+  std::string ComputeFingerprint() const override;
+};
+
 /// @}
 
 // ----------------------------------------------------------------------
@@ -1658,10 +1689,14 @@ class ARROW_EXPORT FieldPath {
 
   /// \brief Retrieve the referenced column from a RecordBatch or Table
   Result<std::shared_ptr<Array>> Get(const RecordBatch& batch) const;
+  Result<std::shared_ptr<ChunkedArray>> Get(const Table& table) const;
 
   /// \brief Retrieve the referenced child from an Array or ArrayData
   Result<std::shared_ptr<Array>> Get(const Array& array) const;
   Result<std::shared_ptr<ArrayData>> Get(const ArrayData& data) const;
+
+  /// \brief Retrieve the referenced child from a ChunkedArray
+  Result<std::shared_ptr<ChunkedArray>> Get(const ChunkedArray& chunked_array) const;
 
  private:
   std::vector<int> indices_;
@@ -1719,9 +1754,7 @@ class ARROW_EXPORT FieldRef : public util::EqualityComparable<FieldRef> {
   FieldRef(int index) : impl_(FieldPath({index})) {}  // NOLINT runtime/explicit
 
   /// Construct a nested FieldRef.
-  FieldRef(std::vector<FieldRef> refs) {  // NOLINT runtime/explicit
-    Flatten(std::move(refs));
-  }
+  explicit FieldRef(std::vector<FieldRef> refs) { Flatten(std::move(refs)); }
 
   /// Convenience constructor for nested FieldRefs: each argument will be used to
   /// construct a FieldRef
@@ -1794,7 +1827,9 @@ class ARROW_EXPORT FieldRef : public util::EqualityComparable<FieldRef> {
   /// \brief Convenience function which applies FindAll to arg's type or schema.
   std::vector<FieldPath> FindAll(const ArrayData& array) const;
   std::vector<FieldPath> FindAll(const Array& array) const;
+  std::vector<FieldPath> FindAll(const ChunkedArray& chunked_array) const;
   std::vector<FieldPath> FindAll(const RecordBatch& batch) const;
+  std::vector<FieldPath> FindAll(const Table& table) const;
 
   /// \brief Convenience function: raise an error if matches is empty.
   template <typename T>
@@ -1967,6 +2002,12 @@ class ARROW_EXPORT Schema : public detail::Fingerprintable,
   Result<std::shared_ptr<Schema>> SetField(int i,
                                            const std::shared_ptr<Field>& field) const;
 
+  /// \brief Replace field names with new names
+  ///
+  /// \param[in] names new names
+  /// \return new Schema
+  Result<std::shared_ptr<Schema>> WithNames(const std::vector<std::string>& names) const;
+
   /// \brief Replace key-value metadata with new metadata
   ///
   /// \param[in] metadata new KeyValueMetadata
@@ -2125,11 +2166,12 @@ Result<std::shared_ptr<Schema>> UnifySchemas(
 
 namespace internal {
 
-static inline bool HasValidityBitmap(Type::type id) {
+constexpr bool HasValidityBitmap(Type::type id) {
   switch (id) {
     case Type::NA:
     case Type::DENSE_UNION:
     case Type::SPARSE_UNION:
+    case Type::RUN_END_ENCODED:
       return false;
     default:
       return true;
