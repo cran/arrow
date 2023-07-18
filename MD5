@@ -1,6 +1,6 @@
-5c00d923837a81183ed1e49dff385667 *DESCRIPTION
+6e615462e4f427d6391e935da7141dc3 *DESCRIPTION
 71acf8a297df29a0e61c943f2ded7823 *NAMESPACE
-3e55d0d29781db83240280fe017a38ab *NEWS.md
+a757ff7a7d3a986adf1c941a0a6fc07a *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 802960c319a34e7f37abd11adeef7159 *R/array.R
 8b83a28926ebbb088fada9c739ae2511 *R/arrow-datum.R
@@ -33,7 +33,7 @@ e4262f9fa2a55e01ea8c419c3f7ee376 *R/dplyr-eval.R
 7a772498ea2b2e8d5fb6a0b792a99abb *R/dplyr-funcs-augmented.R
 4ec66bdd96af1a9ba3e616f37ddff93f *R/dplyr-funcs-conditional.R
 cd909f38acfdfdcc722e9de45e29b216 *R/dplyr-funcs-datetime.R
-09f716578998079399c76ceea738277b *R/dplyr-funcs-doc.R
+0efc8829e717cc2ed8ea5dded2d30ea5 *R/dplyr-funcs-doc.R
 8445517fe652947afda7a24808b64ab9 *R/dplyr-funcs-math.R
 4d41ac497cf6f08b73eb86b01ff2da9f *R/dplyr-funcs-simple.R
 64ef34b91195c4bf3bf3a193ccecf5e8 *R/dplyr-funcs-string.R
@@ -48,7 +48,7 @@ eb8b4d0767780e77246668434dfeea77 *R/dplyr-group-by.R
 699d784ce1419c622d7fa87e0f498cbe *R/dplyr-summarize.R
 019f3406aad7c3519cad568e3766512d *R/dplyr-union.R
 512ba6d6caebb64097fe265de277177a *R/dplyr.R
-67451171732f373ba4445063e124e7b5 *R/duckdb.R
+65d809973ce2512709c7105c05153276 *R/duckdb.R
 091bc08c0bc17e4167280ad3621ccaec *R/enums.R
 612153a49069b6fc7a8ef76819d0bd1d *R/expression.R
 02e5b22d481f73bcb4acf74bddfdbdeb *R/extension.R
@@ -123,7 +123,7 @@ c5a2875483314e300c7e54da4c376177 *man/RecordBatchWriter.Rd
 e56123546d58f4d0603d14b6b19df394 *man/Scanner.Rd
 c0000320968ee5732458d86ff36cd617 *man/Schema.Rd
 c5fae6deb511bb8d81ce2029274ae91a *man/Table.Rd
-4bf6ebd5064d6fee1c70a08f461725ac *man/acero.Rd
+d0a4da9d552adcde29634cf9473078de *man/acero.Rd
 e2c17b95d450b922be2c2debe0551fef *man/add_filename.Rd
 1f99880ee7e6ee616ccc839006b9e2c2 *man/array.Rd
 9dea9afe0fc61184a6f981864fede6cc *man/arrow-package.Rd
