@@ -397,8 +397,7 @@ class SerializedPageWriter : public PageWriter {
     page_header.__set_uncompressed_page_size(static_cast<int32_t>(uncompressed_size));
     page_header.__set_compressed_page_size(static_cast<int32_t>(output_data_len));
 
-    // TODO(PARQUET-594) crc checksum for DATA_PAGE_V2
-    if (page_checksum_verification_ && page.type() == PageType::DATA_PAGE) {
+    if (page_checksum_verification_) {
       uint32_t crc32 =
           ::arrow::internal::crc32(/* prev */ 0, output_data_buffer, output_data_len);
       page_header.__set_crc(static_cast<int32_t>(crc32));
@@ -461,7 +460,11 @@ class SerializedPageWriter : public PageWriter {
         ToThrift(page.definition_level_encoding()));
     data_page_header.__set_repetition_level_encoding(
         ToThrift(page.repetition_level_encoding()));
-    data_page_header.__set_statistics(ToThrift(page.statistics()));
+
+    // Write page statistics only when page index is not enabled.
+    if (column_index_builder_ == nullptr) {
+      data_page_header.__set_statistics(ToThrift(page.statistics()));
+    }
 
     page_header.__set_type(format::PageType::DATA_PAGE);
     page_header.__set_data_page_header(data_page_header);
@@ -480,7 +483,11 @@ class SerializedPageWriter : public PageWriter {
         page.repetition_levels_byte_length());
 
     data_page_header.__set_is_compressed(page.is_compressed());
-    data_page_header.__set_statistics(ToThrift(page.statistics()));
+
+    // Write page statistics only when page index is not enabled.
+    if (column_index_builder_ == nullptr) {
+      data_page_header.__set_statistics(ToThrift(page.statistics()));
+    }
 
     page_header.__set_type(format::PageType::DATA_PAGE_V2);
     page_header.__set_data_page_header_v2(data_page_header);
@@ -1368,7 +1375,7 @@ class TypedColumnWriterImpl : public ColumnWriterImpl, public TypedColumnWriter<
 
   bool pages_change_on_record_boundaries() const {
     return properties_->data_page_version() == ParquetDataPageVersion::V2 ||
-           properties_->write_page_index();
+           properties_->page_index_enabled(descr_->path());
   }
 
  private:

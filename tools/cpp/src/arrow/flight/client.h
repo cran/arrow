@@ -223,7 +223,7 @@ class ARROW_FLIGHT_EXPORT FlightClient {
   /// \param[in] username Username to use
   /// \param[in] password Password to use
   /// \return Arrow result with bearer token and status OK if client authenticated
-  /// sucessfully
+  /// successfully
   arrow::Result<std::pair<std::string, std::string>> AuthenticateBasicToken(
       const FlightCallOptions& options, const std::string& username,
       const std::string& password);
@@ -245,6 +245,32 @@ class ARROW_FLIGHT_EXPORT FlightClient {
   ARROW_DEPRECATED("Deprecated in 8.0.0. Use Result-returning overload instead.")
   Status DoAction(const Action& action, std::unique_ptr<ResultStream>* results) {
     return DoAction({}, action).Value(results);
+  }
+
+  /// \brief Perform the CancelFlightInfo action, returning a
+  /// CancelFlightInfoResult
+  ///
+  /// \param[in] options Per-RPC options
+  /// \param[in] request The CancelFlightInfoRequest
+  /// \return Arrow result with a CancelFlightInfoResult
+  arrow::Result<CancelFlightInfoResult> CancelFlightInfo(
+      const FlightCallOptions& options, const CancelFlightInfoRequest& request);
+  arrow::Result<CancelFlightInfoResult> CancelFlightInfo(
+      const CancelFlightInfoRequest& request) {
+    return CancelFlightInfo({}, request);
+  }
+
+  /// \brief Perform the RenewFlightEndpoint action, returning a renewed
+  /// FlightEndpoint
+  ///
+  /// \param[in] options Per-RPC options
+  /// \param[in] request The RenewFlightEndpointRequest
+  /// \return Arrow result with a renewed FlightEndpoint
+  arrow::Result<FlightEndpoint> RenewFlightEndpoint(
+      const FlightCallOptions& options, const RenewFlightEndpointRequest& request);
+  arrow::Result<FlightEndpoint> RenewFlightEndpoint(
+      const RenewFlightEndpointRequest& request) {
+    return RenewFlightEndpoint({}, request);
   }
 
   /// \brief Retrieve a list of available Action types

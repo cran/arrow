@@ -58,6 +58,7 @@
 #include "arrow/status.h"
 #include "arrow/type.h"
 #include "arrow/util/checked_cast.h"
+#include "arrow/util/logging.h"
 #include "arrow/util/string.h"
 #include "arrow/util/uri.h"
 
@@ -162,9 +163,8 @@ Result<DeclarationInfo> ProcessEmit(const substrait::ProjectRel& rel,
                             no_emit_declr, schema);
 }
 
-Result<DeclarationInfo> ProcessExtensionEmit(
-    const DeclarationInfo& no_emit_declr, const std::vector<int>& emit_order,
-    const std::vector<int>& field_output_indices) {
+Result<DeclarationInfo> ProcessExtensionEmit(const DeclarationInfo& no_emit_declr,
+                                             const std::vector<int>& emit_order) {
   const std::shared_ptr<Schema>& input_schema = no_emit_declr.output_schema;
   std::vector<compute::Expression> proj_field_refs;
   proj_field_refs.reserve(emit_order.size());
@@ -172,15 +172,11 @@ Result<DeclarationInfo> ProcessExtensionEmit(
   emit_fields.reserve(emit_order.size());
 
   for (int emit_idx : emit_order) {
-    if (emit_idx < 0 || static_cast<size_t>(emit_idx) >= field_output_indices.size()) {
+    if (emit_idx < 0 || emit_idx >= input_schema->num_fields()) {
       return Status::Invalid("Out of bounds emit index ", emit_idx);
     }
-    int field_idx = field_output_indices[emit_idx];
-    if (field_idx < 0) {
-      return Status::Invalid("Non-output emit index ", emit_idx);
-    }
-    proj_field_refs.push_back(compute::field_ref(FieldRef(field_idx)));
-    emit_fields.push_back(input_schema->field(field_idx));
+    proj_field_refs.push_back(compute::field_ref(FieldRef(emit_idx)));
+    emit_fields.push_back(input_schema->field(emit_idx));
   }
 
   std::shared_ptr<Schema> emit_schema = schema(std::move(emit_fields));
@@ -192,13 +188,13 @@ Result<DeclarationInfo> ProcessExtensionEmit(
       std::move(emit_schema)};
 }
 
-Result<RelationInfo> GetExtensionRelationInfo(const substrait::Rel& rel,
-                                              const ExtensionSet& ext_set,
-                                              const ConversionOptions& conv_opts,
-                                              std::vector<DeclarationInfo>* inputs_arg) {
+Result<DeclarationInfo> GetExtensionInfo(const substrait::Rel& rel,
+                                         const ExtensionSet& ext_set,
+                                         const ConversionOptions& conv_opts,
+                                         std::vector<DeclarationInfo>* inputs_arg) {
   if (inputs_arg == nullptr) {
     std::vector<DeclarationInfo> inputs_tmp;
-    return GetExtensionRelationInfo(rel, ext_set, conv_opts, &inputs_tmp);
+    return GetExtensionInfo(rel, ext_set, conv_opts, &inputs_tmp);
   }
   std::vector<DeclarationInfo>& inputs = *inputs_arg;
   inputs.clear();
@@ -333,6 +329,50 @@ ARROW_ENGINE_EXPORT Result<DeclarationInfo> MakeAggregateDeclaration(
 }
 
 }  // namespace internal
+
+namespace {
+
+struct SortBehavior {
+  compute::NullPlacement null_placement;
+  compute::SortOrder sort_order;
+
+  static Result<SortBehavior> Make(substrait::SortField::SortDirection dir) {
+    SortBehavior sort_behavior;
+    switch (dir) {
+      case substrait::SortField::SortDirection::
+          SortField_SortDirection_SORT_DIRECTION_UNSPECIFIED:
+        return Status::Invalid("The substrait plan does not specify a sort direction");
+      case substrait::SortField::SortDirection::
+          SortField_SortDirection_SORT_DIRECTION_ASC_NULLS_FIRST:
+        sort_behavior.null_placement = compute::NullPlacement::AtStart;
+        sort_behavior.sort_order = compute::SortOrder::Ascending;
+        break;
+      case substrait::SortField::SortDirection::
+          SortField_SortDirection_SORT_DIRECTION_ASC_NULLS_LAST:
+        sort_behavior.null_placement = compute::NullPlacement::AtEnd;
+        sort_behavior.sort_order = compute::SortOrder::Ascending;
+        break;
+      case substrait::SortField::SortDirection::
+          SortField_SortDirection_SORT_DIRECTION_DESC_NULLS_FIRST:
+        sort_behavior.null_placement = compute::NullPlacement::AtStart;
+        sort_behavior.sort_order = compute::SortOrder::Descending;
+        break;
+      case substrait::SortField::SortDirection::
+          SortField_SortDirection_SORT_DIRECTION_DESC_NULLS_LAST:
+        sort_behavior.null_placement = compute::NullPlacement::AtEnd;
+        sort_behavior.sort_order = compute::SortOrder::Descending;
+        break;
+      case substrait::SortField::SortDirection::
+          SortField_SortDirection_SORT_DIRECTION_CLUSTERED:
+      default:
+        return Status::NotImplemented(
+            "Acero does not support the specified sort direction: ", dir);
+    }
+    return sort_behavior;
+  }
+};
+
+}  // namespace
 
 Result<DeclarationInfo> FromProto(const substrait::Rel& rel, const ExtensionSet& ext_set,
                                   const ConversionOptions& conversion_options) {
@@ -719,6 +759,83 @@ Result<DeclarationInfo> FromProto(const substrait::Rel& rel, const ExtensionSet&
 
       return ProcessEmit(join, join_declaration, join_schema);
     }
+    case substrait::Rel::RelTypeCase::kFetch: {
+      const auto& fetch = rel.fetch();
+      RETURN_NOT_OK(CheckRelCommon(fetch, conversion_options));
+
+      if (!fetch.has_input()) {
+        return Status::Invalid("substrait::FetchRel with no input relation");
+      }
+
+      ARROW_ASSIGN_OR_RAISE(auto input,
+                            FromProto(fetch.input(), ext_set, conversion_options));
+
+      int64_t offset = fetch.offset();
+      int64_t count = fetch.count();
+
+      acero::Declaration fetch_dec{
+          "fetch", {input.declaration}, acero::FetchNodeOptions(offset, count)};
+
+      DeclarationInfo fetch_declaration{std::move(fetch_dec), input.output_schema};
+      return ProcessEmit(fetch, std::move(fetch_declaration),
+                         fetch_declaration.output_schema);
+    }
+    case substrait::Rel::RelTypeCase::kSort: {
+      const auto& sort = rel.sort();
+      RETURN_NOT_OK(CheckRelCommon(sort, conversion_options));
+
+      if (!sort.has_input()) {
+        return Status::Invalid("substrait::SortRel with no input relation");
+      }
+
+      ARROW_ASSIGN_OR_RAISE(auto input,
+                            FromProto(sort.input(), ext_set, conversion_options));
+
+      if (sort.sorts_size() == 0) {
+        return Status::Invalid("substrait::SortRel with no sorts");
+      }
+
+      std::vector<compute::SortKey> sort_keys;
+      sort_keys.reserve(sort.sorts_size());
+      // Substrait allows null placement to differ for each field.  Acero expects it to
+      // be consistent across all fields.  So we grab the null placement from the first
+      // key and verify all other keys have the same null placement
+      std::optional<SortBehavior> sample_sort_behavior;
+      for (const auto& sort : sort.sorts()) {
+        ARROW_ASSIGN_OR_RAISE(SortBehavior sort_behavior,
+                              SortBehavior::Make(sort.direction()));
+        if (sample_sort_behavior) {
+          if (sample_sort_behavior->null_placement != sort_behavior.null_placement) {
+            return Status::NotImplemented(
+                "substrait::SortRel with ordering with mixed null placement");
+          }
+        } else {
+          sample_sort_behavior = sort_behavior;
+        }
+        if (sort.sort_kind_case() != substrait::SortField::SortKindCase::kDirection) {
+          return Status::NotImplemented("substrait::SortRel with custom sort function");
+        }
+        ARROW_ASSIGN_OR_RAISE(compute::Expression expr,
+                              FromProto(sort.expr(), ext_set, conversion_options));
+        const FieldRef* field_ref = expr.field_ref();
+        if (field_ref) {
+          sort_keys.push_back(compute::SortKey(*field_ref, sort_behavior.sort_order));
+        } else {
+          return Status::Invalid("Sort key expressions must be a direct reference.");
+        }
+      }
+
+      DCHECK(sample_sort_behavior.has_value());
+      acero::Declaration sort_dec{
+          "order_by",
+          {input.declaration},
+          acero::OrderByNodeOptions(compute::Ordering(
+              std::move(sort_keys), sample_sort_behavior->null_placement))};
+
+      DeclarationInfo sort_declaration{std::move(sort_dec), input.output_schema};
+      return ProcessEmit(sort, std::move(sort_declaration),
+                         sort_declaration.output_schema);
+    }
     case substrait::Rel::RelTypeCase::kAggregate: {
       const auto& aggregate = rel.aggregate();
       RETURN_NOT_OK(CheckRelCommon(aggregate, conversion_options));
@@ -788,44 +905,27 @@ Result<DeclarationInfo> FromProto(const substrait::Rel& rel, const ExtensionSet&
     case substrait::Rel::RelTypeCase::kExtensionMulti: {
       std::vector<DeclarationInfo> ext_rel_inputs;
       ARROW_ASSIGN_OR_RAISE(
-          auto ext_rel_info,
-          GetExtensionRelationInfo(rel, ext_set, conversion_options, &ext_rel_inputs));
-      const auto& ext_decl_info = ext_rel_info.decl_info;
+          auto ext_decl_info,
+          GetExtensionInfo(rel, ext_set, conversion_options, &ext_rel_inputs));
       auto ext_common_opt = GetExtensionRelCommon(rel);
       bool has_emit = ext_common_opt && ext_common_opt->emit_kind_case() ==
                                             substrait::RelCommon::EmitKindCase::kEmit;
-      if (!ext_rel_info.field_output_indices) {
-        if (!has_emit) {
-          return ext_decl_info;
-        }
-        return Status::NotImplemented("Emit not supported by ",
-                                      ext_decl_info.declaration.factory_name);
-      }
       // Set up the emit order - an ordered list of indices that specifies an output
       // mapping as expected by Substrait. This is a sublist of [0..N), where N is the
       // total number of input fields across all inputs of the relation, that selects
       // from these input fields.
-      std::vector<int> emit_order;
       if (has_emit) {
+        std::vector<int> emit_order;
         // the emit order is defined in the Substrait plan - pick it up
         const auto& emit_info = ext_common_opt->emit();
         emit_order.reserve(emit_info.output_mapping_size());
         for (const auto& emit_idx : emit_info.output_mapping()) {
           emit_order.push_back(emit_idx);
         }
+        return ProcessExtensionEmit(std::move(ext_decl_info), emit_order);
       } else {
-        // the emit order is the default output mapping [0..N)
-        int emit_size = 0;
-        for (const auto& input : ext_rel_inputs) {
-          emit_size += input.output_schema->num_fields();
-        }
-        emit_order.reserve(emit_size);
-        for (int emit_idx = 0; emit_idx < emit_size; emit_idx++) {
-          emit_order.push_back(emit_idx);
-        }
+        return ext_decl_info;
       }
-      return ProcessExtensionEmit(ext_decl_info, emit_order,
-                                  *ext_rel_info.field_output_indices);
     }
 
     case substrait::Rel::RelTypeCase::kSet: {

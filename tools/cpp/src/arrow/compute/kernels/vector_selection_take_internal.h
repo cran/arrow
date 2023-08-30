@@ -15,22 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Dummy file for checking if TlsCredentialsOptions exists in
-// the grpc_impl::experimental namespace. gRPC versions 1.27-1.31
-// put it here. This is for supporting disabling server
-// validation when using TLS.
+#pragma once
 
-#include <grpc/grpc_security_constants.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/tls_credentials_options.h>
+#include <cstdint>
+#include <memory>
 
-static grpc_tls_server_verification_option check(
-    const grpc_impl::experimental::TlsCredentialsOptions* options) {
-  grpc_tls_server_verification_option server_opt = options->server_verification_option();
-  return server_opt;
-}
+#include "arrow/array/data.h"
+#include "arrow/compute/api_vector.h"
+#include "arrow/compute/kernels/vector_selection_internal.h"
+#include "arrow/memory_pool.h"
 
-int main(int argc, const char** argv) {
-  grpc_tls_server_verification_option opt = check(nullptr);
-  return 0;
-}
+namespace arrow {
+namespace compute {
+namespace internal {
+
+const TakeOptions* GetDefaultTakeOptions();
+
+std::unique_ptr<Function> MakeTakeMetaFunction();
+
+void PopulateTakeKernels(std::vector<SelectionKernelData>* out);
+
+}  // namespace internal
+}  // namespace compute
+}  // namespace arrow

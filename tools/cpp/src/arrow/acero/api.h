@@ -15,24 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Dummy file for checking if TlsCredentialsOptions exists in
-// the grpc::experimental namespace. gRPC starting from 1.36
-// puts it here. This is for supporting disabling server
-// validation when using TLS.
+// NOTE: API is EXPERIMENTAL and will change without going through a
+// deprecation cycle
 
-#include <grpc/grpc_security_constants.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/tls_credentials_options.h>
+#pragma once
 
-static void check() {
-  // In 1.34, there's no parameterless constructor; in 1.36, there's
-  // only a parameterless constructor
-  auto options = std::make_shared<grpc::experimental::TlsChannelCredentialsOptions>();
-  options->set_server_verification_option(
-      grpc_tls_server_verification_option::GRPC_TLS_SERVER_VERIFICATION);
-}
+/// \defgroup acero-api Utilities for creating and executing execution plans
+/// @{
+/// @}
 
-int main(int argc, const char** argv) {
-  check();
-  return 0;
-}
+/// \defgroup acero-nodes Options classes for the various exec nodes
+/// @{
+/// @}
+
+#include "arrow/acero/exec_plan.h"
+#include "arrow/acero/options.h"

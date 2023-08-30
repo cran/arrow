@@ -568,6 +568,26 @@ csv___ReadOptions__column_names <- function(options) {
   .Call(`_arrow_csv___ReadOptions__column_names`, options)
 }
 
+csv___ReadOptions__block_size <- function(options) {
+  .Call(`_arrow_csv___ReadOptions__block_size`, options)
+}
+
+csv___ReadOptions__skip_rows <- function(options) {
+  .Call(`_arrow_csv___ReadOptions__skip_rows`, options)
+}
+
+csv___ReadOptions__autogenerate_column_names <- function(options) {
+  .Call(`_arrow_csv___ReadOptions__autogenerate_column_names`, options)
+}
+
+csv___ReadOptions__use_threads <- function(options) {
+  .Call(`_arrow_csv___ReadOptions__use_threads`, options)
+}
+
+csv___ReadOptions__skip_rows_after_names <- function(options) {
+  .Call(`_arrow_csv___ReadOptions__skip_rows_after_names`, options)
+}
+
 csv___ConvertOptions__initialize <- function(options) {
   .Call(`_arrow_csv___ConvertOptions__initialize`, options)
 }
@@ -712,12 +732,20 @@ dataset___CsvFileFormat__Make <- function(parse_options, convert_options, read_o
   .Call(`_arrow_dataset___CsvFileFormat__Make`, parse_options, convert_options, read_options)
 }
 
+dataset___JsonFileFormat__Make <- function(parse_options, read_options) {
+  .Call(`_arrow_dataset___JsonFileFormat__Make`, parse_options, read_options)
+}
+
 dataset___FragmentScanOptions__type_name <- function(fragment_scan_options) {
   .Call(`_arrow_dataset___FragmentScanOptions__type_name`, fragment_scan_options)
 }
 
 dataset___CsvFragmentScanOptions__Make <- function(convert_options, read_options) {
   .Call(`_arrow_dataset___CsvFragmentScanOptions__Make`, convert_options, read_options)
+}
+
+dataset___JsonFragmentScanOptions__Make <- function(parse_options, read_options) {
+  .Call(`_arrow_dataset___JsonFragmentScanOptions__Make`, parse_options, read_options)
 }
 
 dataset___ParquetFragmentScanOptions__Make <- function(use_buffered_stream, buffer_size, pre_buffer) {
@@ -1824,6 +1852,10 @@ RecordBatchReader__Head <- function(reader, num_rows) {
   .Call(`_arrow_RecordBatchReader__Head`, reader, num_rows)
 }
 
+MakeSafeRecordBatchReader <- function(reader) {
+  .Call(`_arrow_MakeSafeRecordBatchReader`, reader)
+}
+
 ipc___RecordBatchStreamReader__Open <- function(stream) {
   .Call(`_arrow_ipc___RecordBatchStreamReader__Open`, stream)
 }
@@ -1982,6 +2014,10 @@ Schema__metadata <- function(schema) {
 
 Schema__WithMetadata <- function(schema, metadata) {
   .Call(`_arrow_Schema__WithMetadata`, schema, metadata)
+}
+
+Schema__WithNames <- function(schema, names) {
+  .Call(`_arrow_Schema__WithNames`, schema, names)
 }
 
 Schema__serialize <- function(schema) {

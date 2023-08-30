@@ -15,22 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Dummy file for checking if TlsCredentialsOptions exists in
-// the grpc::experimental namespace. gRPC versions 1.32 and higher
-// put it here. This is for supporting disabling server
-// validation when using TLS.
+#pragma once
 
-#include <grpc/grpc_security_constants.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/security/tls_credentials_options.h>
+#ifndef NDEBUG
+#include <mutex>
+#include <ostream>
+#endif
 
-static grpc_tls_server_verification_option check(
-    const grpc::experimental::TlsCredentialsOptions* options) {
-  grpc_tls_server_verification_option server_opt = options->server_verification_option();
-  return server_opt;
-}
+namespace arrow {
+namespace acero {
 
-int main(int argc, const char** argv) {
-  grpc_tls_server_verification_option opt = check(nullptr);
-  return 0;
-}
+struct DebugOptions {
+#ifndef NDEBUG
+  DebugOptions(std::ostream* os, std::mutex* mutex) : os(os), mutex(mutex) {}
+
+  std::ostream* os;
+  std::mutex* mutex;
+#endif
+};
+
+}  // namespace acero
+}  // namespace arrow

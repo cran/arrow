@@ -34,7 +34,7 @@
 #' to a `dbplyr::tbl_lazy`. This means that the verbs do not eagerly evaluate
 #' the query on the data. To run the query, call either `compute()`,
 #' which returns an `arrow` [Table], or `collect()`, which pulls the resulting
-#' Table into an R `data.frame`.
+#' Table into an R `tibble`.
 #'
 #' * [`anti_join()`][dplyr::anti_join()]: the `copy` and `na_matches` arguments are ignored
 #' * [`arrange()`][dplyr::arrange()]
@@ -83,7 +83,7 @@
 #' Functions can be called either as `pkg::fun()` or just `fun()`, i.e. both
 #' `str_sub()` and `stringr::str_sub()` work.
 #'
-#' In addition to these functions, you can call any of Arrow's 254 compute
+#' In addition to these functions, you can call any of Arrow's 262 compute
 #' functions directly. Arrow has many functions that don't map to an existing R
 #' function. In other cases where there is an R function mapping, you can still
 #' call the Arrow function directly if you don't want the adaptations that the R
@@ -196,7 +196,7 @@
 #'
 #' * [`across()`][dplyr::across()]
 #' * [`between()`][dplyr::between()]
-#' * [`case_when()`][dplyr::case_when()]
+#' * [`case_when()`][dplyr::case_when()]: `.ptype` and `.size` arguments not supported
 #' * [`coalesce()`][dplyr::coalesce()]
 #' * [`desc()`][dplyr::desc()]
 #' * [`if_all()`][dplyr::if_all()]
@@ -352,4 +352,6 @@
 #' * [`starts_with()`][tidyselect::starts_with()]
 #'
 #' @name acero
+#'
+#' @aliases arrow-functions arrow-verbs arrow-dplyr
 NULL

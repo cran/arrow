@@ -116,10 +116,9 @@ duckdb_disconnector <- function(con, tbl_name) {
   environment()
 }
 
-#' Create an Arrow object from others
+#' Create an Arrow object from a DuckDB connection
 #'
-#' This can be used in pipelines that pass data back and forth between Arrow and
-#' other processes (like DuckDB).
+#' This can be used in pipelines that pass data back and forth between Arrow and DuckDB
 #'
 #' @param .data the object to be converted
 #' @return A `RecordBatchReader`.
@@ -156,5 +155,6 @@ to_arrow <- function(.data) {
   # Run the query
   res <- DBI::dbSendQuery(dbplyr::remote_con(.data), dbplyr::remote_query(.data), arrow = TRUE)
 
-  duckdb::duckdb_fetch_record_batch(res)
+  reader <- duckdb::duckdb_fetch_record_batch(res)
+  MakeSafeRecordBatchReader(reader)
 }

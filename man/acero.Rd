@@ -2,6 +2,9 @@
 % Please edit documentation in R/dplyr-funcs-doc.R
 \name{acero}
 \alias{acero}
+\alias{arrow-functions}
+\alias{arrow-verbs}
+\alias{arrow-dplyr}
 \title{Functions available in Arrow dplyr queries}
 \description{
 The \code{arrow} package contains methods for 37 \code{dplyr} table functions, many of
@@ -18,7 +21,7 @@ Most verb functions return an \code{arrow_dplyr_query} object, similar in spirit
 to a \code{dbplyr::tbl_lazy}. This means that the verbs do not eagerly evaluate
 the query on the data. To run the query, call either \code{compute()},
 which returns an \code{arrow} \link{Table}, or \code{collect()}, which pulls the resulting
-Table into an R \code{data.frame}.
+Table into an R \code{tibble}.
 \itemize{
 \item \code{\link[dplyr:filter-joins]{anti_join()}}: the \code{copy} and \code{na_matches} arguments are ignored
 \item \code{\link[dplyr:arrange]{arrange()}}
@@ -68,7 +71,7 @@ can assume that the function works in Acero just as it does in R.
 Functions can be called either as \code{pkg::fun()} or just \code{fun()}, i.e. both
 \code{str_sub()} and \code{stringr::str_sub()} work.
 
-In addition to these functions, you can call any of Arrow's 254 compute
+In addition to these functions, you can call any of Arrow's 262 compute
 functions directly. Arrow has many functions that don't map to an existing R
 function. In other cases where there is an R function mapping, you can still
 call the Arrow function directly if you don't want the adaptations that the R
@@ -186,7 +189,7 @@ Valid values are "s", "ms" (default), "us", "ns".
 \itemize{
 \item \code{\link[dplyr:across]{across()}}
 \item \code{\link[dplyr:between]{between()}}
-\item \code{\link[dplyr:case_when]{case_when()}}
+\item \code{\link[dplyr:case_when]{case_when()}}: \code{.ptype} and \code{.size} arguments not supported
 \item \code{\link[dplyr:coalesce]{coalesce()}}
 \item \code{\link[dplyr:desc]{desc()}}
 \item \code{\link[dplyr:across]{if_all()}}
