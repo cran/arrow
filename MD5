@@ -1,6 +1,6 @@
-dab8629f48be3213f9c72421f542c69a *DESCRIPTION
+b8ff7787ee6591207216d02186547b9f *DESCRIPTION
 7f8a69dc413219bd0ba7f85524025b22 *NAMESPACE
-db964e5ab4f659b8d3a82e38d091cc26 *NEWS.md
+db23579c6a5f751349b34e2143f44b4b *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 21b96e392c1526f3f24d2af467976a85 *R/array.R
 9910bcfb9c04f36f7d31e036976229ee *R/arrow-datum.R
@@ -34,7 +34,7 @@ d30064a50f4b11b3e889e8122af5716a *R/dplyr-filter.R
 7a772498ea2b2e8d5fb6a0b792a99abb *R/dplyr-funcs-augmented.R
 a5bb1d19015744e9e029c5b6cd11f086 *R/dplyr-funcs-conditional.R
 12c11c0ca5e94ab0bd34e1473d3a9b91 *R/dplyr-funcs-datetime.R
-87f458ef33cef20380ca7c3bfa7c5050 *R/dplyr-funcs-doc.R
+3abfe7f6ff9dacfd02abe9cfd7f9102f *R/dplyr-funcs-doc.R
 8445517fe652947afda7a24808b64ab9 *R/dplyr-funcs-math.R
 4d41ac497cf6f08b73eb86b01ff2da9f *R/dplyr-funcs-simple.R
 64ef34b91195c4bf3bf3a193ccecf5e8 *R/dplyr-funcs-string.R
@@ -83,7 +83,7 @@ bbe4d3fa171a2d51217f150b104e9302 *R/util.R
 eab80a29c24cd774947f51205345a846 *configure
 b7909bd8c66dfd76e6327866766d2c27 *configure.win
 56b91f89083404add6d82d9e2618b386 *inst/NOTICE.txt
-ada126dad9e8636683b5ac429be99780 *inst/build_arrow_static.sh
+ed658f9e5e1be8fcef476db987b989d5 *inst/build_arrow_static.sh
 c533d44b9d685b617f3b995a83076521 *inst/demo_flight_server.py
 198ecbee77c8d179546b9bd407bda83e *inst/v0.7.1.parquet
 efb9faf7238352ea27990fdd2d5056f0 *man/ArrayData.Rd
@@ -127,7 +127,7 @@ c5a2875483314e300c7e54da4c376177 *man/RecordBatchWriter.Rd
 e56123546d58f4d0603d14b6b19df394 *man/Scanner.Rd
 aab3cab77e51027a1a638ce15591d65c *man/Schema-class.Rd
 b574cfc0ced44a4fe1021d94869edece *man/Table-class.Rd
-f701b28d44f0b84ececd7b9f335f485f *man/acero.Rd
+977bc4aea4b674462343d7a5521913e9 *man/acero.Rd
 e2c17b95d450b922be2c2debe0551fef *man/add_filename.Rd
 27ec86601851f5eaa4edc54381de07ff *man/array-class.Rd
 ee136c5be8164109fe04dd34bc11677a *man/arrow-package.Rd
@@ -286,14 +286,14 @@ ea4a219613ac7bd0628b19733f58ba3c *tests/testthat/golden-files/data-arrow_1.0.1_u
 d782daf12f84c6f055b9489050aca5c7 *tests/testthat/golden-files/data-arrow_2.0.0_lz4.feather
 2c9409e98fdda73d0574f44690781cc3 *tests/testthat/golden-files/data-arrow_2.0.0_uncompressed.feather
 a2fc47ba10dbd0177885744c22b0267b *tests/testthat/golden-files/data-arrow_2.0.0_zstd.feather
-790a0a0e1dd4b181828100be449116ac *tests/testthat/helper-arrow.R
-d28f92f31eb5a1990363b6ab5441ac31 *tests/testthat/helper-data.R
+c6196f33fe4ad59ff90599f115084e05 *tests/testthat/helper-arrow.R
+f3a2ce2f633b826b0d566a600e9cf61f *tests/testthat/helper-data.R
 135132058b4379c6a13c8cb62343563c *tests/testthat/helper-expectation.R
 7d143271b7a1b0557bf78b4ce30fce5e *tests/testthat/helper-filesystems.R
 32d1919f530e20cc5bd68be8d0859d51 *tests/testthat/helper-parquet.R
 f3ed3243bd59b30075971d5d37f565ec *tests/testthat/helper-roundtrip.R
 e4d85d1c97070168ce62132b13d18e9f *tests/testthat/helper-skip.R
-c32ff80b0242b4077201955757492b32 *tests/testthat/test-Array.R
+d625c2e8bf052b7618984e192742b244 *tests/testthat/test-Array.R
 d4ebc28d0168f8e8d9e8c34d759d63a6 *tests/testthat/test-RecordBatch.R
 8b467ea7f5925f4b06c83703db9b0f20 *tests/testthat/test-Table.R
 9aba55f337e3630a72a11b920f350c20 *tests/testthat/test-altrep.R
@@ -328,7 +328,7 @@ c4d26e04f4d3a76bbe76ecbf3faa645d *tests/testthat/test-dplyr-count.R
 bc11fa8d47f1a4e50d5dddf7351f1ad4 *tests/testthat/test-dplyr-distinct.R
 c55507e10c077da91f9a06cccf2fb13f *tests/testthat/test-dplyr-filter.R
 70909d4aec89e2dbd8d3f9bb21f0e02b *tests/testthat/test-dplyr-funcs-conditional.R
-f203a36725b01f7e240e65913713e36a *tests/testthat/test-dplyr-funcs-datetime.R
+7e2db652e802765bd2f5ece7f04c5862 *tests/testthat/test-dplyr-funcs-datetime.R
 40058ba6a3998b5519861544e4e1f1a8 *tests/testthat/test-dplyr-funcs-math.R
 965a155e9daf63a08d28f7661ffcfc1b *tests/testthat/test-dplyr-funcs-string.R
 48b607c4db7f0f0f103d2dd078f4957a *tests/testthat/test-dplyr-funcs-type.R
@@ -385,9 +385,6 @@ fe958fd4ba94fc1e88211a336c515a52 *tools/autobrew
 a4f6b6b3d570d7a40b39fe49f61f43d8 *tools/cpp/CMakePresets.json
 523a3c0ceee7a9620e1e36263ccc5b7c *tools/cpp/CMakeSettings.json
 61b948484b120625b03dd14ae5c02127 *tools/cpp/README.md
-f2eed5b8cd7ee37ae33e2bc53af2e96f *tools/cpp/build-support/__pycache__/lintutils.cpython-310.pyc
-87af419a4d3b30b65df3f32b1a920704 *tools/cpp/build-support/__pycache__/lintutils.cpython-36.pyc
-ded3aaed35a9dd8d7bb232676a4cfeda *tools/cpp/build-support/__pycache__/lintutils.cpython-38.pyc
 2c3039ce83865a67687441c03b69f285 *tools/cpp/build-support/asan_symbolize.py
 8b57f234055f70e0d524f0fcb7b756f3 *tools/cpp/build-support/build-lz4-lib.sh
 115305454b8fc8b506cc2509469930d9 *tools/cpp/build-support/build-zstd-lib.sh
@@ -409,7 +406,6 @@ a0a8fb9be6ab6862e6342dad1cc7f12b *tools/cpp/build-support/iwyu/mappings/gmock.im
 8c76bed2c4762b269b66fcf3bca029bd *tools/cpp/build-support/lint_cpp_cli.py
 f497bb2a22121ec8f4415a5c9101509a *tools/cpp/build-support/lint_exclusions.txt
 b97c153d7e2e7dfaa85582b9c11dbe78 *tools/cpp/build-support/lintutils.py
-9d127aca1f4e05d34295f0d07072218f *tools/cpp/build-support/lintutils.pyc
 ffda5df8ea067a9e7d32b761e5ed6a70 *tools/cpp/build-support/lsan-suppressions.txt
 86f3ffd1c0e4d112e5ebb134b7f9adec *tools/cpp/build-support/run-infer.sh
 d3d9cb4de100d9556c0f55144f8178d8 *tools/cpp/build-support/run-test.sh
@@ -424,7 +420,7 @@ ba978e2a47c588cb9e237631b4705d57 *tools/cpp/build-support/update-flatbuffers.sh
 72200c16d6f489f7f75ae9b162deaa9d *tools/cpp/build-support/update-thrift.sh
 b0c2e1bf07f3d70b73278fc831e44729 *tools/cpp/build-support/vendor-flatbuffers.sh
 f8b6f2848cf83f579d3c19b3522a5411 *tools/cpp/cmake_modules/AWSSDKVariables.cmake
-c1727d97230fa4f2e64f9938ae72a375 *tools/cpp/cmake_modules/BuildUtils.cmake
+a4ac1f7aacc1c3ee3dc2e1ecd8232fb5 *tools/cpp/cmake_modules/BuildUtils.cmake
 3ebabf3fba5aceba3b3bbe2a045cc2fe *tools/cpp/cmake_modules/DefineOptions.cmake
 4e1444d5838cc56012fe49156711db50 *tools/cpp/cmake_modules/FindAWSSDKAlt.cmake
 1c39b971f8ad4e3d5d9bc5a60d1de383 *tools/cpp/cmake_modules/FindBrotliAlt.cmake
@@ -450,7 +446,7 @@ a5c6e0257eca89c9acf31f8f3f013af6 *tools/cpp/cmake_modules/Findlz4Alt.cmake
 1dc7504ae2f0956cfffa8b1fd245ab81 *tools/cpp/cmake_modules/Findre2Alt.cmake
 57b96706a94c4669fcf2b8aa789df429 *tools/cpp/cmake_modules/Findutf8proc.cmake
 e4521e0eb4806558153e2770029ca8bf *tools/cpp/cmake_modules/FindzstdAlt.cmake
-181ef1de15021408efa8d65eccc88339 *tools/cpp/cmake_modules/SetupCxxFlags.cmake
+29fdee7e0689c2770e00844f53882ba3 *tools/cpp/cmake_modules/SetupCxxFlags.cmake
 89a588dc8ce7919a9db829ca1ceafd29 *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
 2a48c7c9b634d4bc676aaf9df1b80ea9 *tools/cpp/cmake_modules/UseCython.cmake
 39c589e51953a4c2b4f6c1313cff5b4d *tools/cpp/cmake_modules/Usevcpkg.cmake
@@ -461,8 +457,6 @@ d8bed80f6cc26dbc5773eb5b43ad2a63 *tools/cpp/proto/substrait/extension_rels.proto
 bae06eeeaf73e0badbfd0e888d8ce540 *tools/cpp/src/arrow/ArrowConfig.cmake.in
 c3634effaa4eadc7e17d80e1670245c8 *tools/cpp/src/arrow/ArrowTestingConfig.cmake.in
 d196f55e769eebb2babb82c37ee50f85 *tools/cpp/src/arrow/CMakeLists.txt
-6105347ebb9825ac754615ca55ff3b0c *tools/cpp/src/arrow/Testing/Temporary/CTestCostData.txt
-b305a6cf9bd1eb3c01f25aca9a5d2f46 *tools/cpp/src/arrow/Testing/Temporary/LastTest.log
 1a9a3e9762f04a9b6b60242f6235750d *tools/cpp/src/arrow/acero/ArrowAceroConfig.cmake.in
 7e2e3d223e320a817a130df8a570b3bb *tools/cpp/src/arrow/acero/CMakeLists.txt
 44499984cc9f4f652427ee11ac98b2bb *tools/cpp/src/arrow/acero/accumulation_queue.cc
@@ -1638,7 +1632,7 @@ a9eacfffae2f446193fff7b3f43bf529 *tools/cpp/valgrind.supp
 b5707448ccde4caebc9393de790992d2 *tools/dotenv
 bca75013464f53de56445661ed46ed2f *tools/download_dependencies_R.sh
 b18db2275374041d98dcde4f3eda2fda *tools/nixlibs-allowlist.txt
-2728b4ea9aa79c6cd6d3ccf5750c1940 *tools/nixlibs.R
+13192e68ad2a1c1d50158db626b4f72c *tools/nixlibs.R
 7939129c9664f10197bb90df676bd40b *tools/test-check-versions.R
 4fb4241eb89d772db8956ada883aa206 *tools/test-nixlibs.R
 46fdc2ac792a6730d71bdd7b6b4d0780 *tools/ubsan.supp
