@@ -15,14 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Dummy file for checking if IOOptions exists in SDKOptions.
-// This was introduced when the AWS SDK switched to using the
-// CRT for I/O.
+#pragma once
 
-#include <aws/core/Aws.h>
+namespace parquet {
 
-int main() {
-  Aws::SDKOptions aws_options;
-  auto io_options = aws_options.ioOptions;
-  return 0;
-}
+class Decryptor;
+class Encryptor;
+
+class InternalFileDecryptor;
+class InternalFileEncryptor;
+
+}  // namespace parquet

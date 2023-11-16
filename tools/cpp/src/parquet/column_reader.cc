@@ -43,6 +43,7 @@
 #include "arrow/util/int_util_overflow.h"
 #include "arrow/util/logging.h"
 #include "arrow/util/rle_encoding.h"
+#include "arrow/util/unreachable.h"
 #include "parquet/column_page.h"
 #include "parquet/encoding.h"
 #include "parquet/encryption/encryption_internal.h"
@@ -103,7 +104,7 @@ inline void CheckNumberDecoded(int64_t number_decoded, int64_t expected) {
 
 LevelDecoder::LevelDecoder() : num_values_remaining_(0) {}
 
-LevelDecoder::~LevelDecoder() {}
+LevelDecoder::~LevelDecoder() = default;
 
 int LevelDecoder::SetData(Encoding::type encoding, int16_t max_level,
                           int num_buffered_values, const uint8_t* data,
@@ -362,10 +363,8 @@ void SerializedPageReader::UpdateDecryption(const std::shared_ptr<Decryptor>& de
                                             int8_t module_type, std::string* page_aad) {
   ARROW_DCHECK(decryptor != nullptr);
   if (crypto_ctx_.start_decrypt_with_dictionary_page) {
-    std::string aad = encryption::CreateModuleAad(
-        decryptor->file_aad(), module_type, crypto_ctx_.row_group_ordinal,
-        crypto_ctx_.column_ordinal, kNonPageOrdinal);
-    decryptor->UpdateAad(aad);
+    UpdateDecryptor(decryptor, crypto_ctx_.row_group_ordinal, crypto_ctx_.column_ordinal,
+                    module_type);
   } else {
     encryption::QuickUpdatePageAad(page_ordinal_, page_aad);
     decryptor->UpdateAad(*page_aad);
@@ -435,9 +434,7 @@ std::shared_ptr<Page> SerializedPageReader::NextPage() {
     // until a maximum allowed header limit
     while (true) {
       PARQUET_ASSIGN_OR_THROW(auto view, stream_->Peek(allowed_page_size));
-      if (view.size() == 0) {
-        return std::shared_ptr<Page>(nullptr);
-      }
+      if (view.size() == 0) return nullptr;
 
       // This gets used, then set by DeserializeThriftMsg
       header_size = static_cast<uint32_t>(view.size());
@@ -450,7 +447,7 @@ std::shared_ptr<Page> SerializedPageReader::NextPage() {
         current_page_header_ = format::PageHeader();
         deserializer.DeserializeMessage(reinterpret_cast<const uint8_t*>(view.data()),
                                         &header_size, &current_page_header_,
-                                        crypto_ctx_.meta_decryptor);
+                                        crypto_ctx_.meta_decryptor.get());
         break;
       } catch (std::exception& e) {
         // Failed to deserialize. Double the allowed page header size and try again
@@ -1267,11 +1264,10 @@ int64_t TypedColumnReaderImpl<DType>::Skip(int64_t num_values_to_skip) {
       ARROW_DCHECK_NE(this->scratch_for_skip_, nullptr);
       do {
         int64_t batch_size = std::min(kSkipScratchBatchSize, values_to_skip);
-        values_read = ReadBatch(
-            static_cast<int>(batch_size),
-            reinterpret_cast<int16_t*>(this->scratch_for_skip_->mutable_data()),
-            reinterpret_cast<int16_t*>(this->scratch_for_skip_->mutable_data()),
-            reinterpret_cast<T*>(this->scratch_for_skip_->mutable_data()), &values_read);
+        values_read = ReadBatch(static_cast<int>(batch_size),
+                                scratch_for_skip_->mutable_data_as<int16_t>(),
+                                scratch_for_skip_->mutable_data_as<int16_t>(),
+                                scratch_for_skip_->mutable_data_as<T>(), &values_read);
         values_to_skip -= values_read;
       } while (values_read > 0 && values_to_skip > 0);
     }
@@ -1315,8 +1311,7 @@ std::shared_ptr<ColumnReader> ColumnReader::Make(const ColumnDescriptor* descr,
     default:
       ParquetException::NYI("type reader not implemented");
   }
-  // Unreachable code, but suppress compiler warning
-  return std::shared_ptr<ColumnReader>(nullptr);
+  ::arrow::Unreachable();
 }
 
 // ----------------------------------------------------------------------
@@ -1454,7 +1449,7 @@ class TypedRecordReader : public TypedColumnReaderImpl<DType>,
     int64_t levels_remaining = levels_written_ - gap;
 
     auto left_shift = [&](::arrow::ResizableBuffer* buffer) {
-      int16_t* data = reinterpret_cast<int16_t*>(buffer->mutable_data());
+      auto* data = buffer->mutable_data_as<int16_t>();
       std::copy(data + levels_position_, data + levels_written_,
                 data + start_levels_position);
       PARQUET_THROW_NOT_OK(buffer->Resize(levels_remaining * sizeof(int16_t),
@@ -1619,7 +1614,7 @@ class TypedRecordReader : public TypedColumnReaderImpl<DType>,
     do {
       int64_t batch_size = std::min<int64_t>(kSkipScratchBatchSize, values_left);
       values_read = this->ReadValues(
-          batch_size, reinterpret_cast<T*>(this->scratch_for_skip_->mutable_data()));
+          batch_size, this->scratch_for_skip_->template mutable_data_as<T>());
       values_left -= values_read;
     } while (values_read > 0 && values_left > 0);
     if (values_left > 0) {
@@ -1797,7 +1792,7 @@ class TypedRecordReader : public TypedColumnReaderImpl<DType>,
 
         // Avoid valgrind warnings
         memset(valid_bits_->mutable_data() + valid_bytes_old, 0,
-               valid_bytes_new - valid_bytes_old);
+               static_cast<size_t>(valid_bytes_new - valid_bytes_old));
       }
     }
   }
@@ -1940,7 +1935,7 @@ class TypedRecordReader : public TypedColumnReaderImpl<DType>,
     // Conservative upper bound
     const int64_t possible_num_values =
         std::max<int64_t>(num_records, levels_written_ - levels_position_);
-    ReserveValues(possible_num_values);
+    ReserveValues(static_cast<size_t>(possible_num_values));
 
     const int64_t start_levels_position = levels_position_;
 
@@ -2033,7 +2028,7 @@ class TypedRecordReader : public TypedColumnReaderImpl<DType>,
  protected:
   template <typename T>
   T* ValuesHead() {
-    return reinterpret_cast<T*>(values_->mutable_data()) + values_written_;
+    return values_->mutable_data_as<T>() + values_written_;
   }
   LevelInfo leaf_info_;
 };

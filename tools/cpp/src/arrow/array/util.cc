@@ -366,9 +366,11 @@ class NullArrayFactory {
     }
 
     template <typename T>
-    enable_if_var_size_list<T, Status> Visit(const T&) {
+    enable_if_var_size_list<T, Status> Visit(const T& type) {
       // values array may be empty, but there must be at least one offset of 0
-      return MaxOf(sizeof(typename T::offset_type) * (length_ + 1));
+      RETURN_NOT_OK(MaxOf(sizeof(typename T::offset_type) * (length_ + 1)));
+      RETURN_NOT_OK(MaxOf(GetBufferLength(type.value_type(), length_)));
+      return Status::OK();
     }
 
     template <typename T>
@@ -554,13 +556,18 @@ class NullArrayFactory {
   }
 
   Status Visit(const RunEndEncodedType& type) {
-    ARROW_ASSIGN_OR_RAISE(auto values, MakeArrayOfNull(type.value_type(), 1, pool_));
-    ARROW_ASSIGN_OR_RAISE(auto run_end_scalar,
-                          MakeScalarForRunEndValue(*type.run_end_type(), length_));
-    ARROW_ASSIGN_OR_RAISE(auto run_ends, MakeArrayFromScalar(*run_end_scalar, 1, pool_));
-    ARROW_ASSIGN_OR_RAISE(auto ree_array,
-                          RunEndEncodedArray::Make(length_, run_ends, values));
-    out_ = ree_array->data();
+    std::shared_ptr<Array> run_ends, values;
+    if (length_ == 0) {
+      ARROW_ASSIGN_OR_RAISE(run_ends, MakeEmptyArray(type.run_end_type(), pool_));
+      ARROW_ASSIGN_OR_RAISE(values, MakeEmptyArray(type.value_type(), pool_));
+    } else {
+      ARROW_ASSIGN_OR_RAISE(auto run_end_scalar,
+                            MakeScalarForRunEndValue(*type.run_end_type(), length_));
+      ARROW_ASSIGN_OR_RAISE(run_ends, MakeArrayFromScalar(*run_end_scalar, 1, pool_));
+      ARROW_ASSIGN_OR_RAISE(values, MakeArrayOfNull(type.value_type(), 1, pool_));
+    }
+    out_->child_data[0] = run_ends->data();
+    out_->child_data[1] = values->data();
     return Status::OK();
   }
 
@@ -582,7 +589,7 @@ class NullArrayFactory {
   }
 
   MemoryPool* pool_;
-  std::shared_ptr<DataType> type_;
+  const std::shared_ptr<DataType>& type_;
   int64_t length_;
   std::shared_ptr<ArrayData> out_;
   std::shared_ptr<Buffer> buffer_;
@@ -859,6 +866,13 @@ Result<std::shared_ptr<Array>> MakeArrayFromScalar(const Scalar& scalar, int64_t
 
 Result<std::shared_ptr<Array>> MakeEmptyArray(std::shared_ptr<DataType> type,
                                               MemoryPool* memory_pool) {
+  if (type->id() == Type::EXTENSION) {
+    const auto& ext_type = checked_cast<const ExtensionType&>(*type);
+    ARROW_ASSIGN_OR_RAISE(auto storage,
+                          MakeEmptyArray(ext_type.storage_type(), memory_pool));
+    storage->data()->type = std::move(type);
+    return ext_type.MakeArray(storage->data());
+  }
   std::unique_ptr<ArrayBuilder> builder;
   RETURN_NOT_OK(MakeBuilder(memory_pool, type, &builder));
   RETURN_NOT_OK(builder->Resize(0));

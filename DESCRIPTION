@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 13.0.0.1
+Version: 14.0.0
 Authors@R: c(
     person("Neal", "Richardson", email = "neal.p.richardson@gmail.com", role = c("aut")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -10,6 +10,7 @@ Authors@R: c(
     person("Jonathan", "Keane", email = "jkeane@gmail.com", role = c("aut")),
     person("Drago\u0219", "Moldovan-Gr\u00fcnfeld", email = "dragos.mold@gmail.com", role = c("aut")),
     person("Jeroen", "Ooms", email = "jeroen@berkeley.edu", role = c("aut")),
+    person("Jacob", "Wujciak-Jens", email = "jacob@wujciak.de", role = c("aut")),
     person("Javier", "Luraschi", email = "javier@rstudio.com", role = c("ctb")),
     person("Karl", "Dunkle Werner", email = "karldw@users.noreply.github.com", role = c("ctb"), comment = c(ORCID = "0000-0003-0523-7309")),
     person("Jeffrey", "Wong", email = "jeffreyw@netflix.com", role = c("ctb")),
@@ -33,8 +34,8 @@ Imports: assertthat, bit64 (>= 0.9-7), glue, methods, purrr, R6, rlang
         (>= 1.0.0), stats, tidyselect (>= 1.0.0), utils, vctrs
 RoxygenNote: 7.2.3
 Config/testthat/edition: 3
-Suggests: blob, cli, DBI, dbplyr, decor, distro, dplyr, duckdb (>=
-        0.2.8), hms, jsonlite, knitr, lubridate, pillar, pkgload,
+Suggests: blob, curl, cli, DBI, dbplyr, decor, distro, dplyr, duckdb
+        (>= 0.2.8), hms, jsonlite, knitr, lubridate, pillar, pkgload,
         reticulate, rmarkdown, stringi, stringr, sys, testthat (>=
         3.1.0), tibble, tzdb, withr
 LinkingTo: cpp11 (>= 0.4.2)
@@ -62,7 +63,7 @@ Collate: 'arrowExports.R' 'enums.R' 'arrow-object.R' 'type.R'
         'record-batch-writer.R' 'reexports-bit64.R'
         'reexports-tidyselect.R' 'schema.R' 'udf.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2023-09-20 17:16:25 UTC; nic
+Packaged: 2023-11-15 03:37:45 UTC; nic
 Author: Neal Richardson [aut],
   Ian Cook [aut],
   Nic Crane [aut, cre],
@@ -71,10 +72,11 @@ Author: Neal Richardson [aut],
   Jonathan Keane [aut],
   Dragoș Moldovan-Grünfeld [aut],
   Jeroen Ooms [aut],
+  Jacob Wujciak-Jens [aut],
   Javier Luraschi [ctb],
   Karl Dunkle Werner [ctb] (<https://orcid.org/0000-0003-0523-7309>),
   Jeffrey Wong [ctb],
   Apache Arrow [aut, cph]
 Maintainer: Nic Crane <thisisnic@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-09-22 10:20:05 UTC
+Date/Publication: 2023-11-16 15:23:56 UTC
