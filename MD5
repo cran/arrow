@@ -1,12 +1,12 @@
-dab4d9f3fc1c9bb3643f07513c111283 *DESCRIPTION
+04ca9f6b19ea99c49b388802fd008805 *DESCRIPTION
 0fa985184546d59193a5b3a2e6c3c82e *NAMESPACE
-b76bd67ab18a4d62f9a70974d48cae31 *NEWS.md
+b4231d82498de17138611e4c0f07f4a5 *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 21b96e392c1526f3f24d2af467976a85 *R/array.R
 9910bcfb9c04f36f7d31e036976229ee *R/arrow-datum.R
 a3455cd1c0b95d14a1d063b4e6205f52 *R/arrow-info.R
 74415e4d95c83168c543e9029c586e77 *R/arrow-object.R
-fe1c7a06312abb669fa49c2ef26ae652 *R/arrow-package.R
+2cf95e2ce733fba25a092037a41d3e49 *R/arrow-package.R
 01e04cb41881d26bcc6cb242480d00c7 *R/arrow-tabular.R
 3f53de1b25745314f6cd8c4575afec6a *R/arrowExports.R
 406f8f4327c729741c25dd4dfded25c0 *R/buffer.R
@@ -57,7 +57,7 @@ dedbd1a3039d7e6488ab9c0b4c9d499e *R/dplyr-summarize.R
 0f6b54704372bdf28a227351526c1e2c *R/field.R
 73383ada4ab0d0d48c347cb9358c0fca *R/filesystem.R
 941ad5a9be9cccccc01d507470be37f8 *R/flight.R
-c263d01731fe0eef5d20f16f09bce4e8 *R/install-arrow.R
+0bd7480d419ecbe85beded414c6b5a99 *R/install-arrow.R
 4d582a56975189c7cefdd8784b99508c *R/io.R
 f8df11a3bfc4c9c3934b3792253b0dce *R/ipc-stream.R
 01c01b0db718efc717ea57075ff01e5f *R/json.R
@@ -80,7 +80,7 @@ b4e9d960b03e2d4be4608d5982c77a14 *R/type.R
 cf5e84d268f22f6d6051b22f52828784 *R/util.R
 0bfeac5ede02f8b3d353fe247fed8a0c *README.md
 5f175db9d6fb0eddac3f5ab68b6876cd *cleanup
-cda64bc1d2fe8bd078a620b3a0fbcc45 *configure
+1ad3fe916d3fb16db886f7407cd55d99 *configure
 747ed20ff78eb6ec4d06bcc04ab39c15 *configure.win
 56b91f89083404add6d82d9e2618b386 *inst/NOTICE.txt
 ed658f9e5e1be8fcef476db987b989d5 *inst/build_arrow_static.sh
@@ -1661,7 +1661,7 @@ a0d12d63bebf21c0b612a1ae284e54a9 *tools/cpp/vcpkg.json
 46e118c80148408d47f7e8f6e851a7ab *tools/dotenv
 bca75013464f53de56445661ed46ed2f *tools/download_dependencies_R.sh
 94d2d2c175981ffb68c4dacdde8b01d5 *tools/nixlibs-allowlist.txt
-965c96484edd864e5c585a38c3556dc5 *tools/nixlibs.R
+95c206bd22e4982d2e2b161ad9c4bd3a *tools/nixlibs.R
 7939129c9664f10197bb90df676bd40b *tools/test-check-versions.R
 a1f4a49124c425091e9ab1a5ecc5f0f1 *tools/test-nixlibs.R
 46fdc2ac792a6730d71bdd7b6b4d0780 *tools/ubsan.supp
