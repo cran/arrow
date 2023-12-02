@@ -1,6 +1,6 @@
-04ca9f6b19ea99c49b388802fd008805 *DESCRIPTION
+8f669d39385f2be5e65e66a7ae91fe7f *DESCRIPTION
 0fa985184546d59193a5b3a2e6c3c82e *NAMESPACE
-b4231d82498de17138611e4c0f07f4a5 *NEWS.md
+bc2ddf1fe39ec0e7cb62ef862715f06d *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 21b96e392c1526f3f24d2af467976a85 *R/array.R
 9910bcfb9c04f36f7d31e036976229ee *R/arrow-datum.R
@@ -78,9 +78,9 @@ a1f00afc13db8fdf8f4c1afd1713d069 *R/schema.R
 b4e9d960b03e2d4be4608d5982c77a14 *R/type.R
 42ea92a25b5311a8660b3abc8e5ddb83 *R/udf.R
 cf5e84d268f22f6d6051b22f52828784 *R/util.R
-0bfeac5ede02f8b3d353fe247fed8a0c *README.md
+441ace1456ddadd89a5a7943fa0da15b *README.md
 5f175db9d6fb0eddac3f5ab68b6876cd *cleanup
-1ad3fe916d3fb16db886f7407cd55d99 *configure
+7be59c788ddcd95f15ab173d5fad6b52 *configure
 747ed20ff78eb6ec4d06bcc04ab39c15 *configure.win
 56b91f89083404add6d82d9e2618b386 *inst/NOTICE.txt
 ed658f9e5e1be8fcef476db987b989d5 *inst/build_arrow_static.sh
@@ -219,7 +219,7 @@ e109024f2e58a38d9c268a2f76ee65ef *man/write_parquet.Rd
 0ba12c159e34fd57342c9f953b2a934c *src/Makevars.in
 b3cba604d3faf364b9fbeea9f3c5e321 *src/Makevars.ucrt
 6ecfcdc2fb155bdc045dbdf488d39ab2 *src/RTasks.cpp
-2c5eb9e59f0da9542a67071ac8fa8b36 *src/altrep.cpp
+43c33ec739a25a552f61f3d99d4d1da8 *src/altrep.cpp
 576724a0cb406111cda15b59e6c62801 *src/array.cpp
 c41096b5248a743f86daa651293cee3e *src/array_to_vector.cpp
 44dcd659be318b3ca072a154401a1817 *src/arraydata.cpp
@@ -383,7 +383,7 @@ ea08f502736377bf3da78df5b64e9db7 *tests/testthat/test-utf.R
 b458325a485b2f95f675f58bdd6e1130 *tests/testthat/test-util.R
 8031a2c33230c952ed3f3ccff1d3fa89 *tools/LICENSE.txt
 56b91f89083404add6d82d9e2618b386 *tools/NOTICE.txt
-73d51d1128372d6efbf4e68bc7e6a68d *tools/check-versions.R
+2a47b31b8bf43305adb2229df1d1b4af *tools/check-versions.R
 1257fa60b2b596e450d9326ace6ce4d8 *tools/checksums/darwin-arm64-openssl-1.1/arrow-14.0.0.zip.sha512
 8b8b51fb11e015b79edcca587033b7df *tools/checksums/darwin-arm64-openssl-3.0/arrow-14.0.0.zip.sha512
 3d775ebd715736b841e5a3347fa33d16 *tools/checksums/darwin-x86_64-openssl-1.1/arrow-14.0.0.zip.sha512
@@ -398,7 +398,6 @@ dedbaf0e521e0a4bd13efa6f41cd95d2 *tools/checksums/linux-openssl-3.0/arrow-14.0.0
 15b3aaec63467ebe35101024d638d166 *tools/cpp/CMakePresets.json
 523a3c0ceee7a9620e1e36263ccc5b7c *tools/cpp/CMakeSettings.json
 61b948484b120625b03dd14ae5c02127 *tools/cpp/README.md
-c2986ed6e4d24073464a742fe2db1914 *tools/cpp/build-support/__pycache__/lintutils.cpython-311.pyc
 2c3039ce83865a67687441c03b69f285 *tools/cpp/build-support/asan_symbolize.py
 8b57f234055f70e0d524f0fcb7b756f3 *tools/cpp/build-support/build-lz4-lib.sh
 115305454b8fc8b506cc2509469930d9 *tools/cpp/build-support/build-zstd-lib.sh
@@ -1661,8 +1660,8 @@ a0d12d63bebf21c0b612a1ae284e54a9 *tools/cpp/vcpkg.json
 46e118c80148408d47f7e8f6e851a7ab *tools/dotenv
 bca75013464f53de56445661ed46ed2f *tools/download_dependencies_R.sh
 94d2d2c175981ffb68c4dacdde8b01d5 *tools/nixlibs-allowlist.txt
-95c206bd22e4982d2e2b161ad9c4bd3a *tools/nixlibs.R
+67143eb6c1e401564045b80584357283 *tools/nixlibs.R
 7939129c9664f10197bb90df676bd40b *tools/test-check-versions.R
-a1f4a49124c425091e9ab1a5ecc5f0f1 *tools/test-nixlibs.R
+2f56429de615fae342fdd0026791e541 *tools/test-nixlibs.R
 46fdc2ac792a6730d71bdd7b6b4d0780 *tools/ubsan.supp
 423e1e748875468a5c931421e4bc2ee3 *tools/update-checksums.R
