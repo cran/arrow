@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 14.0.0.2
+Version: 14.0.2.1
 Authors@R: c(
     person("Neal", "Richardson", email = "neal.p.richardson@gmail.com", role = c("aut")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -28,7 +28,8 @@ BugReports: https://github.com/apache/arrow/issues
 Encoding: UTF-8
 Language: en-US
 SystemRequirements: C++17; for AWS S3 support on Linux, libcurl and
-        openssl (optional)
+        openssl (optional); cmake >= 3.16 (build-time only, and only
+        for full source build)
 Biarch: true
 Imports: assertthat, bit64 (>= 0.9-7), glue, methods, purrr, R6, rlang
         (>= 1.0.0), stats, tidyselect (>= 1.0.0), utils, vctrs
@@ -63,7 +64,7 @@ Collate: 'arrowExports.R' 'enums.R' 'arrow-object.R' 'type.R'
         'record-batch-writer.R' 'reexports-bit64.R'
         'reexports-tidyselect.R' 'schema.R' 'udf.R' 'util.R'
 NeedsCompilation: yes
-Packaged: 2023-12-01 18:37:34 UTC; jwj
+Packaged: 2024-02-08 17:20:35 UTC; nic
 Author: Neal Richardson [aut],
   Ian Cook [aut],
   Nic Crane [aut, cre],
@@ -79,4 +80,4 @@ Author: Neal Richardson [aut],
   Apache Arrow [aut, cph]
 Maintainer: Nic Crane <thisisnic@gmail.com>
 Repository: CRAN
-Date/Publication: 2023-12-02 01:30:03 UTC
+Date/Publication: 2024-02-23 17:00:11 UTC

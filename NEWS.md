@@ -17,6 +17,29 @@
   under the License.
 -->
 
+# arrow 14.0.2.1
+
+##  Minor improvements and fixes
+
+* Don't download cmake when ARROW_OFFLINE_BUILD=true and update `SystemRequirements` (#39602).
+* Fallback to source build gracefully if binary download fails (#39587).
+* The developer documentation has been updated to match changes made in recent releases (#38220).
+* Check for internet access when building from source and fallback to a 
+  minimally scoped Arrow C++ build (#39699).
+* Built from source by default on macOS (#39861).
+* Support build against older versions of Arrow C++. This is currently opt-in and 
+  requires atleast Arrow C++ 13.0.0 (#39739).
+* Make it possible to use Arrow C++ from rtools on windows (in future rtools versions).  (#39986). 
+
+# arrow 14.0.2
+
+##  Minor improvements and fixes
+
+* Fixed C++ compiler warnings caused by implicit conversions (#39138, #39186).
+* Fixed confusing dplyr warnings during tests (#39076).
+* Added missing "-framework Security" pkg-config flag to prevent
+  issues when compiling with strict linker settings (#38861).
+
 # arrow 14.0.0.2
 
 ## Minor improvements and fixes
@@ -316,7 +339,7 @@ Arrow query engine. See `?acero`.
 A few new features and bugfixes were implemented for joins:
 
 * Extension arrays are now supported in joins, allowing, for example, joining
-  datasets that contain [geoarrow](https://paleolimbot.github.io/geoarrow/) data.
+  datasets that contain [geoarrow](https://github.com/geoarrow/geoarrow) data.
 * The `keep` argument is now supported, allowing separate columns for the left
   and right hand side join keys in join output. Full joins now coalesce the
   join keys (when `keep = FALSE`), avoiding the issue where the join keys would
