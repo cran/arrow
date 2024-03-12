@@ -9,7 +9,7 @@
 \description{
 The \code{arrow} package contains methods for 37 \code{dplyr} table functions, many of
 which are "verbs" that do transformations to one or more tables.
-The package also has mappings of 211 R functions to the corresponding
+The package also has mappings of 212 R functions to the corresponding
 functions in the Arrow compute library. These allow you to write code inside
 of \code{dplyr} methods that call R functions, including many in packages like
 \code{stringr} and \code{lubridate}, and they will get translated to Arrow and run
@@ -156,6 +156,7 @@ Consider using the lubridate specialised parsing functions \code{ymd()}, \code{y
 \item \code{\link[base:paste]{paste0()}}: the \code{collapse} argument is not yet supported
 \item \code{\link[base:Extremes]{pmax()}}
 \item \code{\link[base:Extremes]{pmin()}}
+\item \code{\link[base:prod]{prod()}}
 \item \code{\link[base:Round]{round()}}
 \item \code{\link[base:sign]{sign()}}
 \item \code{\link[base:Trig]{sin()}}

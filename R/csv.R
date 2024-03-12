@@ -22,8 +22,8 @@
 #' `readr::read_delim()`, and `col_select` was inspired by `vroom::vroom()`.
 #'
 #' `read_csv_arrow()` and `read_tsv_arrow()` are wrappers around
-#' `read_delim_arrow()` that specify a delimeter. `read_csv2_arrow()` uses `;` for
-#' the delimeter and `,` for the decimal point.
+#' `read_delim_arrow()` that specify a delimiter. `read_csv2_arrow()` uses `;` for
+#' the delimiter and `,` for the decimal point.
 #'
 #' Note that not all `readr` options are currently implemented here. Please file
 #' an issue if you encounter one that `arrow` should support.
@@ -76,7 +76,7 @@
 #'
 #' Note that if you are specifying column names, whether by `schema` or
 #' `col_names`, and the CSV file has a header row that would otherwise be used
-#' to idenfity column names, you'll need to add `skip = 1` to skip that row.
+#' to identify column names, you'll need to add `skip = 1` to skip that row.
 #'
 #' @param file A character file name or URI, literal data (either a single string or a [raw] vector),
 #' an Arrow input stream, or a `FileSystem` with path (`SubTreeFileSystem`).

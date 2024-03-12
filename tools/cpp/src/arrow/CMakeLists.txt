@@ -192,6 +192,7 @@ set(ARROW_SRCS
     type_traits.cc
     visitor.cc
     c/bridge.cc
+    c/dlpack.cc
     io/buffered.cc
     io/caching.cc
     io/compressed.cc
@@ -223,11 +224,14 @@ set(ARROW_SRCS
     util/debug.cc
     util/decimal.cc
     util/delimiting.cc
+    util/dict_util.cc
+    util/float16.cc
     util/formatting.cc
     util/future.cc
     util/hashing.cc
     util/int_util.cc
     util/io_util.cc
+    util/list_util.cc
     util/logging.cc
     util/key_value_metadata.cc
     util/memory.cc
@@ -789,6 +793,7 @@ add_arrow_test(array_test
                array/array_binary_test.cc
                array/array_dict_test.cc
                array/array_list_test.cc
+               array/array_list_view_test.cc
                array/array_run_end_test.cc
                array/array_struct_test.cc
                array/array_union_test.cc

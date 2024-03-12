@@ -174,8 +174,8 @@ Arrow C++ options have been mapped to argument names that follow those of
 }
 \details{
 \code{read_csv_arrow()} and \code{read_tsv_arrow()} are wrappers around
-\code{read_delim_arrow()} that specify a delimeter. \code{read_csv2_arrow()} uses \verb{;} for
-the delimeter and \verb{,} for the decimal point.
+\code{read_delim_arrow()} that specify a delimiter. \code{read_csv2_arrow()} uses \verb{;} for
+the delimiter and \verb{,} for the decimal point.
 
 Note that not all \code{readr} options are currently implemented here. Please file
 an issue if you encounter one that \code{arrow} should support.
@@ -230,7 +230,7 @@ be dropped.
 
 Note that if you are specifying column names, whether by \code{schema} or
 \code{col_names}, and the CSV file has a header row that would otherwise be used
-to idenfity column names, you'll need to add \code{skip = 1} to skip that row.
+to identify column names, you'll need to add \code{skip = 1} to skip that row.
 }
 
 \examples{

@@ -575,7 +575,7 @@ struct ARROW_FLIGHT_EXPORT SchemaResult {
   std::string raw_schema_;
 };
 
-/// \brief The access coordinates for retireval of a dataset, returned by
+/// \brief The access coordinates for retrieval of a dataset, returned by
 /// GetFlightInfo
 class ARROW_FLIGHT_EXPORT FlightInfo {
  public:
@@ -604,7 +604,7 @@ class ARROW_FLIGHT_EXPORT FlightInfo {
   ///   bookkeeping
   /// \param[in,out] dictionary_memo for dictionary bookkeeping, will
   /// be modified
-  /// \return Arrrow result with the reconstructed Schema
+  /// \return Arrow result with the reconstructed Schema
   arrow::Result<std::shared_ptr<Schema>> GetSchema(
       ipc::DictionaryMemo* dictionary_memo) const;
 
@@ -693,11 +693,22 @@ class ARROW_FLIGHT_EXPORT PollInfo {
         progress(progress),
         expiration_time(expiration_time) {}
 
-  explicit PollInfo(const PollInfo& other)
+  // Must not be explicit; to declare one we must declare all ("rule of five")
+  PollInfo(const PollInfo& other)  // NOLINT(runtime/explicit)
       : info(other.info ? std::make_unique<FlightInfo>(*other.info) : NULLPTR),
         descriptor(other.descriptor),
         progress(other.progress),
         expiration_time(other.expiration_time) {}
+  PollInfo(PollInfo&& other) noexcept = default;  // NOLINT(runtime/explicit)
+  ~PollInfo() = default;
+  PollInfo& operator=(const PollInfo& other) {
+    info = other.info ? std::make_unique<FlightInfo>(*other.info) : NULLPTR;
+    descriptor = other.descriptor;
+    progress = other.progress;
+    expiration_time = other.expiration_time;
+    return *this;
+  }
+  PollInfo& operator=(PollInfo&& other) = default;
 
   /// \brief Get the wire-format representation of this type.
   ///

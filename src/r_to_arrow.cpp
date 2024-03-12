@@ -1054,7 +1054,7 @@ struct RConverterTrait;
 template <typename T>
 struct RConverterTrait<
     T, enable_if_t<!is_nested_type<T>::value && !is_interval_type<T>::value &&
-                   !is_extension_type<T>::value>> {
+                   !is_extension_type<T>::value && !is_binary_view_like_type<T>::value>> {
   using type = RPrimitiveConverter<T>;
 };
 

@@ -17,19 +17,47 @@
   under the License.
 -->
 
-# arrow 14.0.2.1
+# arrow 15.0.1
+
+##  New features
+
+* Bindings for `base::prod` have been added so you can now use it in your dplyr
+  pipelines (i.e., `tbl |> summarize(prod(col))`) without having to pull the
+  data into R (@m-muecke, #38601).
+* Calling `dimnames` or `colnames` on `Dataset` objects now returns a useful
+  result rather than just `NULL` (#38377).
+* The `code()` method on Schema objects now takes an optional `namespace` 
+  argument which, when `TRUE`, prefixes names with `arrow::` which makes
+  the output more portable (@orgadish, #38144).
 
 ##  Minor improvements and fixes
 
 * Don't download cmake when ARROW_OFFLINE_BUILD=true and update `SystemRequirements` (#39602).
 * Fallback to source build gracefully if binary download fails (#39587).
-* The developer documentation has been updated to match changes made in recent releases (#38220).
-* Check for internet access when building from source and fallback to a 
+* An error is now thrown instead of warning and pulling the data into R when any
+  of `sub`, `gsub`, `stringr::str_replace`, `stringr::str_replace_all` are
+  passed a length > 1 vector of values in `pattern` (@abfleishman, #39219).
+* Missing documentation was added to `?open_dataset` documenting how to use the
+  ND-JSON support added in arrow 13.0.0 (@Divyansh200102, #38258).
+* To make debugging problems easier when using arrow with AWS S3
+  (e.g., `s3_bucket`, `S3FileSystem`), the debug log level for S3 can be set
+  with the `AWS_S3_LOG_LEVEL` environment variable. 
+  See `?S3FileSystem` for more information. (#38267)
+* Using arrow with duckdb (i.e., `to_duckdb()`) no longer results in warnings
+  when quitting your R session. (#38495)
+* A large number of minor spelling mistakes were fixed (@jsoref, #38929, #38257)
+* The developer documentation has been updated to match changes made in recent releases (#38220)
+
+# arrow 14.0.2.1
+
+##  Minor improvements and fixes
+
+* Check for internet access when building from source and fallback to a
   minimally scoped Arrow C++ build (#39699).
-* Built from source by default on macOS (#39861).
-* Support build against older versions of Arrow C++. This is currently opt-in and 
-  requires atleast Arrow C++ 13.0.0 (#39739).
-* Make it possible to use Arrow C++ from rtools on windows (in future rtools versions).  (#39986). 
+* Build from source by default on macOS, use `LIBARROW_BINARY=true` for old behavior (#39861).
+* Support building against older versions of Arrow C++. This is currently opt-in
+  (`ARROW_R_ALLOW_CPP_VERSION_MISMATCH=true`) and requires atleast Arrow C++ 13.0.0 (#39739).
+* Make it possible to use Arrow C++ from Rtools on windows (in future Rtools versions). (#39986).
 
 # arrow 14.0.2
 
@@ -101,10 +129,10 @@
 
 ## Installation
 
-* MacOS builds now use the same installation pathway as on Linux (@assignUser,
+* macOS builds now use the same installation pathway as on Linux (@assignUser,
   #37684).
 * A warning message is now issued on package load when running under emulation
-  on MacOS (i.e., use of x86 installation of R on M1/aarch64; #37777).
+  on macOS (i.e., use of x86 installation of R on M1/aarch64; #37777).
 * R scripts that run during configuration and installation are now run
   using the correct R interpreter (@meztez, #37225).
 * Failed libarrow builds now return more detailed output (@amoeba, #37727).
@@ -437,7 +465,7 @@ As of version 10.0.0, `arrow` requires C++17 to build. This means that:
 
 * The `arrow.dev_repo` for nightly builds of the R package and prebuilt
   libarrow binaries is now <https://nightlies.apache.org/arrow/r/>.
-* Brotli and BZ2 are shipped with MacOS binaries. BZ2 is shipped with Windows binaries. (#13484)
+* Brotli and BZ2 are shipped with macOS binaries. BZ2 is shipped with Windows binaries. (#13484)
 
 # arrow 8.0.0
 
@@ -570,7 +598,7 @@ Arrow arrays and tables can be easily concatenated:
 ## Other improvements and fixes
 
 * Many of the vignettes have been reorganized, restructured and expanded to improve their usefulness and clarity.
-* Code to generate schemas (and individual data type specficiations) are accessible with the `$code()` method on a `schema` or `type`. This allows you to easily get the code needed to create a schema from an object that already has one.
+* Code to generate schemas (and individual data type specifications) are accessible with the `$code()` method on a `schema` or `type`. This allows you to easily get the code needed to create a schema from an object that already has one.
 * Arrow `Duration` type has been mapped to R's `difftime` class.
 * The `decimal256()` type is supported. The `decimal()` function has been revised to call either `decimal256()` or `decimal128()` based on the value of the `precision` argument.
 * `write_parquet()` uses a reasonable guess at `chunk_size` instead of always writing a single chunk. This improves the speed of reading and writing large Parquet files.
@@ -845,7 +873,7 @@ to send and receive data. See `vignette("flight", package = "arrow")` for an ove
 
 * `arrow` now depends on [`cpp11`](https://cpp11.r-lib.org/), which brings more robust UTF-8 handling and faster compilation
 * The Linux build script now succeeds on older versions of R
-* MacOS binary packages now ship with zstandard compression enabled
+* macOS binary packages now ship with zstandard compression enabled
 
 ## Bug fixes and other enhancements
 

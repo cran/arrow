@@ -91,6 +91,27 @@ test_that("Group by sum on dataset", {
   )
 })
 
+test_that("Group by prod on dataset", {
+  compare_dplyr_binding(
+    .input %>%
+      group_by(some_grouping) %>%
+      summarize(prod = prod(int, na.rm = TRUE)) %>%
+      collect(),
+    tbl
+  )
+
+  compare_dplyr_binding(
+    .input %>%
+      group_by(some_grouping) %>%
+      summarize(
+        prod = prod(int, na.rm = FALSE),
+        prod2 = base::prod(int, na.rm = TRUE)
+      ) %>%
+      collect(),
+    tbl
+  )
+})
+
 test_that("Group by mean on dataset", {
   compare_dplyr_binding(
     .input %>%
@@ -319,6 +340,7 @@ test_that("Functions that take ... but we only accept a single arg", {
   # the agg_funcs directly
   expect_error(call_binding_agg("n_distinct"), "n_distinct() with 0 arguments", fixed = TRUE)
   expect_error(call_binding_agg("sum"), "sum() with 0 arguments", fixed = TRUE)
+  expect_error(call_binding_agg("prod"), "prod() with 0 arguments", fixed = TRUE)
   expect_error(call_binding_agg("any"), "any() with 0 arguments", fixed = TRUE)
   expect_error(call_binding_agg("all"), "all() with 0 arguments", fixed = TRUE)
   expect_error(call_binding_agg("min"), "min() with 0 arguments", fixed = TRUE)
@@ -333,7 +355,7 @@ test_that("Functions that take ... but we only accept a single arg", {
 
 test_that("median()", {
   # When medians are integer-valued, stats::median() sometimes returns output of
-  # type integer, whereas whereas the Arrow approx_median kernels always return
+  # type integer, whereas the Arrow approx_median kernels always return
   # output of type float64. The calls to median(int, ...) in the tests below
   # are enclosed in as.double() to work around this known difference.
 
@@ -412,7 +434,7 @@ test_that("quantile()", {
   # returned by Arrow.
 
   # When quantiles are integer-valued, stats::quantile() sometimes returns
-  # output of type integer, whereas whereas the Arrow tdigest kernels always
+  # output of type integer, whereas the Arrow tdigest kernels always
   # return output of type float64. The calls to quantile(int, ...) in the tests
   # below are enclosed in as.double() to work around this known difference.
 
@@ -644,6 +666,7 @@ test_that("summarise() with !!sym()", {
       group_by(false) %>%
       summarise(
         sum = sum(!!sym(test_dbl_col)),
+        prod = prod(!!sym(test_dbl_col)),
         any = any(!!sym(test_lgl_col)),
         all = all(!!sym(test_lgl_col)),
         mean = mean(!!sym(test_dbl_col)),
@@ -818,7 +841,7 @@ test_that("Expressions on aggregations", {
     )
   )
 
-  # Check aggregates on aggeregates with more complex calls
+  # Check aggregates on aggregates with more complex calls
   expect_warning(
     record_batch(tbl) %>% summarise(any(any(!lgl))),
     paste(
