@@ -1036,11 +1036,8 @@ class TypedColumnReaderImpl : public TypedColumnReader<DType>,
       *num_def_levels = this->ReadDefinitionLevels(batch_size, def_levels);
       // TODO(wesm): this tallying of values-to-decode can be performed with better
       // cache-efficiency if fused with the level decoding.
-      for (int64_t i = 0; i < *num_def_levels; ++i) {
-        if (def_levels[i] == this->max_def_level_) {
-          ++(*values_to_read);
-        }
-      }
+      *values_to_read +=
+          std::count(def_levels, def_levels + *num_def_levels, this->max_def_level_);
     } else {
       // Required field, read all values
       *values_to_read = batch_size;
@@ -1169,12 +1166,8 @@ int64_t TypedColumnReaderImpl<DType>::ReadBatchSpaced(
     const bool has_spaced_values = HasSpacedValues(this->descr_);
     int64_t null_count = 0;
     if (!has_spaced_values) {
-      int values_to_read = 0;
-      for (int64_t i = 0; i < num_def_levels; ++i) {
-        if (def_levels[i] == this->max_def_level_) {
-          ++values_to_read;
-        }
-      }
+      int64_t values_to_read =
+          std::count(def_levels, def_levels + num_def_levels, this->max_def_level_);
       total_values = this->ReadValues(values_to_read, values);
       ::arrow::bit_util::SetBitsTo(valid_bits, valid_bits_offset,
                                    /*length=*/total_values,
@@ -1323,7 +1316,8 @@ class TypedRecordReader : public TypedColumnReaderImpl<DType>,
     levels_position_ = 0;
     levels_capacity_ = 0;
     read_dense_for_nullable_ = read_dense_for_nullable;
-    uses_values_ = !(descr->physical_type() == Type::BYTE_ARRAY);
+    // BYTE_ARRAY values are not stored in the `values_` buffer.
+    uses_values_ = descr->physical_type() != Type::BYTE_ARRAY;
 
     if (uses_values_) {
       values_ = AllocateBuffer(pool);
@@ -1485,17 +1479,9 @@ class TypedRecordReader : public TypedColumnReaderImpl<DType>,
     // We skipped the levels by incrementing 'levels_position_'. For values
     // we do not have a buffer, so we need to read them and throw them away.
     // First we need to figure out how many present/not-null values there are.
-    std::shared_ptr<::arrow::ResizableBuffer> valid_bits;
-    valid_bits = AllocateBuffer(this->pool_);
-    PARQUET_THROW_NOT_OK(valid_bits->Resize(bit_util::BytesForBits(skipped_records),
-                                            /*shrink_to_fit=*/true));
-    ValidityBitmapInputOutput validity_io;
-    validity_io.values_read_upper_bound = skipped_records;
-    validity_io.valid_bits = valid_bits->mutable_data();
-    validity_io.valid_bits_offset = 0;
-    DefLevelsToBitmap(def_levels() + start_levels_position, skipped_records,
-                      this->leaf_info_, &validity_io);
-    int64_t values_to_read = validity_io.values_read - validity_io.null_count;
+    int64_t values_to_read =
+        std::count(def_levels() + start_levels_position, def_levels() + levels_position_,
+                   this->max_def_level_);
 
     // Now that we have figured out number of values to read, we do not need
     // these levels anymore. We will remove these values from the buffer.
@@ -1903,11 +1889,8 @@ class TypedRecordReader : public TypedColumnReaderImpl<DType>,
 
     // When reading dense we need to figure out number of values to read.
     const int16_t* def_levels = this->def_levels();
-    for (int64_t i = start_levels_position; i < levels_position_; ++i) {
-      if (def_levels[i] == this->max_def_level_) {
-        ++(*values_to_read);
-      }
-    }
+    *values_to_read += std::count(def_levels + start_levels_position,
+                                  def_levels + levels_position_, this->max_def_level_);
     ReadValuesDense(*values_to_read);
   }
 
