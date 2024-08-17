@@ -53,7 +53,7 @@ static inline void AdjustNonNullable(Type::type type_id, int64_t length,
   if (type_id == Type::NA) {
     *null_count = length;
     (*buffers)[0] = nullptr;
-  } else if (internal::HasValidityBitmap(type_id)) {
+  } else if (internal::may_have_validity_bitmap(type_id)) {
     if (*null_count == 0) {
       // In case there are no nulls, don't keep an allocated null bitmap around
       (*buffers)[0] = nullptr;
@@ -224,6 +224,54 @@ int64_t ArrayData::ComputeLogicalNullCount() const {
   return ArraySpan(*this).ComputeLogicalNullCount();
 }
 
+DeviceAllocationType ArrayData::device_type() const {
+  // we're using 0 as a sentinel value for NOT YET ASSIGNED
+  // there is explicitly no constant DeviceAllocationType to represent
+  // the "UNASSIGNED" case as it is invalid for data to not have an
+  // assigned device type. If it's still 0 at the end, then we return
+  // CPU as the allocation device type
+  int type = 0;
+  for (const auto& buf : buffers) {
+    if (!buf) continue;
+#ifdef NDEBUG
+    return buf->device_type();
+#else
+    if (type == 0) {
+      type = static_cast<int>(buf->device_type());
+    } else {
+      DCHECK_EQ(type, static_cast<int>(buf->device_type()));
+    }
+#endif
+  }
+
+  for (const auto& child : child_data) {
+    if (!child) continue;
+#ifdef NDEBUG
+    return child->device_type();
+#else
+    if (type == 0) {
+      type = static_cast<int>(child->device_type());
+    } else {
+      DCHECK_EQ(type, static_cast<int>(child->device_type()));
+    }
+#endif
+  }
+
+  if (dictionary) {
+#ifdef NDEBUG
+    return dictionary->device_type();
+#else
+    if (type == 0) {
+      type = static_cast<int>(dictionary->device_type());
+    } else {
+      DCHECK_EQ(type, static_cast<int>(dictionary->device_type()));
+    }
+#endif
+  }
+
+  return type == 0 ? DeviceAllocationType::kCPU : static_cast<DeviceAllocationType>(type);
+}
+
 // ----------------------------------------------------------------------
 // Methods for ArraySpan
 
@@ -335,7 +383,7 @@ void FillZeroLengthArray(const DataType* type, ArraySpan* span) {
     span->buffers[i].size = 0;
   }
 
-  if (!HasValidityBitmap(type->id())) {
+  if (!may_have_validity_bitmap(type->id())) {
     span->buffers[0] = {};
   }
 
@@ -370,7 +418,7 @@ void ArraySpan::FillFromScalar(const Scalar& value) {
 
   if (type_id == Type::NA) {
     this->null_count = 1;
-  } else if (!internal::HasValidityBitmap(type_id)) {
+  } else if (!internal::may_have_validity_bitmap(type_id)) {
     this->null_count = 0;
   } else {
     // Populate null count and validity bitmap

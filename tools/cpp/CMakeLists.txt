@@ -71,7 +71,15 @@ if(POLICY CMP0135)
   cmake_policy(SET CMP0135 NEW)
 endif()
 
-set(ARROW_VERSION "16.1.0")
+# https://cmake.org/cmake/help/latest/policy/CMP0170.html
+#
+# CMP0170 is for enforcing dependency populations by users with
+# FETCHCONTENT_FULLY_DISCONNECTED=ON.
+if(POLICY CMP0170)
+  cmake_policy(SET CMP0170 NEW)
+endif()
+
+set(ARROW_VERSION "17.0.0")
 
 string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" ARROW_BASE_VERSION "${ARROW_VERSION}")
 
@@ -256,9 +264,6 @@ if(ARROW_USE_CCACHE
 endif()
 
 if(ARROW_OPTIONAL_INSTALL)
-  # Don't make the "install" target depend on the "all" target
-  set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY true)
-
   set(INSTALL_IS_OPTIONAL OPTIONAL)
 endif()
 
@@ -433,10 +438,6 @@ endif()
 #
 # Compiler flags
 #
-
-if(ARROW_NO_DEPRECATED_API)
-  add_definitions(-DARROW_NO_DEPRECATED_API)
-endif()
 
 if(ARROW_EXTRA_ERROR_CONTEXT)
   add_definitions(-DARROW_EXTRA_ERROR_CONTEXT)
@@ -711,7 +712,7 @@ list(APPEND ARROW_TEST_LINK_LIBS ${ARROW_GTEST_GMOCK} ${ARROW_GTEST_GTEST_MAIN})
 if(ARROW_BUILD_BENCHMARKS)
   set(ARROW_BENCHMARK_LINK_LIBS benchmark::benchmark_main ${ARROW_TEST_LINK_LIBS})
   if(WIN32)
-    list(APPEND ARROW_BENCHMARK_LINK_LIBS Shlwapi.dll)
+    list(APPEND ARROW_BENCHMARK_LINK_LIBS shlwapi)
   endif()
 endif()
 
