@@ -1,6 +1,6 @@
-0669ef109df3c734d979d7d1ab1c1765 *DESCRIPTION
+125b2309964f940776af132b0227bc8c *DESCRIPTION
 2d79a91626993e718d54b1f0a8984411 *NAMESPACE
-c91099b84d9aaba7820533c2adc6b045 *NEWS.md
+9792fe3052a982902a9bfac13b76ebbd *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 21b96e392c1526f3f24d2af467976a85 *R/array.R
 b2d498ffaafe081bd8694c3e135be8d4 *R/arrow-datum.R
@@ -473,7 +473,7 @@ a66854f3f854b8a83c54edb11c224e4c *tools/cpp/cmake_modules/Findutf8proc.cmake
 e4521e0eb4806558153e2770029ca8bf *tools/cpp/cmake_modules/FindzstdAlt.cmake
 7f47e07423af45b640cfbee17bd5c332 *tools/cpp/cmake_modules/GandivaAddBitcode.cmake
 7835e2b4db7a9de736fa6f31dd3665ca *tools/cpp/cmake_modules/SetupCxxFlags.cmake
-71ea91d4e1059c76840a0a4db3121b33 *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
+8b772b48217f333737f8f9ccd72d96a1 *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
 2a48c7c9b634d4bc676aaf9df1b80ea9 *tools/cpp/cmake_modules/UseCython.cmake
 f95bbff6dd6845b45e612d3f73e073fd *tools/cpp/cmake_modules/Usevcpkg.cmake
 cada5d659a61036ad1264751d2f66ffe *tools/cpp/cmake_modules/aws_sdk_cpp_generate_variables.sh
