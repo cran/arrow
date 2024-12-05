@@ -17,9 +17,16 @@
   under the License.
 -->
 
-# arrow 17.0.0.1
+# arrow 18.1.0
 
-* Resolve an issue with CRAN's M1 builders and the AWS SDK dependency build process.
+## Minor improvements and fixes
+
+* Fix bindings to allow filtering a factor column in a Dataset using `%in%` (#43446)
+* Update `str_sub` binding to properly handle negative `end` values (@coussens, #44141)
+* Fix altrep string columns from readr (#43351)
+* Fix crash in ParquetFileWriter$WriteTable and add WriteBatch (#42241)
+* Fix bindings in Math group generics (@aboyoun, #43162)
+* Fix pull on a grouped query returns the wrong column (#43172)
 
 # arrow 17.0.0
 
@@ -34,7 +41,7 @@
   functions (UDFs); for UDFs, see `register_scalar_function()`. (#41223)
 * `mutate()` expressions can now include aggregations, such as `x - mean(x)`. (#41350)
 * `summarize()` supports more complex expressions, and correctly handles cases
-  where column names are reused in expressions.
+  where column names are reused in expressions. (#41223)
 * The `na_matches` argument to the `dplyr::*_join()` functions is now supported.
   This argument controls whether `NA` values are considered equal when joining. (#41358)
 * R metadata, stored in the Arrow schema to support round-tripping data between
@@ -59,7 +66,7 @@
 ## Minor improvements and fixes
 
 * Dataset and table output printing now truncates schemas longer than 20 items long (#38916)
-* Fixed pointer conversion to Python for latest reticulate to ensure data can be passed between Arrow and PyArrow (#39969)
+* Fixed pointer conversion to Python for latest reticulate to ensure data can be passed between Arrow and PyArrow (#39969) 
 * Check on macOS if we are using GNU libtool is and ensure we use macOS libtool instead (#40259)
 * Fix an error where creating a bundled tarball with all dependencies was failing on Windows (@hutch3232, #40232)
 
@@ -73,7 +80,7 @@
   data into R (@m-muecke, #38601).
 * Calling `dimnames` or `colnames` on `Dataset` objects now returns a useful
   result rather than just `NULL` (#38377).
-* The `code()` method on Schema objects now takes an optional `namespace`
+* The `code()` method on Schema objects now takes an optional `namespace` 
   argument which, when `TRUE`, prefixes names with `arrow::` which makes
   the output more portable (@orgadish, #38144).
 
@@ -88,7 +95,7 @@
   ND-JSON support added in arrow 13.0.0 (@Divyansh200102, #38258).
 * To make debugging problems easier when using arrow with AWS S3
   (e.g., `s3_bucket`, `S3FileSystem`), the debug log level for S3 can be set
-  with the `AWS_S3_LOG_LEVEL` environment variable.
+  with the `AWS_S3_LOG_LEVEL` environment variable. 
   See `?S3FileSystem` for more information. (#38267)
 * Using arrow with duckdb (i.e., `to_duckdb()`) no longer results in warnings
   when quitting your R session. (#38495)
@@ -130,8 +137,8 @@
 
 * If pkg-config fails to detect the required libraries an additional search
   without pkg-config is run (#38970).
-* Fetch the latest nightly Arrow C++ binary when installing a development
-  Version (#38236).
+* Fetch the latest nightly Arrow C++ binary when installing a development 
+  Version (#38236).  
 
 # arrow 14.0.0.1
 
@@ -155,7 +162,7 @@
 * `schema()` can now be called on `data.frame` objects to retrieve their
   inferred Arrow schema  (#37843).
 * CSVs with a comma or other character as decimal mark can now be read in
-  by the dataset reading functions and new function `read_csv2_arrow()`
+  by the dataset reading functions and new function `read_csv2_arrow()` 
   (#38002).
 
 ## Minor improvements and fixes
@@ -233,7 +240,7 @@
 
 # arrow 12.0.1
 
-* Update the version of the date library vendored with Arrow C++ library
+* Update the version of the date library vendored with Arrow C++ library 
   for compatibility with tzdb 0.4.0 (#35594, #35612).
 * Update some tests for compatibility with waldo 0.5.1 (#35131, #35308).
 

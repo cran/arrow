@@ -259,7 +259,7 @@ macro(resolve_dependency DEPENDENCY_NAME)
       IS_RUNTIME_DEPENDENCY
       REQUIRED_VERSION
       USE_CONFIG)
-  set(multi_value_args COMPONENTS PC_PACKAGE_NAMES)
+  set(multi_value_args COMPONENTS OPTIONAL_COMPONENTS PC_PACKAGE_NAMES)
   cmake_parse_arguments(ARG
                         "${options}"
                         "${one_value_args}"
@@ -286,6 +286,9 @@ macro(resolve_dependency DEPENDENCY_NAME)
   endif()
   if(ARG_COMPONENTS)
     list(APPEND FIND_PACKAGE_ARGUMENTS COMPONENTS ${ARG_COMPONENTS})
+  endif()
+  if(ARG_OPTIONAL_COMPONENTS)
+    list(APPEND FIND_PACKAGE_ARGUMENTS OPTIONAL_COMPONENTS ${ARG_OPTIONAL_COMPONENTS})
   endif()
   if(${DEPENDENCY_NAME}_SOURCE STREQUAL "AUTO")
     find_package(${FIND_PACKAGE_ARGUMENTS})
@@ -813,21 +816,9 @@ endif()
 if(DEFINED ENV{ARROW_THRIFT_URL})
   set(THRIFT_SOURCE_URL "$ENV{ARROW_THRIFT_URL}")
 else()
-  set_urls(THRIFT_SOURCE_URL
-           "https://www.apache.org/dyn/closer.cgi?action=download&filename=/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://downloads.apache.org/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://apache.claz.org/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://apache.cs.utah.edu/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://apache.mirrors.lucidnetworks.net/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://apache.osuosl.org/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://ftp.wayne.edu/apache/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://mirror.olnevhost.net/pub/apache/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://mirrors.gigenet.com/apache/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://mirrors.koehn.com/apache/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://mirrors.ocf.berkeley.edu/apache/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://mirrors.sonic.net/apache/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "https://us.mirrors.quenda.co/apache/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
-           "${THIRDPARTY_MIRROR_URL}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz")
+  set(THRIFT_SOURCE_URL
+      "https://dlcdn.apache.org/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
+  )
 endif()
 
 if(DEFINED ENV{ARROW_UCX_URL})
@@ -1289,15 +1280,19 @@ if(ARROW_USE_BOOST)
     set(Boost_USE_STATIC_LIBS ON)
   endif()
   if(ARROW_BOOST_REQUIRE_LIBRARY)
-    set(ARROW_BOOST_COMPONENTS system filesystem)
+    set(ARROW_BOOST_COMPONENTS filesystem system)
+    set(ARROW_BOOST_OPTIONAL_COMPONENTS process)
   else()
     set(ARROW_BOOST_COMPONENTS)
+    set(ARROW_BOOST_OPTIONAL_COMPONENTS)
   endif()
   resolve_dependency(Boost
                      REQUIRED_VERSION
                      ${ARROW_BOOST_REQUIRED_VERSION}
                      COMPONENTS
                      ${ARROW_BOOST_COMPONENTS}
+                     OPTIONAL_COMPONENTS
+                     ${ARROW_BOOST_OPTIONAL_COMPONENTS}
                      IS_RUNTIME_DEPENDENCY
                      # libarrow.so doesn't depend on libboost*.
                      FALSE)
@@ -1316,14 +1311,35 @@ if(ARROW_USE_BOOST)
     endif()
   endforeach()
 
-  if(WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # boost/process/detail/windows/handle_workaround.hpp doesn't work
-    # without BOOST_USE_WINDOWS_H with MinGW because MinGW doesn't
-    # provide __kernel_entry without winternl.h.
-    #
-    # See also:
-    # https://github.com/boostorg/process/blob/develop/include/boost/process/detail/windows/handle_workaround.hpp
-    target_compile_definitions(Boost::headers INTERFACE "BOOST_USE_WINDOWS_H=1")
+  if(TARGET Boost::process)
+    # Boost >= 1.86
+    target_compile_definitions(Boost::process INTERFACE "BOOST_PROCESS_HAVE_V1")
+    target_compile_definitions(Boost::process INTERFACE "BOOST_PROCESS_HAVE_V2")
+  else()
+    # Boost < 1.86
+    add_library(Boost::process INTERFACE IMPORTED)
+    if(TARGET Boost::filesystem)
+      target_link_libraries(Boost::process INTERFACE Boost::filesystem)
+    endif()
+    if(TARGET Boost::system)
+      target_link_libraries(Boost::process INTERFACE Boost::system)
+    endif()
+    if(TARGET Boost::headers)
+      target_link_libraries(Boost::process INTERFACE Boost::headers)
+    endif()
+    if(Boost_VERSION VERSION_GREATER_EQUAL 1.80)
+      target_compile_definitions(Boost::process INTERFACE "BOOST_PROCESS_HAVE_V2")
+      # Boost < 1.86 has a bug that
+      # boost::process::v2::process_environment::on_setup() isn't
+      # defined. We need to build Boost Process source to define it.
+      #
+      # See also:
+      # https://github.com/boostorg/process/issues/312
+      target_compile_definitions(Boost::process INTERFACE "BOOST_PROCESS_NEED_SOURCE")
+      if(WIN32)
+        target_link_libraries(Boost::process INTERFACE bcrypt ntdll)
+      endif()
+    endif()
   endif()
 
   message(STATUS "Boost include dir: ${Boost_INCLUDE_DIRS}")
@@ -1355,15 +1371,23 @@ macro(build_snappy)
       "-DCMAKE_INSTALL_PREFIX=${SNAPPY_PREFIX}")
   # Snappy unconditionally enables -Werror when building with clang this can lead
   # to build failures by way of new compiler warnings. This adds a flag to disable
-  # Werror to the very end of the invocation to override the snappy internal setting.
+  # -Werror to the very end of the invocation to override the snappy internal setting.
+  set(SNAPPY_ADDITIONAL_CXX_FLAGS "")
   if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    foreach(CONFIG DEBUG MINSIZEREL RELEASE RELWITHDEBINFO)
-      list(APPEND
-           SNAPPY_CMAKE_ARGS
-           "-DCMAKE_CXX_FLAGS_${UPPERCASE_BUILD_TYPE}=${EP_CXX_FLAGS_${CONFIG}} -Wno-error"
-      )
-    endforeach()
+    string(APPEND SNAPPY_ADDITIONAL_CXX_FLAGS " -Wno-error")
   endif()
+  # Snappy unconditionally disables RTTI, which is incompatible with some other
+  # build settings (https://github.com/apache/arrow/issues/43688).
+  if(NOT MSVC)
+    string(APPEND SNAPPY_ADDITIONAL_CXX_FLAGS " -frtti")
+  endif()
+
+  foreach(CONFIG DEBUG MINSIZEREL RELEASE RELWITHDEBINFO)
+    list(APPEND
+         SNAPPY_CMAKE_ARGS
+         "-DCMAKE_CXX_FLAGS_${CONFIG}=${EP_CXX_FLAGS_${CONFIG}} ${SNAPPY_ADDITIONAL_CXX_FLAGS}"
+    )
+  endforeach()
 
   if(APPLE AND CMAKE_HOST_SYSTEM_VERSION VERSION_LESS 20)
     # On macOS 10.13 we need to explicitly add <functional> to avoid a missing include error
@@ -1739,6 +1763,7 @@ macro(build_thrift)
       set(THRIFT_LIB_SUFFIX "md")
       list(APPEND THRIFT_CMAKE_ARGS "-DWITH_MT=OFF")
     endif()
+    # NOTE(amoeba): When you bump Thrift to >=0.21.0, change bin to lib
     set(THRIFT_LIB
         "${THRIFT_PREFIX}/bin/${CMAKE_IMPORT_LIBRARY_PREFIX}thrift${THRIFT_LIB_SUFFIX}${CMAKE_IMPORT_LIBRARY_SUFFIX}"
     )
@@ -2306,6 +2331,10 @@ function(build_gtest)
   install(DIRECTORY "${googletest_SOURCE_DIR}/googlemock/include/"
                     "${googletest_SOURCE_DIR}/googletest/include/"
           DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+  add_library(arrow::GTest::gtest_headers INTERFACE IMPORTED)
+  target_include_directories(arrow::GTest::gtest_headers
+                             INTERFACE "${googletest_SOURCE_DIR}/googlemock/include/"
+                                       "${googletest_SOURCE_DIR}/googletest/include/")
   install(TARGETS gmock gmock_main gtest gtest_main
           EXPORT arrow_testing_targets
           RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
@@ -2350,12 +2379,14 @@ if(ARROW_TESTING)
 
       string(APPEND ARROW_TESTING_PC_LIBS " $<TARGET_FILE:GTest::gtest>")
     endif()
+    set(ARROW_GTEST_GTEST_HEADERS)
     set(ARROW_GTEST_GMOCK GTest::gmock)
     set(ARROW_GTEST_GTEST GTest::gtest)
     set(ARROW_GTEST_GTEST_MAIN GTest::gtest_main)
   else()
     string(APPEND ARROW_TESTING_PC_CFLAGS " -I\${includedir}/arrow-gtest")
     string(APPEND ARROW_TESTING_PC_LIBS " -larrow_gtest")
+    set(ARROW_GTEST_GTEST_HEADERS arrow::GTest::gtest_headers)
     set(ARROW_GTEST_GMOCK arrow::GTest::gmock)
     set(ARROW_GTEST_GTEST arrow::GTest::gtest)
     set(ARROW_GTEST_GTEST_MAIN arrow::GTest::gtest_main)
@@ -2873,33 +2904,6 @@ endmacro()
 
 # ----------------------------------------------------------------------
 # Dependencies for Arrow Flight RPC
-
-macro(ensure_absl)
-  if(NOT absl_FOUND)
-    if(${absl_SOURCE} STREQUAL "AUTO")
-      # We can't use resolve_dependency(absl 20211102) to use Abseil
-      # 20211102 or later because Abseil's CMake package uses "EXACT"
-      # version match strategy. Our CMake configuration will work with
-      # Abseil LTS 20211102 or later. So we want to accept Abseil LTS
-      # 20211102 or later. We need to update
-      # ARROW_ABSL_REQUIRED_LTS_VERSIONS list when new Abseil LTS is
-      # released.
-      set(ARROW_ABSL_REQUIRED_LTS_VERSIONS 20230125 20220623 20211102)
-      foreach(_VERSION ${ARROW_ABSL_REQUIRED_LTS_VERSIONS})
-        find_package(absl ${_VERSION})
-        if(absl_FOUND)
-          break()
-        endif()
-      endforeach()
-      # If we can't find Abseil LTS 20211102 or later, we use bundled
-      # Abseil.
-      if(NOT absl_FOUND)
-        set(absl_SOURCE "BUNDLED")
-      endif()
-    endif()
-    resolve_dependency(absl)
-  endif()
-endmacro()
 
 macro(build_absl)
   message(STATUS "Building Abseil-cpp from source")
@@ -3849,7 +3853,6 @@ macro(build_grpc)
                      TRUE
                      PC_PACKAGE_NAMES
                      libcares)
-  ensure_absl()
 
   message(STATUS "Building gRPC from source")
 
@@ -4139,12 +4142,40 @@ macro(build_grpc)
   endif()
 endmacro()
 
+if(ARROW_WITH_GOOGLE_CLOUD_CPP OR ARROW_WITH_GRPC)
+  set(ARROW_ABSL_REQUIRED_VERSION 20211102)
+  # Google Cloud C++ SDK and gRPC require Google Abseil
+  if(ARROW_WITH_GOOGLE_CLOUD_CPP)
+    set(ARROW_ABSL_CMAKE_PACKAGE_NAME Arrow)
+    set(ARROW_ABSL_PC_PACKAGE_NAME arrow)
+  else()
+    set(ARROW_ABSL_CMAKE_PACKAGE_NAME ArrowFlight)
+    set(ARROW_ABSL_PC_PACKAGE_NAME arrow-flight)
+  endif()
+  resolve_dependency(absl
+                     ARROW_CMAKE_PACKAGE_NAME
+                     ${ARROW_ABSL_CMAKE_PACKAGE_NAME}
+                     ARROW_PC_PACKAGE_NAME
+                     ${ARROW_ABSL_PC_PACKAGE_NAME}
+                     HAVE_ALT
+                     TRUE
+                     FORCE_ANY_NEWER_VERSION
+                     TRUE
+                     REQUIRED_VERSION
+                     ${ARROW_ABSL_REQUIRED_VERSION})
+endif()
+
 if(ARROW_WITH_GRPC)
   if(NOT ARROW_ENABLE_THREADING)
     message(FATAL_ERROR "Can't use gRPC with ARROW_ENABLE_THREADING=OFF")
   endif()
 
   set(ARROW_GRPC_REQUIRED_VERSION "1.30.0")
+  if(absl_SOURCE STREQUAL "BUNDLED" AND NOT gRPC_SOURCE STREQUAL "BUNDLED")
+    # System gRPC can't be used with bundled Abseil
+    message(STATUS "Forcing gRPC_SOURCE to BUNDLED because absl_SOURCE is BUNDLED")
+    set(gRPC_SOURCE "BUNDLED")
+  endif()
   if(NOT Protobuf_SOURCE STREQUAL gRPC_SOURCE)
     # ARROW-15495: Protobuf/gRPC must come from the same source
     message(STATUS "Forcing gRPC_SOURCE to Protobuf_SOURCE (${Protobuf_SOURCE})")
@@ -4180,6 +4211,14 @@ if(ARROW_WITH_GRPC)
                                  INTERFACE "GRPC_ASAN_SUPPRESSED")
       target_link_libraries(gRPC::grpc++ INTERFACE gRPC::grpc_asan_suppressed)
     endif()
+  endif()
+
+  if(ARROW_GRPC_CPP_PLUGIN)
+    if(NOT TARGET gRPC::grpc_cpp_plugin)
+      add_executable(gRPC::grpc_cpp_plugin IMPORTED)
+    endif()
+    set_target_properties(gRPC::grpc_cpp_plugin PROPERTIES IMPORTED_LOCATION
+                                                           ${ARROW_GRPC_CPP_PLUGIN})
   endif()
 endif()
 
@@ -4263,7 +4302,6 @@ macro(build_google_cloud_cpp_storage)
   message(STATUS "Only building the google-cloud-cpp::storage component")
 
   # List of dependencies taken from https://github.com/googleapis/google-cloud-cpp/blob/main/doc/packaging.md
-  ensure_absl()
   build_crc32c_once()
 
   # Curl is required on all platforms, but building it internally might also trip over S3's copy.
@@ -4960,6 +4998,10 @@ macro(build_awssdk)
     # Negate warnings that AWS SDK cannot build under
     string(APPEND AWS_C_FLAGS " -Wno-error=shorten-64-to-32")
     string(APPEND AWS_CXX_FLAGS " -Wno-error=shorten-64-to-32")
+  endif()
+  if(NOT MSVC)
+    string(APPEND AWS_C_FLAGS " -Wno-deprecated")
+    string(APPEND AWS_CXX_FLAGS " -Wno-deprecated")
   endif()
 
   set(AWSSDK_COMMON_CMAKE_ARGS

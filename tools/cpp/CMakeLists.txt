@@ -79,12 +79,12 @@ if(POLICY CMP0170)
   cmake_policy(SET CMP0170 NEW)
 endif()
 
-set(ARROW_VERSION "17.0.0")
+set(ARROW_VERSION "18.1.0")
 
 string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" ARROW_BASE_VERSION "${ARROW_VERSION}")
 
 # if no build type is specified, default to release builds
-if(NOT DEFINED CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE
       Release
       CACHE STRING "Choose the type of build.")
@@ -160,6 +160,7 @@ set(ARROW_DOC_DIR "share/doc/${PROJECT_NAME}")
 set(BUILD_SUPPORT_DIR "${CMAKE_SOURCE_DIR}/build-support")
 
 set(ARROW_LLVM_VERSIONS
+    "19.1"
     "18.1"
     "17.0"
     "16.0"
@@ -301,7 +302,8 @@ add_custom_target(lint
                   --cpplint_binary
                   ${CPPLINT_BIN}
                   ${COMMON_LINT_OPTIONS}
-                  ${ARROW_LINT_QUIET})
+                  ${ARROW_LINT_QUIET}
+                  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 #
 # "make format" and "make check-format" targets
@@ -689,7 +691,7 @@ endif()
 
 if("${ARROW_TEST_LINKAGE}" STREQUAL "shared")
   if(ARROW_BUILD_TESTS AND NOT ARROW_BUILD_SHARED)
-    message(FATAL_ERROR "If using shared linkage for unit tests, must also \
+    message(FATAL_ERROR "If using ARROW_TEST_LINKAGE=shared, must also \
 pass ARROW_BUILD_SHARED=on")
   endif()
   # Use shared linking for unit tests if it's available
