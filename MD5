@@ -1,6 +1,6 @@
-81af2a3de2f67ecac2d3becbf96d31da *DESCRIPTION
+062a50bf8fe8f0e98000ee8163dedf00 *DESCRIPTION
 2d79a91626993e718d54b1f0a8984411 *NAMESPACE
-75abf553120a61438fe54c0d498590e2 *NEWS.md
+79f20a7e16735943592e3943a6f3b92e *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 21b96e392c1526f3f24d2af467976a85 *R/array.R
 b2d498ffaafe081bd8694c3e135be8d4 *R/arrow-datum.R
@@ -476,12 +476,13 @@ a66854f3f854b8a83c54edb11c224e4c *tools/cpp/cmake_modules/Findutf8proc.cmake
 e4521e0eb4806558153e2770029ca8bf *tools/cpp/cmake_modules/FindzstdAlt.cmake
 7f47e07423af45b640cfbee17bd5c332 *tools/cpp/cmake_modules/GandivaAddBitcode.cmake
 b3d7cdf1be972cec372263e562e7ee40 *tools/cpp/cmake_modules/SetupCxxFlags.cmake
-d3d94f97d5fedcb86d7c0126554b85fd *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
+e7045009a1a04c393b7eaf23e778283d *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
 84a41c315ee2b4ff325879b8d8f41039 *tools/cpp/cmake_modules/UseCython.cmake
 f95bbff6dd6845b45e612d3f73e073fd *tools/cpp/cmake_modules/Usevcpkg.cmake
 cada5d659a61036ad1264751d2f66ffe *tools/cpp/cmake_modules/aws_sdk_cpp_generate_variables.sh
 a43eff0b8da4f38839e38d6d7140db9f *tools/cpp/cmake_modules/san-config.cmake
 6ade865a4177e7c2498af023dacdad16 *tools/cpp/cmake_modules/snappy.diff
+835f4172cc882a135db20d71a35ae184 *tools/cpp/cmake_modules/thrift-cstdint.patch
 76652bd6c2bdae5c246d0a4ccf64d3dd *tools/cpp/gdb_arrow.py
 d8bed80f6cc26dbc5773eb5b43ad2a63 *tools/cpp/proto/substrait/extension_rels.proto
 26eb07f58f2732ac09443dcbc9369e92 *tools/cpp/src/arrow/ArrowConfig.cmake.in
