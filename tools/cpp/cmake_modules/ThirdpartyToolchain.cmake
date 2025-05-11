@@ -67,7 +67,6 @@ set(ARROW_THIRDPARTY_DEPENDENCIES
     Snappy
     Substrait
     Thrift
-    ucx
     utf8proc
     xsimd
     ZLIB
@@ -218,8 +217,6 @@ macro(build_dependency DEPENDENCY_NAME)
     build_substrait()
   elseif("${DEPENDENCY_NAME}" STREQUAL "Thrift")
     build_thrift()
-  elseif("${DEPENDENCY_NAME}" STREQUAL "ucx")
-    build_ucx()
   elseif("${DEPENDENCY_NAME}" STREQUAL "utf8proc")
     build_utf8proc()
   elseif("${DEPENDENCY_NAME}" STREQUAL "xsimd")
@@ -386,12 +383,12 @@ if(ARROW_WITH_OPENTELEMETRY)
   set(ARROW_WITH_PROTOBUF ON)
 endif()
 
-if(ARROW_THRIFT)
-  set(ARROW_WITH_ZLIB ON)
-endif()
-
 if(ARROW_PARQUET)
   set(ARROW_WITH_THRIFT ON)
+endif()
+
+if(ARROW_WITH_THRIFT)
+  set(ARROW_WITH_ZLIB ON)
 endif()
 
 if(ARROW_FLIGHT)
@@ -697,8 +694,7 @@ if(DEFINED ENV{ARROW_GTEST_URL})
   set(GTEST_SOURCE_URL "$ENV{ARROW_GTEST_URL}")
 else()
   set_urls(GTEST_SOURCE_URL
-           "https://github.com/google/googletest/archive/release-${ARROW_GTEST_BUILD_VERSION}.tar.gz"
-           "https://chromium.googlesource.com/external/github.com/google/googletest/+archive/release-${ARROW_GTEST_BUILD_VERSION}.tar.gz"
+           "https://github.com/google/googletest/releases/download/v${ARROW_GTEST_BUILD_VERSION}/googletest-${ARROW_GTEST_BUILD_VERSION}.tar.gz"
            "${THIRDPARTY_MIRROR_URL}/gtest-${ARROW_GTEST_BUILD_VERSION}.tar.gz")
 endif()
 
@@ -819,13 +815,6 @@ else()
       "https://www.apache.org/dyn/closer.lua/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz?action=download"
       "https://dlcdn.apache.org/thrift/${ARROW_THRIFT_BUILD_VERSION}/thrift-${ARROW_THRIFT_BUILD_VERSION}.tar.gz"
   )
-endif()
-
-if(DEFINED ENV{ARROW_UCX_URL})
-  set(ARROW_UCX_SOURCE_URL "$ENV{ARROW_UCX_URL}")
-else()
-  set_urls(ARROW_UCX_SOURCE_URL
-           "https://github.com/openucx/ucx/archive/v${ARROW_UCX_BUILD_VERSION}.tar.gz")
 endif()
 
 if(DEFINED ENV{ARROW_UTF8PROC_URL})
@@ -968,6 +957,9 @@ set(EP_COMMON_CMAKE_ARGS
     -DCMAKE_INSTALL_LIBDIR=lib
     -DCMAKE_OSX_SYSROOT=${CMAKE_OSX_SYSROOT}
     -DCMAKE_VERBOSE_MAKEFILE=${CMAKE_VERBOSE_MAKEFILE}
+    # We set CMAKE_POLICY_VERSION_MINIMUM temporarily due to failures with CMake 4
+    # We should remove it once we have updated the dependencies:
+    # https://github.com/apache/arrow/issues/45985
     -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
 
 # if building with a toolchain file, pass that through
@@ -989,9 +981,11 @@ endif()
 
 # Enable s/ccache if set by parent.
 if(CMAKE_C_COMPILER_LAUNCHER AND CMAKE_CXX_COMPILER_LAUNCHER)
+  file(TO_CMAKE_PATH "${CMAKE_C_COMPILER_LAUNCHER}" EP_CMAKE_C_COMPILER_LAUNCHER)
+  file(TO_CMAKE_PATH "${CMAKE_CXX_COMPILER_LAUNCHER}" EP_CMAKE_CXX_COMPILER_LAUNCHER)
   list(APPEND EP_COMMON_CMAKE_ARGS
-       -DCMAKE_C_COMPILER_LAUNCHER=${CMAKE_C_COMPILER_LAUNCHER}
-       -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER})
+       -DCMAKE_C_COMPILER_LAUNCHER=${EP_CMAKE_C_COMPILER_LAUNCHER}
+       -DCMAKE_CXX_COMPILER_LAUNCHER=${EP_CMAKE_CXX_COMPILER_LAUNCHER})
 endif()
 
 if(NOT ARROW_VERBOSE_THIRDPARTY_BUILD)
@@ -1034,6 +1028,9 @@ macro(prepare_fetchcontent)
   set(CMAKE_COMPILE_WARNING_AS_ERROR FALSE)
   set(CMAKE_EXPORT_NO_PACKAGE_REGISTRY TRUE)
   set(CMAKE_MACOSX_RPATH ${ARROW_INSTALL_NAME_RPATH})
+  # We set CMAKE_POLICY_VERSION_MINIMUM temporarily due to failures with CMake 4
+  # We should remove it once we have updated the dependencies:
+  # https://github.com/apache/arrow/issues/45985
   set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
   if(MSVC)
@@ -1257,13 +1254,19 @@ endif()
 # - Gandiva has a compile-time (header-only) dependency on Boost, not runtime.
 # - Tests need Boost at runtime.
 # - S3FS and Flight benchmarks need Boost at runtime.
+# - arrow_testing uses boost::filesystem. So arrow_testing requires
+#   Boost library. (boost::filesystem isn't header-only.) But if we
+#   use arrow_testing as a static library without
+#   using arrow::util::Process, we don't need boost::filesystem.
 if(ARROW_BUILD_INTEGRATION
    OR ARROW_BUILD_TESTS
    OR (ARROW_FLIGHT AND (ARROW_TESTING OR ARROW_BUILD_BENCHMARKS))
-   OR (ARROW_S3 AND ARROW_BUILD_BENCHMARKS))
+   OR (ARROW_S3 AND ARROW_BUILD_BENCHMARKS)
+   OR (ARROW_TESTING AND ARROW_BUILD_SHARED))
   set(ARROW_USE_BOOST TRUE)
   set(ARROW_BOOST_REQUIRE_LIBRARY TRUE)
 elseif(ARROW_GANDIVA
+       OR ARROW_TESTING
        OR ARROW_WITH_THRIFT
        OR (NOT ARROW_USE_NATIVE_INT128))
   set(ARROW_USE_BOOST TRUE)
@@ -1389,6 +1392,9 @@ macro(build_snappy)
   set(SNAPPY_CMAKE_ARGS
       ${EP_COMMON_CMAKE_ARGS} -DSNAPPY_BUILD_TESTS=OFF -DSNAPPY_BUILD_BENCHMARKS=OFF
       "-DCMAKE_INSTALL_PREFIX=${SNAPPY_PREFIX}")
+  # We can remove this once we remove -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+  # from EP_COMMON_CMAKE_ARGS.
+  list(REMOVE_ITEM SNAPPY_CMAKE_ARGS -DCMAKE_POLICY_VERSION_MINIMUM=3.5)
   # Snappy unconditionally enables -Werror when building with clang this can lead
   # to build failures by way of new compiler warnings. This adds a flag to disable
   # -Werror to the very end of the invocation to override the snappy internal setting.
@@ -1660,11 +1666,10 @@ endif()
 if(ARROW_BUILD_TESTS
    OR ARROW_BUILD_BENCHMARKS
    OR ARROW_BUILD_INTEGRATION
-   OR ARROW_USE_GLOG
-   OR ARROW_WITH_GRPC)
-  set(ARROW_NEED_GFLAGS 1)
+   OR ARROW_USE_GLOG)
+  set(ARROW_NEED_GFLAGS TRUE)
 else()
-  set(ARROW_NEED_GFLAGS 0)
+  set(ARROW_NEED_GFLAGS FALSE)
 endif()
 
 macro(build_gflags)
@@ -1768,9 +1773,10 @@ macro(build_thrift)
   if(DEFINED BOOST_ROOT)
     list(APPEND THRIFT_CMAKE_ARGS "-DBOOST_ROOT=${BOOST_ROOT}")
   endif()
-  if(DEFINED Boost_INCLUDE_DIR)
-    list(APPEND THRIFT_CMAKE_ARGS "-DBoost_INCLUDE_DIR=${Boost_INCLUDE_DIR}")
-  endif()
+  list(APPEND
+       THRIFT_CMAKE_ARGS
+       "-DBoost_INCLUDE_DIR=$<TARGET_PROPERTY:Boost::headers,INTERFACE_INCLUDE_DIRECTORIES>"
+  )
   if(DEFINED Boost_NAMESPACE)
     list(APPEND THRIFT_CMAKE_ARGS "-DBoost_NAMESPACE=${Boost_NAMESPACE}")
   endif()
@@ -2330,6 +2336,9 @@ function(build_gtest)
                        URL ${GTEST_SOURCE_URL}
                        URL_HASH "SHA256=${ARROW_GTEST_BUILD_SHA256_CHECKSUM}")
   prepare_fetchcontent()
+  # We can remove this once we remove set(CMAKE_POLICY_VERSION_MINIMUM
+  # 3.5) from prepare_fetchcontent().
+  unset(CMAKE_POLICY_VERSION_MINIMUM)
   if(APPLE)
     string(APPEND CMAKE_CXX_FLAGS " -Wno-unused-value" " -Wno-ignored-attributes")
   endif()
@@ -2746,6 +2755,10 @@ if(ARROW_WITH_ZSTD)
       set(ARROW_ZSTD_LIBZSTD zstd::libzstd_shared)
     else()
       set(ARROW_ZSTD_LIBZSTD zstd::libzstd_static)
+    endif()
+    # vcpkg uses zstd::libzstd
+    if(NOT TARGET ${ARROW_ZSTD_LIBZSTD} AND TARGET zstd::libzstd)
+      set(ARROW_ZSTD_LIBZSTD zstd::libzstd)
     endif()
     if(NOT TARGET ${ARROW_ZSTD_LIBZSTD})
       message(FATAL_ERROR "Zstandard target doesn't exist: ${ARROW_ZSTD_LIBZSTD}")
@@ -3950,9 +3963,6 @@ macro(build_grpc)
                       IMPORTED_LOCATION)
   get_target_property(GRPC_CARES_INCLUDE_DIR c-ares::cares INTERFACE_INCLUDE_DIRECTORIES)
   get_filename_component(GRPC_CARES_ROOT "${GRPC_CARES_INCLUDE_DIR}" DIRECTORY)
-  get_target_property(GRPC_GFLAGS_INCLUDE_DIR ${GFLAGS_LIBRARIES}
-                      INTERFACE_INCLUDE_DIRECTORIES)
-  get_filename_component(GRPC_GFLAGS_ROOT "${GRPC_GFLAGS_INCLUDE_DIR}" DIRECTORY)
   get_target_property(GRPC_RE2_INCLUDE_DIR re2::re2 INTERFACE_INCLUDE_DIRECTORIES)
   get_filename_component(GRPC_RE2_ROOT "${GRPC_RE2_INCLUDE_DIR}" DIRECTORY)
 
@@ -3960,7 +3970,6 @@ macro(build_grpc)
   # before (what are likely) system directories
   set(GRPC_CMAKE_PREFIX "${GRPC_CMAKE_PREFIX};${ABSL_PREFIX}")
   set(GRPC_CMAKE_PREFIX "${GRPC_CMAKE_PREFIX};${GRPC_PB_ROOT}")
-  set(GRPC_CMAKE_PREFIX "${GRPC_CMAKE_PREFIX};${GRPC_GFLAGS_ROOT}")
   set(GRPC_CMAKE_PREFIX "${GRPC_CMAKE_PREFIX};${GRPC_CARES_ROOT}")
   set(GRPC_CMAKE_PREFIX "${GRPC_CMAKE_PREFIX};${GRPC_RE2_ROOT}")
 
@@ -4010,7 +4019,6 @@ macro(build_grpc)
       -DgRPC_BUILD_GRPC_RUBY_PLUGIN=OFF
       -DgRPC_BUILD_TESTS=OFF
       -DgRPC_CARES_PROVIDER=package
-      -DgRPC_GFLAGS_PROVIDER=package
       -DgRPC_MSVC_STATIC_RUNTIME=${ARROW_USE_STATIC_CRT}
       -DgRPC_PROTOBUF_PROVIDER=package
       -DgRPC_RE2_PROVIDER=package
@@ -4636,6 +4644,10 @@ function(build_orc)
     set(ZLIB_HOME
         ${ZLIB_ROOT}
         CACHE STRING "" FORCE)
+    # From CMake 3.21 onwards the set(CACHE) command does not remove any normal
+    # variable of the same name from the current scope. We have to manually remove
+    # the variable via unset to avoid ORC not finding the ZLIB_LIBRARY.
+    unset(ZLIB_LIBRARY)
     set(ZLIB_LIBRARY
         ZLIB::ZLIB
         CACHE STRING "" FORCE)
@@ -4670,16 +4682,10 @@ function(build_orc)
         OFF
         CACHE BOOL "" FORCE)
 
-    # We can remove this with ORC 2.0.2 or later.
-    list(PREPEND CMAKE_MODULE_PATH
-         ${CMAKE_CURRENT_BINARY_DIR}/_deps/orc-src/cmake_modules)
-
     fetchcontent_makeavailable(orc)
 
     add_library(orc::orc INTERFACE IMPORTED)
     target_link_libraries(orc::orc INTERFACE orc)
-    target_include_directories(orc::orc INTERFACE "${orc_BINARY_DIR}/c++/include"
-                                                  "${orc_SOURCE_DIR}/c++/include")
 
     list(APPEND ARROW_BUNDLED_STATIC_LIBS orc)
   else()
@@ -4704,6 +4710,9 @@ function(build_orc)
     get_target_property(ORC_ZSTD_ROOT ${ARROW_ZSTD_LIBZSTD} INTERFACE_INCLUDE_DIRECTORIES)
     get_filename_component(ORC_ZSTD_ROOT "${ORC_ZSTD_ROOT}" DIRECTORY)
 
+    get_target_property(ORC_ZLIB_ROOT ZLIB::ZLIB INTERFACE_INCLUDE_DIRECTORIES)
+    get_filename_component(ORC_ZLIB_ROOT "${ORC_ZLIB_ROOT}" DIRECTORY)
+
     set(ORC_CMAKE_ARGS
         ${EP_COMMON_CMAKE_ARGS}
         "-DCMAKE_INSTALL_PREFIX=${ORC_PREFIX}"
@@ -4713,7 +4722,6 @@ function(build_orc)
         -DBUILD_TOOLS=OFF
         -DBUILD_CPP_TESTS=OFF
         -DINSTALL_VENDORED_LIBS=OFF
-        "-DLZ4_HOME=${ORC_LZ4_ROOT}"
         "-DPROTOBUF_EXECUTABLE=$<TARGET_FILE:${ARROW_PROTOBUF_PROTOC}>"
         "-DPROTOBUF_HOME=${ORC_PROTOBUF_ROOT}"
         "-DPROTOBUF_INCLUDE_DIR=$<TARGET_PROPERTY:${ARROW_PROTOBUF_LIBPROTOBUF},INTERFACE_INCLUDE_DIRECTORIES>"
@@ -4721,16 +4729,17 @@ function(build_orc)
         "-DPROTOC_LIBRARY=$<TARGET_FILE:${ARROW_PROTOBUF_LIBPROTOC}>"
         "-DSNAPPY_HOME=${ORC_SNAPPY_ROOT}"
         "-DSNAPPY_LIBRARY=$<TARGET_FILE:${Snappy_TARGET}>"
+        "-DLZ4_HOME=${ORC_LZ4_ROOT}"
         "-DLZ4_LIBRARY=$<TARGET_FILE:LZ4::lz4>"
         "-DLZ4_STATIC_LIB=$<TARGET_FILE:LZ4::lz4>"
         "-DLZ4_INCLUDE_DIR=${ORC_LZ4_ROOT}/include"
         "-DSNAPPY_INCLUDE_DIR=${ORC_SNAPPY_INCLUDE_DIR}"
         "-DZSTD_HOME=${ORC_ZSTD_ROOT}"
         "-DZSTD_INCLUDE_DIR=$<TARGET_PROPERTY:${ARROW_ZSTD_LIBZSTD},INTERFACE_INCLUDE_DIRECTORIES>"
-        "-DZSTD_LIBRARY=$<TARGET_FILE:${ARROW_ZSTD_LIBZSTD}>")
-    if(ZLIB_ROOT)
-      set(ORC_CMAKE_ARGS ${ORC_CMAKE_ARGS} "-DZLIB_HOME=${ZLIB_ROOT}")
-    endif()
+        "-DZSTD_LIBRARY=$<TARGET_FILE:${ARROW_ZSTD_LIBZSTD}>"
+        "-DZLIB_HOME=${ORC_ZLIB_ROOT}"
+        "-DZLIB_INCLUDE_DIR=$<TARGET_PROPERTY:ZLIB::ZLIB,INTERFACE_INCLUDE_DIRECTORIES>"
+        "-DZLIB_LIBRARY=$<TARGET_FILE:ZLIB::ZLIB>")
 
     # Work around CMake bug
     file(MAKE_DIRECTORY ${ORC_INCLUDE_DIR})
@@ -5042,6 +5051,18 @@ macro(build_awssdk)
     string(APPEND AWS_C_FLAGS " -Wno-deprecated")
     string(APPEND AWS_CXX_FLAGS " -Wno-deprecated")
   endif()
+  # GH-44950: This is required to build under Rtools40 and we may be able to
+  # remove it if/when we no longer need to build under Rtools40
+  if(WIN32 AND NOT MSVC)
+    string(APPEND
+           AWS_C_FLAGS
+           " -D_WIN32_WINNT=0x0601 -D__USE_MINGW_ANSI_STDIO=1 -Wno-error -Wno-error=format= -Wno-error=format-extra-args -Wno-unused-local-typedefs -Wno-unused-variable"
+    )
+    string(APPEND
+           AWS_CXX_FLAGS
+           " -D_WIN32_WINNT=0x0601 -D__USE_MINGW_ANSI_STDIO=1 -Wno-error -Wno-error=format= -Wno-error=format-extra-args -Wno-unused-local-typedefs -Wno-unused-variable"
+    )
+  endif()
 
   set(AWSSDK_COMMON_CMAKE_ARGS
       ${EP_COMMON_CMAKE_ARGS}
@@ -5078,6 +5099,28 @@ macro(build_awssdk)
     list(APPEND AWSSDK_PATCH_COMMAND rm -rf)
   endif()
   list(APPEND AWSSDK_PATCH_COMMAND ${AWSSDK_UNUSED_DIRECTORIES})
+
+  # Patch parts of the AWSSDK EP so it builds cleanly under Rtools40
+  if(WIN32 AND NOT MSVC)
+    find_program(PATCH patch REQUIRED)
+    # Patch aws_c_common to build under Rtools40
+    set(AWS_C_COMMON_PATCH_COMMAND ${PATCH} -p1 -i
+                                   ${CMAKE_SOURCE_DIR}/../ci/rtools/aws_c_common_ep.patch)
+    message(STATUS "Hello ${AWS_C_COMMON_PATCH_COMMAND}")
+    # aws_c_io_ep to build under Rtools40
+    set(AWS_C_IO_PATCH_COMMAND ${PATCH} -p1 -i
+                               ${CMAKE_SOURCE_DIR}/../ci/rtools/aws_c_io_ep.patch)
+    message(STATUS "Hello ${AWS_C_IO_PATCH_COMMAND}")
+    # awssdk_ep to build under Rtools40
+    list(APPEND
+         AWSSDK_PATCH_COMMAND
+         &&
+         ${PATCH}
+         -p1
+         -i
+         ${CMAKE_SOURCE_DIR}/../ci/rtools/awssdk_ep.patch)
+    message(STATUS "Hello ${AWSSDK_PATCH_COMMAND}")
+  endif()
 
   if(UNIX)
     # on Linux and macOS curl seems to be required
@@ -5173,6 +5216,7 @@ macro(build_awssdk)
                       ${EP_COMMON_OPTIONS}
                       URL ${AWS_C_COMMON_SOURCE_URL}
                       URL_HASH "SHA256=${ARROW_AWS_C_COMMON_BUILD_SHA256_CHECKSUM}"
+                      PATCH_COMMAND ${AWS_C_COMMON_PATCH_COMMAND}
                       CMAKE_ARGS ${AWSSDK_COMMON_CMAKE_ARGS}
                       BUILD_BYPRODUCTS ${AWS_C_COMMON_STATIC_LIBRARY})
   add_dependencies(AWS::aws-c-common aws_c_common_ep)
@@ -5268,6 +5312,7 @@ macro(build_awssdk)
                       ${EP_COMMON_OPTIONS}
                       URL ${AWS_C_IO_SOURCE_URL}
                       URL_HASH "SHA256=${ARROW_AWS_C_IO_BUILD_SHA256_CHECKSUM}"
+                      PATCH_COMMAND ${AWS_C_IO_PATCH_COMMAND}
                       CMAKE_ARGS ${AWSSDK_COMMON_CMAKE_ARGS}
                       BUILD_BYPRODUCTS ${AWS_C_IO_STATIC_LIBRARY}
                       DEPENDS ${AWS_C_IO_DEPENDS})
@@ -5477,6 +5522,12 @@ function(build_azure_sdk)
   set(BUILD_SAMPLES FALSE)
   set(BUILD_TESTING FALSE)
   set(BUILD_WINDOWS_UWP TRUE)
+  # ICU 75.1 or later requires C++17 but Azure SDK for C++ still uses
+  # C++14. So we disable C++ API in ICU.
+  #
+  # We can remove this after
+  # https://github.com/Azure/azure-sdk-for-cpp/pull/6486 is merged.
+  string(APPEND CMAKE_CXX_FLAGS " -DU_SHOW_CPLUSPLUS_API=0")
   set(CMAKE_UNITY_BUILD FALSE)
   set(DISABLE_AZURE_CORE_OPENTELEMETRY TRUE)
   set(ENV{AZURE_SDK_DISABLE_AUTO_VCPKG} TRUE)
@@ -5504,86 +5555,6 @@ if(ARROW_WITH_AZURE_SDK)
   resolve_dependency(Azure REQUIRED_VERSION 1.10.2)
   set(AZURE_SDK_LINK_LIBRARIES Azure::azure-storage-files-datalake
                                Azure::azure-storage-blobs Azure::azure-identity)
-endif()
-# ----------------------------------------------------------------------
-# ucx - communication framework for modern, high-bandwidth and low-latency networks
-
-macro(build_ucx)
-  message(STATUS "Building UCX from source")
-
-  set(UCX_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/ucx_ep-install")
-
-  # link with static ucx libraries leads to test failures, use shared libs instead
-  set(UCX_SHARED_LIB_UCP "${UCX_PREFIX}/lib/libucp${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  set(UCX_SHARED_LIB_UCT "${UCX_PREFIX}/lib/libuct${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  set(UCX_SHARED_LIB_UCS "${UCX_PREFIX}/lib/libucs${CMAKE_SHARED_LIBRARY_SUFFIX}")
-  set(UCX_SHARED_LIB_UCM "${UCX_PREFIX}/lib/libucm${CMAKE_SHARED_LIBRARY_SUFFIX}")
-
-  set(UCX_CONFIGURE_COMMAND ./autogen.sh COMMAND ./configure)
-  list(APPEND
-       UCX_CONFIGURE_COMMAND
-       "CC=${CMAKE_C_COMPILER}"
-       "CXX=${CMAKE_CXX_COMPILER}"
-       "CFLAGS=${EP_C_FLAGS}"
-       "CXXFLAGS=${EP_CXX_FLAGS}"
-       "--prefix=${UCX_PREFIX}"
-       "--enable-mt"
-       "--enable-shared")
-  if(${UPPERCASE_BUILD_TYPE} STREQUAL "DEBUG")
-    list(APPEND
-         UCX_CONFIGURE_COMMAND
-         "--enable-profiling"
-         "--enable-frame-pointer"
-         "--enable-stats"
-         "--enable-fault-injection"
-         "--enable-debug-data")
-  else()
-    list(APPEND
-         UCX_CONFIGURE_COMMAND
-         "--disable-logging"
-         "--disable-debug"
-         "--disable-assertions"
-         "--disable-params-check")
-  endif()
-  set(UCX_BUILD_COMMAND ${MAKE} ${MAKE_BUILD_ARGS})
-  externalproject_add(ucx_ep
-                      ${EP_COMMON_OPTIONS}
-                      URL ${ARROW_UCX_SOURCE_URL}
-                      URL_HASH "SHA256=${ARROW_UCX_BUILD_SHA256_CHECKSUM}"
-                      CONFIGURE_COMMAND ${UCX_CONFIGURE_COMMAND}
-                      BUILD_IN_SOURCE 1
-                      BUILD_COMMAND ${UCX_BUILD_COMMAND}
-                      BUILD_BYPRODUCTS "${UCX_SHARED_LIB_UCP}" "${UCX_SHARED_LIB_UCT}"
-                                       "${UCX_SHARED_LIB_UCS}" "${UCX_SHARED_LIB_UCM}"
-                      INSTALL_COMMAND ${MAKE} install)
-
-  # ucx cmake module sets UCX_INCLUDE_DIRS
-  set(UCX_INCLUDE_DIRS "${UCX_PREFIX}/include")
-  file(MAKE_DIRECTORY "${UCX_INCLUDE_DIRS}")
-
-  add_library(ucx::ucp SHARED IMPORTED)
-  set_target_properties(ucx::ucp PROPERTIES IMPORTED_LOCATION "${UCX_SHARED_LIB_UCP}")
-  add_library(ucx::uct SHARED IMPORTED)
-  set_target_properties(ucx::uct PROPERTIES IMPORTED_LOCATION "${UCX_SHARED_LIB_UCT}")
-  add_library(ucx::ucs SHARED IMPORTED)
-  set_target_properties(ucx::ucs PROPERTIES IMPORTED_LOCATION "${UCX_SHARED_LIB_UCS}")
-
-  add_dependencies(ucx::ucp ucx_ep)
-  add_dependencies(ucx::uct ucx_ep)
-  add_dependencies(ucx::ucs ucx_ep)
-endmacro()
-
-if(ARROW_WITH_UCX)
-  resolve_dependency(ucx
-                     ARROW_CMAKE_PACKAGE_NAME
-                     ArrowFlight
-                     ARROW_PC_PACKAGE_NAME
-                     arrow-flight
-                     PC_PACKAGE_NAMES
-                     ucx)
-  add_library(ucx::ucx INTERFACE IMPORTED)
-  target_include_directories(ucx::ucx INTERFACE "${UCX_INCLUDE_DIRS}")
-  target_link_libraries(ucx::ucx INTERFACE ucx::ucp ucx::uct ucx::ucs)
 endif()
 
 message(STATUS "All bundled static libraries: ${ARROW_BUNDLED_STATIC_LIBS}")

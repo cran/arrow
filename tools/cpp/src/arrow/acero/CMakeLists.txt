@@ -19,6 +19,15 @@ add_custom_target(arrow_acero)
 
 arrow_install_all_headers("arrow/acero")
 
+# If libarrow_acero.a is only built, "pkg-config --cflags --libs
+# arrow-acero" outputs build flags for static linking not shared
+# linking. ARROW_ACERO_PC_* except ARROW_ACERO_PC_*_PRIVATE are for
+# the static linking case.
+if(NOT ARROW_BUILD_SHARED AND ARROW_BUILD_STATIC)
+  string(APPEND ARROW_ACERO_PC_CFLAGS "${ARROW_ACERO_PC_CFLAGS_PRIVATE}")
+  set(ARROW_ACERO_PC_CFLAGS_PRIVATE "")
+endif()
+
 set(ARROW_ACERO_SRCS
     accumulation_queue.cc
     scalar_aggregate_node.cc
@@ -117,7 +126,7 @@ if(ARROW_TESTING)
   if(ARROW_WITH_OPENTELEMETRY)
     target_link_libraries(arrow_acero_testing PRIVATE ${ARROW_OPENTELEMETRY_LIBS})
   endif()
-  list(APPEND ARROW_ACERO_TEST_LINK_LIBS arrow_acero_testing)
+  list(APPEND ARROW_ACERO_TEST_LINK_LIBS arrow_acero_testing arrow_compute_testing)
 endif()
 # Only for hash_aggregate_test.cc.
 if(ARROW_USE_BOOST)
@@ -221,18 +230,7 @@ if(ARROW_BUILD_BENCHMARKS)
 
   add_arrow_acero_benchmark(aggregate_benchmark SOURCES aggregate_benchmark.cc)
 
-  if(ARROW_BUILD_OPENMP_BENCHMARKS)
-    find_package(OpenMP REQUIRED)
-    add_arrow_acero_benchmark(hash_join_benchmark
-                              EXTRA_LINK_LIBS
-                              OpenMP::OpenMP_CXX
-                              SOURCES
-                              hash_join_benchmark.cc)
-    if(MSVC)
-      target_compile_options(arrow-compute-hash-join-benchmark
-                             PRIVATE "-openmp:experimental -openmp:llvm")
-    endif()
-  endif()
+  add_arrow_acero_benchmark(hash_join_benchmark SOURCES hash_join_benchmark.cc)
 
   if(ARROW_BUILD_STATIC)
     target_link_libraries(arrow-acero-expression-benchmark PUBLIC arrow_acero_static)
@@ -240,17 +238,13 @@ if(ARROW_BUILD_BENCHMARKS)
     target_link_libraries(arrow-acero-project-benchmark PUBLIC arrow_acero_static)
     target_link_libraries(arrow-acero-asof-join-benchmark PUBLIC arrow_acero_static)
     target_link_libraries(arrow-acero-tpch-benchmark PUBLIC arrow_acero_static)
-    if(ARROW_BUILD_OPENMP_BENCHMARKS)
-      target_link_libraries(arrow-acero-hash-join-benchmark PUBLIC arrow_acero_static)
-    endif()
+    target_link_libraries(arrow-acero-hash-join-benchmark PUBLIC arrow_acero_static)
   else()
     target_link_libraries(arrow-acero-expression-benchmark PUBLIC arrow_acero_shared)
     target_link_libraries(arrow-acero-filter-benchmark PUBLIC arrow_acero_shared)
     target_link_libraries(arrow-acero-project-benchmark PUBLIC arrow_acero_shared)
     target_link_libraries(arrow-acero-asof-join-benchmark PUBLIC arrow_acero_shared)
     target_link_libraries(arrow-acero-tpch-benchmark PUBLIC arrow_acero_shared)
-    if(ARROW_BUILD_OPENMP_BENCHMARKS)
-      target_link_libraries(arrow-acero-hash-join-benchmark PUBLIC arrow_acero_shared)
-    endif()
+    target_link_libraries(arrow-acero-hash-join-benchmark PUBLIC arrow_acero_shared)
   endif()
 endif()

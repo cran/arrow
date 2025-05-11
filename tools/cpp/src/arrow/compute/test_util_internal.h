@@ -15,31 +15,28 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "arrow/flight/transport/ucx/ucx.h"
+#pragma once
 
-#include <mutex>
+#include <string_view>
+#include <vector>
 
-#include "arrow/flight/transport.h"
-#include "arrow/flight/transport/ucx/ucx_internal.h"
-#include "arrow/flight/transport_server.h"
-#include "arrow/util/logging.h"
+#include "arrow/compute/exec.h"
+#include "arrow/type_fwd.h"
 
-namespace arrow {
-namespace flight {
-namespace transport {
-namespace ucx {
+namespace arrow::compute {
 
-namespace {
-std::once_flag kInitializeOnce;
-}
-void InitializeFlightUcx() {
-  std::call_once(kInitializeOnce, []() {
-    auto* registry = flight::internal::GetDefaultTransportRegistry();
-    DCHECK_OK(registry->RegisterClient("ucx", MakeUcxClientImpl));
-    DCHECK_OK(registry->RegisterServer("ucx", MakeUcxServerImpl));
-  });
-}
-}  // namespace ucx
-}  // namespace transport
-}  // namespace flight
-}  // namespace arrow
+using compute::ExecBatch;
+
+ExecBatch ExecBatchFromJSON(const std::vector<TypeHolder>& types, std::string_view json);
+
+/// \brief Shape qualifier for value types. In certain instances
+/// (e.g. "map_lookup" kernel), an argument may only be a scalar, where in
+/// other kernels arguments can be arrays or scalars
+enum class ArgShape { ANY, ARRAY, SCALAR };
+
+ExecBatch ExecBatchFromJSON(const std::vector<TypeHolder>& types,
+                            const std::vector<ArgShape>& shapes, std::string_view json);
+
+void ValidateOutput(const Datum& output);
+
+}  // namespace arrow::compute

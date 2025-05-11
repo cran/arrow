@@ -126,9 +126,7 @@ if(ARROW_WITH_RE2)
   endif()
 endif()
 
-# This should be done after if(ARROW_ORC) and if(ARROW_WITH_OPENTELEMETRY)
-# because they depend on Protobuf.
-if(ARROW_WITH_PROTOBUF)
+if(ARROW_PROTOBUF_ARROW_CMAKE_PACKAGE_NAME STREQUAL "Arrow")
   if(Protobuf_SOURCE STREQUAL "SYSTEM")
     list(APPEND ARROW_STATIC_INSTALL_INTERFACE_LIBS ${ARROW_PROTOBUF_LIBPROTOBUF})
   endif()
@@ -529,6 +527,7 @@ set(ARROW_UTIL_SRCS
     util/logger.cc
     util/logging.cc
     util/key_value_metadata.cc
+    util/math_internal.cc
     util/memory.cc
     util/mutex.cc
     util/ree_util.cc
@@ -752,10 +751,14 @@ if(ARROW_COMPUTE)
        ARROW_COMPUTE_SRCS
        compute/kernels/aggregate_basic.cc
        compute/kernels/aggregate_mode.cc
+       compute/kernels/aggregate_pivot.cc
        compute/kernels/aggregate_quantile.cc
        compute/kernels/aggregate_tdigest.cc
        compute/kernels/aggregate_var_std.cc
        compute/kernels/hash_aggregate.cc
+       compute/kernels/hash_aggregate_numeric.cc
+       compute/kernels/hash_aggregate_pivot.cc
+       compute/kernels/pivot_internal.cc
        compute/kernels/scalar_arithmetic.cc
        compute/kernels/scalar_boolean.cc
        compute/kernels/scalar_compare.cc
@@ -771,13 +774,15 @@ if(ARROW_COMPUTE)
        compute/kernels/scalar_validity.cc
        compute/kernels/vector_array_sort.cc
        compute/kernels/vector_cumulative_ops.cc
-       compute/kernels/vector_pairwise.cc
        compute/kernels/vector_nested.cc
+       compute/kernels/vector_pairwise.cc
        compute/kernels/vector_rank.cc
        compute/kernels/vector_replace.cc
        compute/kernels/vector_run_end_encode.cc
        compute/kernels/vector_select_k.cc
        compute/kernels/vector_sort.cc
+       compute/kernels/vector_statistics.cc
+       compute/kernels/vector_swizzle.cc
        compute/key_hash_internal.cc
        compute/key_map_internal.cc
        compute/light_array_internal.cc
