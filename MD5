@@ -1,6 +1,6 @@
-36995aa95d943ad5ecf97ed8174102e4 *DESCRIPTION
+53ec17fb5b6e0a3b1df96993439d73d7 *DESCRIPTION
 2d79a91626993e718d54b1f0a8984411 *NAMESPACE
-e14296b40a1fd5067dd1388744569917 *NEWS.md
+b521443fd3f665507cd034f0a0cf893a *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 21b96e392c1526f3f24d2af467976a85 *R/array.R
 b2d498ffaafe081bd8694c3e135be8d4 *R/arrow-datum.R
@@ -395,14 +395,6 @@ b458325a485b2f95f675f58bdd6e1130 *tests/testthat/test-util.R
 021a60277f9c3728811219d900377968 *tools/LICENSE.txt
 27114e62776411778f8efaaea243dbc9 *tools/NOTICE.txt
 d6dcaa8dc2dfb4ea989d9813a336e339 *tools/check-versions.R
-c3fa3c5f784154230d9aaa91e1a58186 *tools/checksums/darwin-arm64-openssl-1.1/arrow-20.0.0.zip.sha512
-0b0e2c33b888042810238d6eef1e9fab *tools/checksums/darwin-arm64-openssl-3.0/arrow-20.0.0.zip.sha512
-1e19590e5478cbc5089fbd2e21f89407 *tools/checksums/darwin-x86_64-openssl-1.1/arrow-20.0.0.zip.sha512
-b0380b51058dc081e35b0bffb9c28bf5 *tools/checksums/darwin-x86_64-openssl-3.0/arrow-20.0.0.zip.sha512
-be6d20308af912f8000fa179ca57d9df *tools/checksums/linux-openssl-1.0/arrow-20.0.0.zip.sha512
-f4dc69fdc0a0517d95145b61184b41f2 *tools/checksums/linux-openssl-1.1/arrow-20.0.0.zip.sha512
-d81fb5fb92c09c6d6822073750dd0b65 *tools/checksums/linux-openssl-3.0/arrow-20.0.0.zip.sha512
-1d2401ee003660a280a697b3b77980ad *tools/checksums/windows/arrow-20.0.0.zip.sha512
 31d503d05beb38f0c6d79d5e7871e427 *tools/cpp/Brewfile
 ab005a490712ceb296b00ca18281389f *tools/cpp/CHANGELOG_PARQUET.md
 357854e74a59511ef16ce31074f06426 *tools/cpp/CMakeLists.txt
@@ -476,7 +468,7 @@ a66854f3f854b8a83c54edb11c224e4c *tools/cpp/cmake_modules/Findutf8proc.cmake
 e4521e0eb4806558153e2770029ca8bf *tools/cpp/cmake_modules/FindzstdAlt.cmake
 7f47e07423af45b640cfbee17bd5c332 *tools/cpp/cmake_modules/GandivaAddBitcode.cmake
 add0e69c165bad17a0def6e48b37697d *tools/cpp/cmake_modules/SetupCxxFlags.cmake
-f2f242efbffc497feb12503fc788396a *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
+d3e9768f8e6ff5337ff135e699a1e0b5 *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
 84a41c315ee2b4ff325879b8d8f41039 *tools/cpp/cmake_modules/UseCython.cmake
 ba05062f58fa04cd27d34834adede4ce *tools/cpp/cmake_modules/Usevcpkg.cmake
 cada5d659a61036ad1264751d2f66ffe *tools/cpp/cmake_modules/aws_sdk_cpp_generate_variables.sh
@@ -845,7 +837,7 @@ bbd06b72c0d621875d1dd3d358a6311b *tools/cpp/src/arrow/csv/lexing_internal.h
 c8db4889ba92cb0248c30417f5585c67 *tools/cpp/src/arrow/csv/meson.build
 bebd1b23dd12bdef44736f3fbc2d22d9 *tools/cpp/src/arrow/csv/options.cc
 5925763f48ddca1ee47ae12f6859cee4 *tools/cpp/src/arrow/csv/options.h
-0ccbdd0a1f11d3feb7c1d4f62bb1cd49 *tools/cpp/src/arrow/csv/parser.cc
+8b761cc679d318c62e759fa2add44c40 *tools/cpp/src/arrow/csv/parser.cc
 7361303523117381a0442c649cf55a4d *tools/cpp/src/arrow/csv/parser.h
 2667624027f8474cd06655f7f56e270c *tools/cpp/src/arrow/csv/parser_benchmark.cc
 8a85dc5b0be85035cfc230d05781291a *tools/cpp/src/arrow/csv/reader.cc
