@@ -295,7 +295,7 @@ class ARROW_EXPORT RecordBatch {
       MemoryPool* pool = default_memory_pool()) const;
 
  protected:
-  RecordBatch(const std::shared_ptr<Schema>& schema, int64_t num_rows);
+  RecordBatch(std::shared_ptr<Schema> schema, int64_t num_rows);
 
   std::shared_ptr<Schema> schema_;
   int64_t num_rows_;
@@ -390,7 +390,7 @@ class ARROW_EXPORT RecordBatchReader {
     }
 
     Result<std::shared_ptr<RecordBatch>> operator*() {
-      ARROW_RETURN_NOT_OK(batch_.status());
+      ARROW_RETURN_NOT_OK(batch_);
 
       return batch_;
     }

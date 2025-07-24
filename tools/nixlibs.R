@@ -317,7 +317,7 @@ get_macos_openssl_dir <- function() {
   openssl_root_dir
 }
 
-# (built with newer devtoolset but older glibc (2.17) for broader compatibility,# like manylinux2014)
+# (built with newer devtoolset but older glibc (2.17) for broader compatibility, like manylinux2014)
 determine_binary_from_stderr <- function(errs) {
   if (is.null(attr(errs, "status"))) {
     # There was no error in compiling: so we found libcurl and OpenSSL >= 1.1,
@@ -580,6 +580,7 @@ build_libarrow <- function(src_dir, dst_dir) {
     env_var_list <- c(
       env_var_list,
       ARROW_S3 = Sys.getenv("ARROW_S3", "ON"),
+      ARROW_GCS = Sys.getenv("ARROW_GCS", "ON"),
       ARROW_WITH_ZSTD = Sys.getenv("ARROW_WITH_ZSTD", "ON")
     )
   }

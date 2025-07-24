@@ -35,7 +35,7 @@
 #include "arrow/type_traits.h"
 #include "arrow/util/bit_util.h"
 #include "arrow/util/checked_cast.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 
 namespace arrow::compute::internal {
 namespace {
@@ -147,7 +147,7 @@ void RegisterPairwiseDiffKernels(std::string_view func_name,
                                                doc, GetDefaultPairwiseOptions());
 
   auto base_func_result = registry->GetFunction(std::string(base_func_name));
-  DCHECK_OK(base_func_result.status());
+  DCHECK_OK(base_func_result);
   const auto& base_func = checked_cast<const ScalarFunction&>(**base_func_result);
   DCHECK_EQ(base_func.arity().num_args, 2);
 

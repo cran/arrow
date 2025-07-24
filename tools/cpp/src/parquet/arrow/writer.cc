@@ -34,7 +34,7 @@
 #include "arrow/util/base64.h"
 #include "arrow/util/checked_cast.h"
 #include "arrow/util/key_value_metadata.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "arrow/util/parallel.h"
 
 #include "parquet/arrow/path_internal.h"
@@ -388,15 +388,14 @@ class FileWriterImpl : public FileWriter {
 
     if (table.num_rows() == 0) {
       // Append a row group with 0 rows
-      RETURN_NOT_OK_ELSE(WriteRowGroup(0, 0), PARQUET_IGNORE_NOT_OK(Close()));
-      return Status::OK();
+      RETURN_NOT_OK(
+          WriteRowGroup(0, 0).OrElse([&](auto&&) { PARQUET_IGNORE_NOT_OK(Close()); }));
     }
 
     for (int chunk = 0; chunk * chunk_size < table.num_rows(); chunk++) {
       int64_t offset = chunk * chunk_size;
-      RETURN_NOT_OK_ELSE(
-          WriteRowGroup(offset, std::min(chunk_size, table.num_rows() - offset)),
-          PARQUET_IGNORE_NOT_OK(Close()));
+      RETURN_NOT_OK(WriteRowGroup(offset, std::min(chunk_size, table.num_rows() - offset))
+                        .OrElse([&](auto&&) { PARQUET_IGNORE_NOT_OK(Close()); }));
     }
     return Status::OK();
   }

@@ -21,7 +21,7 @@
 #'
 #' The `arrow` package contains methods for 37 `dplyr` table functions, many of
 #' which are "verbs" that do transformations to one or more tables.
-#' The package also has mappings of 213 R functions to the corresponding
+#' The package also has mappings of 222 R functions to the corresponding
 #' functions in the Arrow compute library. These allow you to write code inside
 #' of `dplyr` methods that call R functions, including many in packages like
 #' `stringr` and `lubridate`, and they will get translated to Arrow and run
@@ -83,7 +83,7 @@
 #' Functions can be called either as `pkg::fun()` or just `fun()`, i.e. both
 #' `str_sub()` and `stringr::str_sub()` work.
 #'
-#' In addition to these functions, you can call any of Arrow's 280 compute
+#' In addition to these functions, you can call any of Arrow's 281 compute
 #' functions directly. Arrow has many functions that don't map to an existing R
 #' function. In other cases where there is an R function mapping, you can still
 #' call the Arrow function directly if you don't want the adaptations that the R
@@ -96,7 +96,6 @@
 #'
 #' * [`add_filename()`][arrow::add_filename()]
 #' * [`cast()`][arrow::cast()]
-#' * [`one()`][arrow::one()]
 #'
 #' ## base
 #'
@@ -120,6 +119,7 @@
 #' * [`^`][^()]
 #' * [`abs()`][base::abs()]
 #' * [`acos()`][base::acos()]
+#' * [`acosh()`][base::acosh()]
 #' * [`all()`][base::all()]
 #' * [`any()`][base::any()]
 #' * [`as.Date()`][base::as.Date()]: Multiple `tryFormats` not supported in Arrow.
@@ -131,14 +131,19 @@
 #' * [`as.logical()`][base::as.logical()]
 #' * [`as.numeric()`][base::as.numeric()]
 #' * [`asin()`][base::asin()]
+#' * [`asinh()`][base::asinh()]
+#' * [`atan()`][base::atan()]
+#' * [`atanh()`][base::atanh()]
 #' * [`ceiling()`][base::ceiling()]
 #' * [`cos()`][base::cos()]
+#' * [`cosh()`][base::cosh()]
 #' * [`data.frame()`][base::data.frame()]: `row.names` and `check.rows` arguments not supported;
 #' `stringsAsFactors` must be `FALSE`
 #' * [`difftime()`][base::difftime()]: only supports `units = "secs"` (the default);
 #' `tz` argument not supported
 #' * [`endsWith()`][base::endsWith()]
 #' * [`exp()`][base::exp()]
+#' * [`expm1()`][base::expm1()]
 #' * [`floor()`][base::floor()]
 #' * [`format()`][base::format()]
 #' * [`grepl()`][base::grepl()]
@@ -172,6 +177,7 @@
 #' * [`round()`][base::round()]
 #' * [`sign()`][base::sign()]
 #' * [`sin()`][base::sin()]
+#' * [`sinh()`][base::sinh()]
 #' * [`sqrt()`][base::sqrt()]
 #' * [`startsWith()`][base::startsWith()]
 #' * [`strftime()`][base::strftime()]
@@ -184,6 +190,7 @@
 #' * [`substring()`][base::substring()]
 #' * [`sum()`][base::sum()]
 #' * [`tan()`][base::tan()]
+#' * [`tanh()`][base::tanh()]
 #' * [`tolower()`][base::tolower()]
 #' * [`toupper()`][base::toupper()]
 #' * [`trunc()`][base::trunc()]
@@ -206,6 +213,11 @@
 #' * [`if_else()`][dplyr::if_else()]
 #' * [`n()`][dplyr::n()]
 #' * [`n_distinct()`][dplyr::n_distinct()]
+#'
+#' ## hms
+#'
+#' * [`as_hms()`][hms::as_hms()]: subsecond times not supported
+#' * [`hms()`][hms::hms()]: subsecond times not supported
 #'
 #' ## lubridate
 #'

@@ -34,7 +34,7 @@
 #include "arrow/util/checked_cast.h"
 #include "arrow/util/future.h"
 #include "arrow/util/iterator.h"
-#include "arrow/util/logging.h"
+#include "arrow/util/logging_internal.h"
 #include "arrow/util/range.h"
 #include "arrow/util/tracing_internal.h"
 #include "parquet/arrow/reader.h"
@@ -116,6 +116,8 @@ parquet::ArrowReaderProperties MakeArrowReaderProperties(
   }
   properties.set_coerce_int96_timestamp_unit(
       format.reader_options.coerce_int96_timestamp_unit);
+  properties.set_binary_type(format.reader_options.binary_type);
+  properties.set_list_type(format.reader_options.list_type);
   return properties;
 }
 
@@ -132,6 +134,8 @@ parquet::ArrowReaderProperties MakeArrowReaderProperties(
   arrow_properties.set_io_context(
       parquet_scan_options.arrow_reader_properties->io_context());
   arrow_properties.set_use_threads(options.use_threads);
+  arrow_properties.set_arrow_extensions_enabled(
+      parquet_scan_options.arrow_reader_properties->get_arrow_extensions_enabled());
   return arrow_properties;
 }
 
@@ -441,7 +445,9 @@ bool ParquetFileFormat::Equals(const FileFormat& other) const {
   // FIXME implement comparison for decryption options
   return (reader_options.dict_columns == other_reader_options.dict_columns &&
           reader_options.coerce_int96_timestamp_unit ==
-              other_reader_options.coerce_int96_timestamp_unit);
+              other_reader_options.coerce_int96_timestamp_unit &&
+          reader_options.binary_type == other_reader_options.binary_type &&
+          reader_options.list_type == other_reader_options.list_type);
 }
 
 ParquetFileFormat::ParquetFileFormat(const parquet::ReaderProperties& reader_properties)
