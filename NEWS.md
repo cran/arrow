@@ -17,7 +17,19 @@
   under the License.
 -->
 
+# arrow 21.0.0.1
+
+##  Minor improvements and fixes
+
+- Patch bundled version of Thrift to prevent CRAN check failures (@kou, #47286)
+
 # arrow 21.0.0
+
+## New features
+
+- Support for Arrow's 32 and 64 bit Decimal types (#46720).
+- `hms::hms()` and `hms::as_hms()` bindings implemented to create and manipulate time of day variables (#46206).
+- `atan()`, `sinh()`, `cosh()`, `tanh()`, `asinh()`, `acosh()`, and `tanh()`, and `expm1()` bindings added (#44953).
 
 ## New features
 
