@@ -1,6 +1,6 @@
 {
   "name": "arrow",
-  "version-string": "21.0.0",
+  "version-string": "22.0.0",
   "dependencies": [
     "abseil",
     {
@@ -54,7 +54,6 @@
     "rapidjson",
     "re2",
     "snappy",
-    "spdlog",
     "sqlite3",
     "thrift",
     "utf8proc",
