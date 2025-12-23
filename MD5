@@ -1,6 +1,6 @@
-eee08bb32c4b230c506b0af3abcce69a *DESCRIPTION
+244aed04b516c08510dd68833bdb5ab0 *DESCRIPTION
 687d0801336722368dd65511b03853a8 *NAMESPACE
-95b9d939142830ae3c63feef60a1a352 *NEWS.md
+192bcc8a19802c158ff17558420f884c *NEWS.md
 964267380c57e60937e2d6142ae4cbf9 *R/array-data.R
 21b96e392c1526f3f24d2af467976a85 *R/array.R
 c0507a27ec568ee960c0c8b53391236b *R/arrow-datum.R
@@ -84,7 +84,7 @@ bef2f011418d5e5179b9e704399ddeeb *README.md
 89af9fc9d7c12659ae4f92ee3fe76b2f *configure
 721c9699ca0fed6c79d8e5d59cd5f37b *configure.win
 4a7fd0cea96873b03929811c3656aaa9 *inst/NOTICE.txt
-e9e206bd97fb23127d6b340c453f162a *inst/build_arrow_static.sh
+eaeb96088df773354a6c78129924c5b7 *inst/build_arrow_static.sh
 745023dc0b105e277b4d9b3d4301d549 *inst/demo_flight_server.py
 198ecbee77c8d179546b9bd407bda83e *inst/v0.7.1.parquet
 efb9faf7238352ea27990fdd2d5056f0 *man/ArrayData.Rd
@@ -220,7 +220,7 @@ cef9b57dbcbb5ee3bc61fd265fac65e8 *man/write_feather.Rd
 360c4a32dba2253f3afafd1cf072d0a9 *man/write_ipc_stream.Rd
 e24446c5e30278df653f346c1ac36a63 *man/write_parquet.Rd
 72421c8655c56bc68d6941090a6a28c0 *man/write_to_raw.Rd
-8cc591d1765543a02e8193dedcd3f806 *src/Makevars.in
+b6daa5d11cfb79b0464caf8148a768fb *src/Makevars.in
 b3cba604d3faf364b9fbeea9f3c5e321 *src/Makevars.ucrt
 6ecfcdc2fb155bdc045dbdf488d39ab2 *src/RTasks.cpp
 e27ed198874df72f51887b1f27c75c2f *src/altrep.cpp
@@ -1808,7 +1808,7 @@ e172f8a426e5b57fae8a2c16f00a0e32 *tools/cpp/thirdparty/flatbuffers/include/flatb
 afcda467aa4f5eb64fc446f83e148977 *tools/cpp/thirdparty/flatbuffers/include/flatbuffers/verifier.h
 2feb74eb3758fd3a82f444f1fd77ab0d *tools/cpp/thirdparty/hadoop/include/hdfs.h
 cf29df47bdce4d2db8bd8d7f592188c4 *tools/cpp/thirdparty/update.rb
-50afd5f916340990380a85da0009b0e3 *tools/cpp/thirdparty/versions.txt
+61ff57de7a6ee00c418da7c564a5d559 *tools/cpp/thirdparty/versions.txt
 1a11fee1d0f35772f18335d95381322c *tools/cpp/tools/binary_symbol_explore.py
 4851a6fecfc99fc3021700b965c8f030 *tools/cpp/tools/parquet/CMakeLists.txt
 8acb2756885af274e7a12ae70e410e58 *tools/cpp/tools/parquet/meson.build
@@ -1822,7 +1822,7 @@ bab6c700ed2a652f80e216c280760d0a *tools/cpp/tools/parquet/parquet_scan.cc
 5f39688dafb10fbf41f7045e349ffff5 *tools/dotenv
 bca75013464f53de56445661ed46ed2f *tools/download_dependencies_R.sh
 6b3f02a995926df777d154499badc36a *tools/nixlibs-allowlist.txt
-224103c2e93eea89ea89c1971834536f *tools/nixlibs.R
+785d567c52654367fb1988efaa9beba8 *tools/nixlibs.R
 361141e30933977bbd3e2a728d703c86 *tools/test-check-versions.R
 0b1b766ead8c45c20cdc70db9f0befd7 *tools/test-nixlibs.R
 053da5d7089a690ff0b3f056db64ce18 *tools/ubsan.supp
