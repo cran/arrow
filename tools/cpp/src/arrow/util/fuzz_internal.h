@@ -15,15 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "arrow/util/bpacking_avx512_internal.h"
-#include "arrow/util/bpacking_simd512_generated_internal.h"
-#include "arrow/util/bpacking_simd_internal.h"
+#pragma once
+
+#include <cstdint>
+
+#include "arrow/type_fwd.h"
+#include "arrow/util/macros.h"
 
 namespace arrow::internal {
 
-int unpack32_avx512(const uint8_t* in, uint32_t* out, int batch_size, int num_bits) {
-  return unpack32_specialized<UnpackBits512<DispatchLevel::AVX512>>(
-      reinterpret_cast<const uint32_t*>(in), out, batch_size, num_bits);
-}
+// The default rss_limit_mb on OSS-Fuzz is 2560 MB and we want to fail allocations
+// before that limit is reached, otherwise the fuzz target gets killed (GH-48105).
+constexpr int64_t kFuzzingMemoryLimit = 2200LL * 1000 * 1000;
+
+/// Return a memory pool that will not allocate more than kFuzzingMemoryLimit bytes.
+ARROW_EXPORT MemoryPool* fuzzing_memory_pool();
+
+/// Optionally log the outcome of fuzzing an input
+ARROW_EXPORT void LogFuzzStatus(const Status&, const uint8_t* data, int64_t size);
 
 }  // namespace arrow::internal
