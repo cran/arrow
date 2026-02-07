@@ -1,6 +1,6 @@
-de459292ade5b2f8c38fe80fc3e4e70f *DESCRIPTION
+8aa85b31a016b7244da85348704e77f1 *DESCRIPTION
 687d0801336722368dd65511b03853a8 *NAMESPACE
-12e78d90bf4c9c6cd8406e7aca9196f5 *NEWS.md
+52cbd9d11bd630c177705badbd28ae27 *NEWS.md
 8737f61bb2db02aaee9ec869adc8ab27 *R/array-data.R
 dfc1f8fad8d51aacfa0baebdd545f8ab *R/array.R
 0a4a6df3586f13b97f3d35c91b17714b *R/arrow-datum.R
@@ -79,7 +79,7 @@ ed74142c8ec4f9beb1d7be36ca9d4186 *R/schema.R
 d640d9eb5ef98f1f0a8779aa15d2f50d *R/type.R
 8f2d65c46347ce4fae1947e426766122 *R/udf.R
 edac09001c6e133ddbd16a70c1c5762e *R/util.R
-823a9e1fdc590e5d80f9f343bd8467b1 *README.md
+e9b7bef5b8a2ea54af141b4d7a5355d7 *README.md
 5f175db9d6fb0eddac3f5ab68b6876cd *cleanup
 eada0651f171701b06f8b4784aa2ffca *configure
 7e231f1e75a4c94751d5cb52351ba122 *configure.win
@@ -402,6 +402,7 @@ aa82f4ef33e6490dcbc81eb2b7d30330 *tests/testthat/test-util.R
 31d503d05beb38f0c6d79d5e7871e427 *tools/cpp/Brewfile
 ab005a490712ceb296b00ca18281389f *tools/cpp/CHANGELOG_PARQUET.md
 df7b1e067a96bfd46261813b3a6c5465 *tools/cpp/CMakeLists.txt
+46d36c7835bacc3ff8e070d0e1ac41b6 *tools/cpp/CMakeLists.txt-e
 6a0d7736278771f401b92ca511cfaf5c *tools/cpp/CMakePresets.json
 523a3c0ceee7a9620e1e36263ccc5b7c *tools/cpp/CMakeSettings.json
 437696b5d96b535b2171e3fab83b672a *tools/cpp/README.md
@@ -452,7 +453,7 @@ bcbad6b4018ea8ae943b2bf642311265 *tools/cpp/cmake_modules/FindjemallocAlt.cmake
 e4521e0eb4806558153e2770029ca8bf *tools/cpp/cmake_modules/FindzstdAlt.cmake
 6afe6d30cbd1ab7795a314066057f4de *tools/cpp/cmake_modules/GandivaAddBitcode.cmake
 51f1ebe2f742b6cb027f975045df21c3 *tools/cpp/cmake_modules/SetupCxxFlags.cmake
-f219157da87f269e6e27271cad0ad66a *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
+ea57dd9af51c24146d3ad5707d12bcbc *tools/cpp/cmake_modules/ThirdpartyToolchain.cmake
 84a41c315ee2b4ff325879b8d8f41039 *tools/cpp/cmake_modules/UseCython.cmake
 ba05062f58fa04cd27d34834adede4ce *tools/cpp/cmake_modules/Usevcpkg.cmake
 26803b418d61ba80fa8f69aa6dee446b *tools/cpp/cmake_modules/mimalloc-1138.patch
@@ -1832,7 +1833,7 @@ f3002ad9a3dc02a23d7c50e43ad97423 *tools/cpp/vcpkg.json
 3ef1334612dfbb1f67b153af394cebc9 *tools/dotenv
 bca75013464f53de56445661ed46ed2f *tools/download_dependencies_R.sh
 6b3f02a995926df777d154499badc36a *tools/nixlibs-allowlist.txt
-657b436d870233a4c81a64dafe4cfb80 *tools/nixlibs.R
+f61536de613c87a11b74b1df1bf54a0f *tools/nixlibs.R
 36f82dc916f2b6887b738ed7676e711e *tools/test-check-versions.R
 1302239d2e85226ec3f83e821c98dfc2 *tools/test-nixlibs.R
 053da5d7089a690ff0b3f056db64ce18 *tools/ubsan.supp
