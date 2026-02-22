@@ -17,13 +17,12 @@
   under the License.
 -->
 
-# arrow 23.0.0.1
+# arrow 23.0.1
 
-## Installation
+## Minor improvements and fixes
 
-- As of version 23.0.0.1 GCS is no longer offered in CRAN builds. Please use R-Universe for more fully-featured builds.
-- Fixed an issue with C++20 and libc++ on Fedora.
-
+- Fix C++20 compatibility issue on macOS (#49221).
+- Turn off GCS support by default on macOS; see `vignette("install", package = "arrow")` for details on enabling it (#49068, #48995).
 
 # arrow 23.0.0
 
