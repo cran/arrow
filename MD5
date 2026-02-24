@@ -1,6 +1,6 @@
-f2a02f42a1f5ef03d841b8eb56c5f96b *DESCRIPTION
+d54b6d589ce4ee238f93071b391e6e37 *DESCRIPTION
 687d0801336722368dd65511b03853a8 *NAMESPACE
-747b00ff08f84c1b9147b98aec081eb4 *NEWS.md
+de2cc30917d659ca508c39b6bf698d6c *NEWS.md
 8737f61bb2db02aaee9ec869adc8ab27 *R/array-data.R
 dfc1f8fad8d51aacfa0baebdd545f8ab *R/array.R
 0a4a6df3586f13b97f3d35c91b17714b *R/arrow-datum.R
@@ -129,7 +129,7 @@ c5a2875483314e300c7e54da4c376177 *man/RecordBatchWriter.Rd
 850d7d07dc58cc8b47b34bcc1297f3e0 *man/Scanner.Rd
 e17ccbda229091fbe75625bc6b200597 *man/Schema-class.Rd
 b574cfc0ced44a4fe1021d94869edece *man/Table-class.Rd
-b702fc9bb1a2320fd788ab8a169dbcef *man/acero.Rd
+53837e21d3550941b6a45f37965fa909 *man/acero.Rd
 bfb72e1ff274fe7f42f44bae6e53ec88 *man/add_filename.Rd
 27ec86601851f5eaa4edc54381de07ff *man/array-class.Rd
 658272d7fa3d24c5d05f38edda6e9850 *man/arrow-package.Rd
@@ -402,6 +402,7 @@ fb94758a75a4b89f2f7aae250a8a9fc0 *tools/checksums/r-libarrow-windows-x86_64-23.0
 31d503d05beb38f0c6d79d5e7871e427 *tools/cpp/Brewfile
 ab005a490712ceb296b00ca18281389f *tools/cpp/CHANGELOG_PARQUET.md
 4edf2a22a10731065f5314575ae324da *tools/cpp/CMakeLists.txt
+4f8e1530839e781dfff62a84d9e6df4a *tools/cpp/CMakeLists.txt-e
 6a0d7736278771f401b92ca511cfaf5c *tools/cpp/CMakePresets.json
 523a3c0ceee7a9620e1e36263ccc5b7c *tools/cpp/CMakeSettings.json
 437696b5d96b535b2171e3fab83b672a *tools/cpp/README.md
@@ -422,7 +423,7 @@ be50fa3feebd83baadfbe4848e7a890d *tools/cpp/build-support/tsan-suppressions.txt
 24b94ea77618d53ecad87b8fe6136384 *tools/cpp/build-support/update-flatbuffers.sh
 9f193c8c8e9a168f19524010f47241ce *tools/cpp/build-support/update-thrift.sh
 b0c2e1bf07f3d70b73278fc831e44729 *tools/cpp/build-support/vendor-flatbuffers.sh
-89242c7390be0e296e55efc7adb9fcbf *tools/cpp/cmake_modules/BuildUtils.cmake
+e72ff9d15651849294ab5abb1619fdb5 *tools/cpp/cmake_modules/BuildUtils.cmake
 f4f822290e1097b14367e37c73204397 *tools/cpp/cmake_modules/DefineOptions.cmake
 4e1444d5838cc56012fe49156711db50 *tools/cpp/cmake_modules/FindAWSSDKAlt.cmake
 31072ecf9ed52f89b30d62be9edbfd15 *tools/cpp/cmake_modules/FindAzure.cmake
