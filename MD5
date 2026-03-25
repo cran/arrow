@@ -1,6 +1,6 @@
-d54b6d589ce4ee238f93071b391e6e37 *DESCRIPTION
+75f619b0f8c05a40ff81a590f2c6b7b5 *DESCRIPTION
 687d0801336722368dd65511b03853a8 *NAMESPACE
-de2cc30917d659ca508c39b6bf698d6c *NEWS.md
+9c2410d268b292daeaf029e477039a13 *NEWS.md
 8737f61bb2db02aaee9ec869adc8ab27 *R/array-data.R
 dfc1f8fad8d51aacfa0baebdd545f8ab *R/array.R
 0a4a6df3586f13b97f3d35c91b17714b *R/arrow-datum.R
@@ -129,7 +129,7 @@ c5a2875483314e300c7e54da4c376177 *man/RecordBatchWriter.Rd
 850d7d07dc58cc8b47b34bcc1297f3e0 *man/Scanner.Rd
 e17ccbda229091fbe75625bc6b200597 *man/Schema-class.Rd
 b574cfc0ced44a4fe1021d94869edece *man/Table-class.Rd
-53837e21d3550941b6a45f37965fa909 *man/acero.Rd
+b702fc9bb1a2320fd788ab8a169dbcef *man/acero.Rd
 bfb72e1ff274fe7f42f44bae6e53ec88 *man/add_filename.Rd
 27ec86601851f5eaa4edc54381de07ff *man/array-class.Rd
 658272d7fa3d24c5d05f38edda6e9850 *man/arrow-package.Rd
@@ -193,7 +193,7 @@ eddc75773de3530241c403e16d7cf028 *man/one.Rd
 7fe1cec07ef49ff36e3072feaa40ce23 *man/read_delim_arrow.Rd
 b95cf5b8e9039894e0bce1f853c27a20 *man/read_feather.Rd
 0cebf8cb5f2b21259fb9fd4c7d4055d9 *man/read_ipc_stream.Rd
-7c6620361535f4b28fe5af80d82cf83e *man/read_json_arrow.Rd
+b74d52ab35b9e020589aff5b10882a99 *man/read_json_arrow.Rd
 f2c0ebe3f72c797eb8f05550c213dad2 *man/read_message.Rd
 7dab6975ed56dacf396ff54337580ef9 *man/read_parquet.Rd
 4e10973d0c404f5745609b9605901e36 *man/read_schema.Rd
@@ -205,7 +205,7 @@ f90d3be65fb689d4a23848cd14432fbf *man/recycle_scalars.Rd
 3bba03f7977884c2fd828554b1c95e72 *man/repeat_value_as_array.Rd
 9e285e602a3a6ae7327d9cde6ade8997 *man/s3_bucket.Rd
 76bb5f958be3ec1403ba2946159954e2 *man/scalar.Rd
-dfe20986b5c9815f5766f03fbefb2b05 *man/schema.Rd
+4cd53c26a8de1a31f698ce2cfe58bb50 *man/schema.Rd
 728fb2c6325646748af81049f6ab5c26 *man/show_exec_plan.Rd
 12913fc722f29e4c3ccf146b024e25f8 *man/table.Rd
 6100e1f9aa0a54353285d37d2d5db618 *man/to_arrow.Rd
@@ -228,7 +228,7 @@ d2397e9d7313d7d3f4bd1f7835e4bb34 *src/altrep.cpp
 7b02d8840d3d42febc44296f69213d94 *src/array_to_vector.cpp
 8d7f53bd69aa3a4cd0ce5f6be1a94a9b *src/arraydata.cpp
 312a0ab403ba4d1cf384a713214b1907 *src/arrowExports.cpp
-b468909710187517501f0258d383f4f0 *src/arrow_cpp11.h
+a9de7cfbbde55d01a848fdc8a8dcaf6c *src/arrow_cpp11.h
 55e669b6219762116d1ad58110a9b4fb *src/arrow_types.h
 6c08ee46e6f098b651742e6c2a370b69 *src/bridge.cpp
 00ea80bb266e49c97435eef668b8ec8a *src/buffer.cpp
@@ -352,7 +352,7 @@ ee09b4dc9e62b4574c51227c2a8c2a8d *tests/testthat/test-dplyr-funcs-string.R
 18789e2312cc31224b3381b7feadad08 *tests/testthat/test-dplyr-glimpse.R
 ce153b5423b83e52d8a9e9bc5d161288 *tests/testthat/test-dplyr-group-by.R
 770bb9e378df11c448d690625bd422eb *tests/testthat/test-dplyr-join.R
-788c4c88a18de15f746d5ab4bba6ff19 *tests/testthat/test-dplyr-mutate.R
+00044f3224cf04042ce73a4a40190cc9 *tests/testthat/test-dplyr-mutate.R
 f218ca29fdafdd31f7dc7ffe642af288 *tests/testthat/test-dplyr-query.R
 b418de729a78a29b4688b27409b7f62c *tests/testthat/test-dplyr-select.R
 0835a04d4c44d88f8611c83325a221e7 *tests/testthat/test-dplyr-slice.R
@@ -402,7 +402,6 @@ fb94758a75a4b89f2f7aae250a8a9fc0 *tools/checksums/r-libarrow-windows-x86_64-23.0
 31d503d05beb38f0c6d79d5e7871e427 *tools/cpp/Brewfile
 ab005a490712ceb296b00ca18281389f *tools/cpp/CHANGELOG_PARQUET.md
 4edf2a22a10731065f5314575ae324da *tools/cpp/CMakeLists.txt
-4f8e1530839e781dfff62a84d9e6df4a *tools/cpp/CMakeLists.txt-e
 6a0d7736278771f401b92ca511cfaf5c *tools/cpp/CMakePresets.json
 523a3c0ceee7a9620e1e36263ccc5b7c *tools/cpp/CMakeSettings.json
 437696b5d96b535b2171e3fab83b672a *tools/cpp/README.md
