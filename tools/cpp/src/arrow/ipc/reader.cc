@@ -22,6 +22,8 @@
 #include <cstring>
 #include <memory>
 #include <numeric>
+#include <optional>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -41,6 +43,7 @@
 #include "arrow/ipc/metadata_internal.h"
 #include "arrow/ipc/reader_internal.h"
 #include "arrow/ipc/writer.h"
+#include "arrow/pretty_print.h"
 #include "arrow/record_batch.h"
 #include "arrow/sparse_tensor.h"
 #include "arrow/status.h"
@@ -119,14 +122,14 @@ Status InvalidMessageType(MessageType expected, MessageType actual) {
 
 /// \brief Structure to keep common arguments to be passed
 struct IpcReadContext {
-  IpcReadContext(DictionaryMemo* memo, const IpcReadOptions& option, bool swap,
+  IpcReadContext(DictionaryMemo* memo, const IpcReadOptions& option, bool swap_endian,
                  MetadataVersion version = MetadataVersion::V5,
                  Compression::type kind = Compression::UNCOMPRESSED)
       : dictionary_memo(memo),
         options(option),
         metadata_version(version),
         compression(kind),
-        swap_endian(swap) {}
+        swap_endian(swap_endian) {}
 
   DictionaryMemo* dictionary_memo;
 
@@ -296,7 +299,7 @@ class ArrayLoader {
     return Status::OK();
   }
 
-  Status LoadCommon(Type::type type_id) {
+  Status LoadCommon(Type::type type_id, bool allow_validity_bitmap = true) {
     DCHECK_NE(out_, nullptr);
     // This only contains the length and null count, which we need to figure
     // out what to do with the buffers. For example, if null_count == 0, then
@@ -314,10 +317,16 @@ class ArrayLoader {
     }
 
     if (internal::HasValidityBitmap(type_id, metadata_version_)) {
-      // Extract null_bitmap which is common to all arrays except for unions
+      // Extract null bitmap which is common to all arrays except for unions
       // and nulls.
       if (out_->null_count != 0) {
-        RETURN_NOT_OK(GetBuffer(buffer_index_, &out_->buffers[0]));
+        if (allow_validity_bitmap) {
+          RETURN_NOT_OK(GetBuffer(buffer_index_, &out_->buffers[0]));
+        } else {
+          // Caller did not allow this
+          return Status::Invalid("Cannot read ", ::arrow::internal::ToTypeName(type_id),
+                                 " array with top-level validity bitmap");
+        }
       }
       buffer_index_++;
     }
@@ -471,9 +480,10 @@ class ArrayLoader {
     int n_buffers = type.mode() == UnionMode::SPARSE ? 2 : 3;
     out_->buffers.resize(n_buffers);
 
-    RETURN_NOT_OK(LoadCommon(type.id()));
-
-    // With metadata V4, we can get a validity bitmap.
+    // With metadata V4, we can get a validity bitmap. The bitmap may be there
+    // if we're loading eagerly, or it might be scheduled for loading if we're
+    // using a BatchDataReadRequest.
+    //
     // Trying to fix up union data to do without the top-level validity bitmap
     // is hairy:
     // - type ids must be rewritten to all have valid values (even for former
@@ -482,12 +492,9 @@ class ArrayLoader {
     //   by ANDing the top-level validity bitmap
     // - dense union children must be rewritten (at least one of them)
     //   to insert the required null slots that were formerly omitted
-    // So instead we bail out.
-    if (out_->null_count != 0 && out_->buffers[0] != nullptr) {
-      return Status::Invalid(
-          "Cannot read pre-1.0.0 Union array with top-level validity bitmap");
-    }
-    out_->buffers[0] = nullptr;
+    //
+    // So instead we disallow validity bitmaps.
+    RETURN_NOT_OK(LoadCommon(type.id(), /*allow_validity_bitmap=*/false));
     out_->null_count = 0;
 
     if (out_->length > 0) {
@@ -582,6 +589,7 @@ Status DecompressBuffers(Compression::type compression, const IpcReadOptions& op
         }
         AppendFrom(field->child_data);
       }
+      // Dictionary buffers are decompressed separately (see ReadDictionary).
     }
 
     BufferPtrVector Get(const ArrayDataVector& fields) && {
@@ -606,16 +614,91 @@ Status DecompressBuffers(Compression::type compression, const IpcReadOptions& op
       });
 }
 
+// Helper class to run post-ArrayLoader steps:
+// buffer decompression, dictionary resolution, buffer re-alignment.
+struct RecordBatchLoader {
+  Result<std::shared_ptr<RecordBatch>> CreateRecordBatch(ArrayDataVector columns) {
+    ARROW_ASSIGN_OR_RAISE(auto filtered_columns, CreateColumns(std::move(columns)));
+
+    std::shared_ptr<Schema> filtered_schema;
+    if (!inclusion_mask_.empty()) {
+      FieldVector filtered_fields;
+      for (int i = 0; i < schema_->num_fields(); ++i) {
+        if (inclusion_mask_[i]) {
+          filtered_fields.push_back(schema_->field(i));
+        }
+      }
+      filtered_schema = schema(std::move(filtered_fields), schema_->metadata());
+    } else {
+      filtered_schema = schema_;
+    }
+
+    return RecordBatch::Make(std::move(filtered_schema), batch_length_,
+                             std::move(filtered_columns));
+  }
+
+  Result<ArrayDataVector> CreateColumns(ArrayDataVector columns,
+                                        bool resolve_dictionaries = true) {
+    if (resolve_dictionaries) {
+      // Dictionary resolution needs to happen on the unfiltered columns,
+      // because fields are mapped structurally (by path in the original schema).
+      RETURN_NOT_OK(ResolveDictionaries(columns, *context_.dictionary_memo,
+                                        context_.options.memory_pool));
+    }
+
+    ArrayDataVector filtered_columns;
+    if (!inclusion_mask_.empty()) {
+      FieldVector filtered_fields;
+      for (int i = 0; i < schema_->num_fields(); ++i) {
+        if (inclusion_mask_[i]) {
+          DCHECK_NE(columns[i], nullptr);
+          filtered_columns.push_back(std::move(columns[i]));
+        }
+      }
+      columns.clear();
+    } else {
+      filtered_columns = std::move(columns);
+    }
+
+    if (context_.compression != Compression::UNCOMPRESSED) {
+      RETURN_NOT_OK(
+          DecompressBuffers(context_.compression, context_.options, &filtered_columns));
+    }
+
+    // Swap endian if necessary
+    if (context_.swap_endian) {
+      for (auto& column : filtered_columns) {
+        ARROW_ASSIGN_OR_RAISE(
+            column, arrow::internal::SwapEndianArrayData(std::move(column),
+                                                         context_.options.memory_pool));
+      }
+    }
+    if (context_.options.ensure_alignment != Alignment::kAnyAlignment) {
+      for (auto& column : filtered_columns) {
+        ARROW_ASSIGN_OR_RAISE(
+            column,
+            util::EnsureAlignment(
+                std::move(column),
+                // The numerical value of the enum is taken literally as byte alignment
+                static_cast<int64_t>(context_.options.ensure_alignment),
+                context_.options.memory_pool));
+      }
+    }
+    return filtered_columns;
+  }
+
+  IpcReadContext context_;
+  std::shared_ptr<Schema> schema_;
+  int64_t batch_length_;
+  std::vector<bool> inclusion_mask_;
+};
+
 Result<std::shared_ptr<RecordBatch>> LoadRecordBatchSubset(
     const flatbuf::RecordBatch* metadata, const std::shared_ptr<Schema>& schema,
     const std::vector<bool>* inclusion_mask, const IpcReadContext& context,
     io::RandomAccessFile* file) {
   ArrayLoader loader(metadata, context.metadata_version, context.options, file);
-
   ArrayDataVector columns(schema->num_fields());
-  ArrayDataVector filtered_columns;
-  FieldVector filtered_fields;
-  std::shared_ptr<Schema> filtered_schema;
 
   for (int i = 0; i < schema->num_fields(); ++i) {
     const Field& field = *schema->field(i);
@@ -627,10 +710,6 @@ Result<std::shared_ptr<RecordBatch>> LoadRecordBatchSubset(
         return Status::IOError("Array length did not match record batch length");
       }
       columns[i] = std::move(column);
-      if (inclusion_mask) {
-        filtered_columns.push_back(columns[i]);
-        filtered_fields.push_back(schema->field(i));
-      }
     } else {
       // Skip field. This logic must be executed to advance the state of the
       // loader to the next field
@@ -638,41 +717,9 @@ Result<std::shared_ptr<RecordBatch>> LoadRecordBatchSubset(
     }
   }
 
-  // Dictionary resolution needs to happen on the unfiltered columns,
-  // because fields are mapped structurally (by path in the original schema).
-  RETURN_NOT_OK(ResolveDictionaries(columns, *context.dictionary_memo,
-                                    context.options.memory_pool));
-
-  if (inclusion_mask) {
-    filtered_schema = ::arrow::schema(std::move(filtered_fields), schema->metadata());
-    columns.clear();
-  } else {
-    filtered_schema = schema;
-    filtered_columns = std::move(columns);
-  }
-  if (context.compression != Compression::UNCOMPRESSED) {
-    RETURN_NOT_OK(
-        DecompressBuffers(context.compression, context.options, &filtered_columns));
-  }
-
-  // swap endian in a set of ArrayData if necessary (swap_endian == true)
-  if (context.swap_endian) {
-    for (auto& filtered_column : filtered_columns) {
-      ARROW_ASSIGN_OR_RAISE(filtered_column,
-                            arrow::internal::SwapEndianArrayData(filtered_column));
-    }
-  }
-  auto batch = RecordBatch::Make(std::move(filtered_schema), metadata->length(),
-                                 std::move(filtered_columns));
-
-  if (ARROW_PREDICT_FALSE(context.options.ensure_alignment != Alignment::kAnyAlignment)) {
-    return util::EnsureAlignment(batch,
-                                 // the numerical value of ensure_alignment enum is taken
-                                 // literally as byte alignment
-                                 static_cast<int64_t>(context.options.ensure_alignment),
-                                 context.options.memory_pool);
-  }
-  return batch;
+  RecordBatchLoader batch_loader{context, schema, metadata->length(),
+                                 inclusion_mask ? *inclusion_mask : std::vector<bool>{}};
+  return batch_loader.CreateRecordBatch(std::move(columns));
 }
 
 Result<std::shared_ptr<RecordBatch>> LoadRecordBatch(
@@ -838,7 +885,7 @@ Status UnpackSchemaMessage(const Message& message, const IpcReadOptions& options
                              out_schema, field_inclusion_mask, swap_endian);
 }
 
-Status ReadDictionary(const Buffer& metadata, const IpcReadContext& context,
+Status ReadDictionary(const Buffer& metadata, IpcReadContext context,
                       DictionaryKind* kind, io::RandomAccessFile* file) {
   const flatbuf::Message* message = nullptr;
   RETURN_NOT_OK(internal::VerifyMessage(metadata.data(), metadata.size(), &message));
@@ -853,13 +900,12 @@ Status ReadDictionary(const Buffer& metadata, const IpcReadContext& context,
 
   CHECK_FLATBUFFERS_NOT_NULL(batch_meta, "DictionaryBatch.data");
 
-  Compression::type compression;
-  RETURN_NOT_OK(GetCompression(batch_meta, &compression));
-  if (compression == Compression::UNCOMPRESSED &&
+  RETURN_NOT_OK(GetCompression(batch_meta, &context.compression));
+  if (context.compression == Compression::UNCOMPRESSED &&
       message->version() == flatbuf::MetadataVersion::MetadataVersion_V4) {
     // Possibly obtain codec information from experimental serialization format
     // in 0.17.x
-    RETURN_NOT_OK(GetCompressionExperimental(message, &compression));
+    RETURN_NOT_OK(GetCompressionExperimental(message, &context.compression));
   }
 
   const int64_t id = dictionary_batch->id();
@@ -875,16 +921,14 @@ Status ReadDictionary(const Buffer& metadata, const IpcReadContext& context,
   const Field dummy_field("", value_type);
   RETURN_NOT_OK(loader.Load(&dummy_field, dict_data.get()));
 
-  if (compression != Compression::UNCOMPRESSED) {
-    ArrayDataVector dict_fields{dict_data};
-    RETURN_NOT_OK(DecompressBuffers(compression, context.options, &dict_fields));
-  }
-
-  // swap endian in dict_data if necessary (swap_endian == true)
-  if (context.swap_endian) {
-    ARROW_ASSIGN_OR_RAISE(dict_data, ::arrow::internal::SwapEndianArrayData(
-                                         dict_data, context.options.memory_pool));
-  }
+  // Run post-load steps: buffer decompression, etc.
+  RecordBatchLoader batch_loader{context, /*schema=*/nullptr, batch_meta->length(),
+                                 /*inclusion_mask=*/std::vector<bool>{}};
+  ARROW_ASSIGN_OR_RAISE(
+      auto dict_columns,
+      batch_loader.CreateColumns({dict_data}, /*resolve_dictionaries=*/false));
+  DCHECK_EQ(dict_columns.size(), 1);
+  dict_data = dict_columns[0];
 
   if (dictionary_batch->isDelta()) {
     if (kind != nullptr) {
@@ -1232,9 +1276,15 @@ Result<std::unique_ptr<Message>> ReadMessageFromBlock(
     const FileBlock& block, io::RandomAccessFile* file,
     const FieldsLoaderFunction& fields_loader) {
   RETURN_NOT_OK(CheckAligned(block));
-  ARROW_ASSIGN_OR_RAISE(auto message, ReadMessage(block.offset, block.metadata_length,
-                                                  file, fields_loader));
-  return CheckBodyLength(std::move(message), block);
+  if (fields_loader) {
+    ARROW_ASSIGN_OR_RAISE(auto message, ReadMessage(block.offset, block.metadata_length,
+                                                    file, fields_loader));
+    return CheckBodyLength(std::move(message), block);
+  } else {
+    ARROW_ASSIGN_OR_RAISE(auto message, ReadMessage(block.offset, block.metadata_length,
+                                                    block.body_length, file));
+    return CheckBodyLength(std::move(message), block);
+  }
 }
 
 Future<std::shared_ptr<Message>> ReadMessageFromBlockAsync(
@@ -1743,10 +1793,9 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
       std::shared_ptr<Schema> out_schema;
       RETURN_NOT_OK(GetInclusionMaskAndOutSchema(schema, context.options.included_fields,
                                                  &inclusion_mask, &out_schema));
-
       for (int i = 0; i < schema->num_fields(); ++i) {
         const Field& field = *schema->field(i);
-        if (inclusion_mask.size() == 0 || inclusion_mask[i]) {
+        if (inclusion_mask.empty() || inclusion_mask[i]) {
           // Read field
           auto column = std::make_shared<ArrayData>();
           RETURN_NOT_OK(loader.Load(&field, column.get()));
@@ -1754,20 +1803,11 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
             return Status::IOError("Array length did not match record batch length");
           }
           columns[i] = std::move(column);
-          if (inclusion_mask.size() > 0) {
-            filtered_columns.push_back(columns[i]);
-            filtered_fields.push_back(schema->field(i));
-          }
         } else {
           // Skip field. This logic must be executed to advance the state of the
           // loader to the next field
           RETURN_NOT_OK(loader.SkipField(&field));
         }
-      }
-      if (inclusion_mask.size() > 0) {
-        filtered_schema = ::arrow::schema(std::move(filtered_fields), schema->metadata());
-      } else {
-        filtered_schema = schema;
       }
       return Status::OK();
     }
@@ -1785,31 +1825,8 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
       }
       loader.read_request().FulfillRequest(buffers);
 
-      // Dictionary resolution needs to happen on the unfiltered columns,
-      // because fields are mapped structurally (by path in the original schema).
-      RETURN_NOT_OK(ResolveDictionaries(columns, *context.dictionary_memo,
-                                        context.options.memory_pool));
-      if (inclusion_mask.size() > 0) {
-        columns.clear();
-      } else {
-        filtered_columns = std::move(columns);
-      }
-
-      if (context.compression != Compression::UNCOMPRESSED) {
-        RETURN_NOT_OK(
-            DecompressBuffers(context.compression, context.options, &filtered_columns));
-      }
-
-      // swap endian in a set of ArrayData if necessary (swap_endian == true)
-      if (context.swap_endian) {
-        for (int i = 0; i < static_cast<int>(filtered_columns.size()); ++i) {
-          ARROW_ASSIGN_OR_RAISE(filtered_columns[i],
-                                arrow::internal::SwapEndianArrayData(
-                                    filtered_columns[i], context.options.memory_pool));
-        }
-      }
-      return RecordBatch::Make(std::move(filtered_schema), length,
-                               std::move(filtered_columns));
+      RecordBatchLoader batch_loader{context, schema, length, std::move(inclusion_mask)};
+      return batch_loader.CreateRecordBatch(std::move(columns));
     }
 
     std::shared_ptr<Schema> schema;
@@ -1821,9 +1838,6 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
     ArrayDataVector columns;
     io::internal::ReadRangeCache cache;
     int64_t length;
-    ArrayDataVector filtered_columns;
-    FieldVector filtered_fields;
-    std::shared_ptr<Schema> filtered_schema;
     std::vector<bool> inclusion_mask;
   };
 
@@ -1854,26 +1868,28 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
   }
 
   Future<> ReadFooterAsync(arrow::internal::Executor* executor) {
-    const int32_t magic_size = static_cast<int>(strlen(kArrowMagicBytes));
+    constexpr int32_t kMagicSize = static_cast<int>(kArrowMagicBytes.size());
 
-    if (footer_offset_ <= magic_size * 2 + 4) {
+    if (footer_offset_ <= kMagicSize * 2 + 4) {
       return Status::Invalid("File is too small: ", footer_offset_);
     }
 
-    int file_end_size = static_cast<int>(magic_size + sizeof(int32_t));
+    int file_end_size = static_cast<int>(kMagicSize + sizeof(int32_t));
     auto self = std::dynamic_pointer_cast<RecordBatchFileReaderImpl>(shared_from_this());
     auto read_magic = file_->ReadAsync(footer_offset_ - file_end_size, file_end_size);
     if (executor) read_magic = executor->Transfer(std::move(read_magic));
     return read_magic
         .Then([=](const std::shared_ptr<Buffer>& buffer)
                   -> Future<std::shared_ptr<Buffer>> {
-          const int64_t expected_footer_size = magic_size + sizeof(int32_t);
+          const int64_t expected_footer_size = kMagicSize + sizeof(int32_t);
           if (buffer->size() < expected_footer_size) {
             return Status::Invalid("Unable to read ", expected_footer_size,
                                    "from end of file");
           }
 
-          if (memcmp(buffer->data() + sizeof(int32_t), kArrowMagicBytes, magic_size)) {
+          const auto magic_start = buffer->data() + sizeof(int32_t);
+          if (std::string_view(reinterpret_cast<const char*>(magic_start), kMagicSize) !=
+              kArrowMagicBytes) {
             return Status::Invalid("Not an Arrow file");
           }
 
@@ -1881,7 +1897,7 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
               *reinterpret_cast<const int32_t*>(buffer->data()));
 
           if (footer_length <= 0 ||
-              footer_length > self->footer_offset_ - magic_size * 2 - 4) {
+              footer_length > self->footer_offset_ - kMagicSize * 2 - 4) {
             return Status::Invalid("File is smaller than indicated metadata size");
           }
 
@@ -2679,6 +2695,64 @@ Status ValidateFuzzBatch(const RecordBatchWithMetadata& batch) {
   return Status::OK();
 }
 
+Status CompareFuzzBatches(const RecordBatchWithMetadata& left,
+                          const RecordBatchWithMetadata& right) {
+  if ((left.custom_metadata != nullptr) != (right.custom_metadata != nullptr) ||
+      (left.custom_metadata && !left.custom_metadata->Equals(*right.custom_metadata))) {
+    std::stringstream ss;
+    auto print_metadata = [&](const RecordBatchWithMetadata& batch) {
+      if (batch.custom_metadata) {
+        ss << batch.custom_metadata->ToString();
+      } else {
+        ss << "nullptr";
+      }
+    };
+    ss << "Custom metadata unequal: left = ";
+    print_metadata(left);
+    ss << "\nright = ";
+    print_metadata(right);
+    return Status::Invalid(ss.str());
+  }
+
+  bool ok = true;
+  if ((left.batch != nullptr) != (right.batch != nullptr)) {
+    ok = false;
+  } else if (left.batch) {
+    ok &= left.batch->Equals(*right.batch, EqualOptions{}.nans_equal(true));
+  }
+  if (ok) {
+    return Status::OK();
+  }
+  std::stringstream ss;
+  PrettyPrintOptions options{};
+  options.show_field_metadata = true;
+  options.show_schema_metadata = true;
+  auto print_batch = [&](const RecordBatchWithMetadata& batch) {
+    if (batch.batch) {
+      ss << "\n";
+      ARROW_UNUSED(PrettyPrint(*batch.batch, options, &ss));
+    } else {
+      ss << "nullptr";
+    }
+  };
+  ss << "Batches unequal: left = ";
+  print_batch(left);
+  ss << "\nright = ";
+  print_batch(right);
+  return Status::Invalid(ss.str());
+}
+
+Status CompareFuzzBatches(const std::vector<RecordBatchWithMetadata>& left,
+                          const std::vector<RecordBatchWithMetadata>& right) {
+  if (left.size() != right.size()) {
+    return Status::Invalid("Not the same number of batches");
+  }
+  for (size_t i = 0; i < left.size(); ++i) {
+    RETURN_NOT_OK(CompareFuzzBatches(left[i], right[i]));
+  }
+  return Status::OK();
+}
+
 IpcReadOptions FuzzingOptions() {
   IpcReadOptions options;
   options.memory_pool = ::arrow::internal::fuzzing_memory_pool();
@@ -2713,7 +2787,34 @@ Status FuzzIpcFile(const uint8_t* data, int64_t size) {
 
   Status final_status;
 
-  auto do_read = [&](bool pre_buffer) {
+  struct IpcReadResult {
+    std::shared_ptr<Schema> schema;
+    std::vector<RecordBatchWithMetadata> batches = {};
+  };
+
+  // Try to read the IPC file as a stream to compare the results (differential fuzzing)
+  auto do_stream_read = [&]() -> Result<IpcReadResult> {
+    io::BufferReader buffer_reader(buffer);
+    // Skip magic bytes at the beginning
+    RETURN_NOT_OK(
+        buffer_reader.Advance(bit_util::RoundUpToMultipleOf8(kArrowMagicBytes.length())));
+    ARROW_ASSIGN_OR_RAISE(auto batch_reader, RecordBatchStreamReader::Open(
+                                                 &buffer_reader, FuzzingOptions()));
+
+    std::vector<RecordBatchWithMetadata> batches;
+    while (true) {
+      ARROW_ASSIGN_OR_RAISE(auto batch, batch_reader->ReadNext());
+      if (!batch.batch && !batch.custom_metadata) {
+        // EOS
+        break;
+      }
+      RETURN_NOT_OK(ValidateFuzzBatch(batch));
+      batches.push_back(batch);
+    }
+    return IpcReadResult{batch_reader->schema(), batches};
+  };
+
+  auto do_file_read = [&](bool pre_buffer) -> Result<IpcReadResult> {
     io::BufferReader buffer_reader(buffer);
     ARROW_ASSIGN_OR_RAISE(auto batch_reader,
                           RecordBatchFileReader::Open(&buffer_reader, FuzzingOptions()));
@@ -2722,23 +2823,66 @@ Status FuzzIpcFile(const uint8_t* data, int64_t size) {
       RETURN_NOT_OK(batch_reader->PreBufferMetadata(/*indices=*/{}));
     }
 
+    IpcReadResult result = {.schema = batch_reader->schema()};
     const int n_batches = batch_reader->num_record_batches();
+    // Delay error return until the end, as we want to access all record batches
+    Status st;
     for (int i = 0; i < n_batches; ++i) {
       RecordBatchWithMetadata batch;
-      auto st = batch_reader->ReadRecordBatchWithCustomMetadata(i).Value(&batch);
-      final_status &= st;
-      if (!st.ok()) {
-        continue;
-      }
-      final_status &= ValidateFuzzBatch(batch);
+      st &= batch_reader->ReadRecordBatchWithCustomMetadata(i).Value(&batch);
+      st &= ValidateFuzzBatch(batch);
+      result.batches.push_back(batch);
     }
-    return Status::OK();
+    RETURN_NOT_OK(st);
+    return result;
+  };
+
+  // Persistent read result for differential fuzzing.
+  std::optional<IpcReadResult> maybe_read_result;
+
+  auto compare_result = [&](IpcReadResult new_result) {
+    // Differential fuzzing: compare results read using different APIs or options
+    // with one another.
+    if (maybe_read_result.has_value()) {
+      ARROW_CHECK_OK(CompareFuzzBatches(maybe_read_result->batches, new_result.batches));
+    } else {
+      maybe_read_result = std::move(new_result);
+    }
   };
 
   for (const bool pre_buffer : {false, true}) {
-    final_status &= do_read(pre_buffer);
+    auto maybe_file_result = do_file_read(pre_buffer);
+    final_status &= maybe_file_result.status();
+    if (maybe_file_result.ok()) {
+      compare_result(*std::move(maybe_file_result));
+    }
   }
 
+  if (maybe_read_result.has_value()) {
+    // IPC file read successful: compare results with IPC stream reader,
+    // if possible.
+    // NOTE: some valid IPC files may not be readable as IPC streams,
+    // for example because of excess spacing between IPC messages.
+    // A regular IPC file writer would not produce them, but fuzzing might.
+    auto maybe_stream_result = do_stream_read();
+    final_status &= maybe_stream_result.status();
+    if (maybe_stream_result.ok()) {
+      if (maybe_read_result->schema->Equals(maybe_stream_result->schema,
+                                            /*check_metadata=*/true)) {
+        // XXX: in some rare cases, an IPC file might read unequal to the enclosed
+        // IPC stream, for example if the footer skips some batches or orders the
+        // batches differently. We should revisit this if the fuzzer generates such
+        // files.
+        compare_result(*maybe_stream_result);
+      } else {
+        // The fuzzer might have mutated the schema definition that is duplicated
+        // in the IPC file footer, in which case the comparison above would fail.
+        final_status &= Status::TypeError(
+            "Schema mismatch between IPC stream and IPC file footer, skipping "
+            "comparison");
+      }
+    }
+  }
   return final_status;
 }
 
