@@ -53,6 +53,25 @@ test_that("infer_type() infers from R type", {
   )
 })
 
+test_that("infer_type() errors clearly for POSIXct with invalid tzone", {
+  x <- as.POSIXct("2019-02-14 13:55:05", tz = "UTC")
+  attr(x, "tzone") <- 123
+
+  expect_error(
+    infer_type(x),
+    "`tzone` attribute of a `POSIXct` vector must be a character vector"
+  )
+
+  # Also check zero-length POSIXct
+  x <- as.POSIXct(x = NULL)
+  attr(x, "tzone") <- 123
+
+  expect_error(
+    infer_type(x),
+    "`tzone` attribute of a `POSIXct` vector must be a character vector"
+  )
+})
+
 test_that("infer_type() default method errors for unknown classes", {
   vec <- structure(list(), class = "class_not_supported")
 
@@ -306,15 +325,6 @@ test_that("infer_type() infers type for vctrs", {
     infer_type(vec),
     vctrs_extension_type(vec[integer(0)])
   )
-})
-
-test_that("type() is deprecated", {
-  a <- Array$create(1:10)
-  expect_deprecated(
-    a_type <- type(a),
-    "infer_type"
-  )
-  expect_equal(a_type, a$type)
 })
 
 test_that("infer_type() infers type for lists of raw() as binary()", {

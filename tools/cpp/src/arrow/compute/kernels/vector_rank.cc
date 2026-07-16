@@ -23,6 +23,7 @@
 #include "arrow/compute/registry.h"
 #include "arrow/compute/registry_internal.h"
 #include "arrow/util/logging_internal.h"
+#include "arrow/util/macros.h"
 #include "arrow/util/math_internal.h"
 
 namespace arrow::compute::internal {
@@ -36,8 +37,9 @@ namespace {
 // is the same as the value at the previous sort index.
 constexpr uint64_t kDuplicateMask = 1ULL << 63;
 
-template <typename ValueSelector>
-void MarkDuplicates(const NullPartitionResult& sorted, ValueSelector&& value_selector) {
+template <typename ValueSelector, typename IsNullSelector>
+void MarkDuplicates(const NullPartitionResult& sorted, ValueSelector&& value_selector,
+                    IsNullSelector&& is_null_selector) {
   using T = decltype(value_selector(int64_t{}));
 
   // Process non-nulls
@@ -55,10 +57,14 @@ void MarkDuplicates(const NullPartitionResult& sorted, ValueSelector&& value_sel
 
   // Process nulls
   if (sorted.nulls_end != sorted.nulls_begin) {
-    // TODO this should be able to distinguish between NaNs and real nulls (GH-45193)
     auto it = sorted.nulls_begin;
+    bool prev_is_null = is_null_selector(*it);
     while (++it < sorted.nulls_end) {
-      *it |= kDuplicateMask;
+      bool curr_is_null = is_null_selector(*it);
+      if (curr_is_null == prev_is_null) {
+        *it |= kDuplicateMask;
+      }
+      prev_is_null = curr_is_null;
     }
   }
 }
@@ -82,7 +88,12 @@ Result<NullPartitionResult> DoSortAndMarkDuplicate(
     auto value_selector = [&array](int64_t index) {
       return GetView::LogicalValue(array.GetView(index));
     };
-    MarkDuplicates(sorted, value_selector);
+    if constexpr (has_null_like_values<ArrowType>()) {
+      auto is_null_selector = [&array](int64_t index) { return array.IsNull(index); };
+      MarkDuplicates(sorted, value_selector, is_null_selector);
+    } else {
+      MarkDuplicates(sorted, value_selector, [](int64_t) { return true; });
+    }
   }
   return sorted;
 }
@@ -105,7 +116,15 @@ Result<NullPartitionResult> DoSortAndMarkDuplicate(
                                ChunkedArrayResolver(std::span(arrays))](int64_t index) {
       return resolver.Resolve(index).Value<ArrowType>();
     };
-    MarkDuplicates(sorted, value_selector);
+    if constexpr (has_null_like_values<ArrowType>()) {
+      auto is_null_selector =
+          [resolver = ChunkedArrayResolver(std::span(arrays))](int64_t index) {
+            return resolver.Resolve(index).IsNull();
+          };
+      MarkDuplicates(sorted, value_selector, is_null_selector);
+    } else {
+      MarkDuplicates(sorted, value_selector, [](int64_t) { return true; });
+    }
   }
   return sorted;
 }
@@ -346,9 +365,16 @@ class RankMetaFunctionBase : public MetaFunction {
         checked_cast<const typename Derived::FunctionOptionsType&>(function_options);
 
     SortOrder order = SortOrder::Ascending;
+    NullPlacement null_placement = NullPlacement::AtEnd;
     if (!options.sort_keys.empty()) {
       order = options.sort_keys[0].order;
+      null_placement = options.sort_keys[0].null_placement;
     }
+    ARROW_SUPPRESS_DEPRECATION_WARNING
+    if (options.null_placement.has_value()) {
+      null_placement = options.null_placement.value();
+    }
+    ARROW_UNSUPPRESS_DEPRECATION_WARNING
 
     int64_t length = input.length();
     ARROW_ASSIGN_OR_RAISE(auto indices,
@@ -359,7 +385,7 @@ class RankMetaFunctionBase : public MetaFunction {
     auto needs_duplicates = Derived::NeedsDuplicates(options);
     ARROW_ASSIGN_OR_RAISE(
         auto sorted, SortAndMarkDuplicate(ctx, indices_begin, indices_end, input, order,
-                                          options.null_placement, needs_duplicates)
+                                          null_placement, needs_duplicates)
                          .Run());
 
     auto ranker = Derived::GetRanker(options);

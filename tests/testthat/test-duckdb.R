@@ -123,13 +123,17 @@ test_that("to_duckdb then to_arrow", {
   )
 
   # Now check errors
+  # dbplyr 2.6.0 added "con" to the allowed $ fields on tbl_lazy;
+  # older versions only allow "src" and "lazy_query"
+  skip_if(packageVersion("dbplyr") < "2.6.0")
+
   ds_rt <- ds |>
     to_duckdb() |>
     # factors don't roundtrip https://github.com/duckdb/duckdb/issues/1879
     select(-fct)
 
   # alter the class of ds_rt's connection to simulate some other database
-  class(ds_rt$src$con) <- "some_other_connection"
+  class(ds_rt$con) <- "some_other_connection"
 
   expect_error(
     to_arrow(ds_rt),
@@ -188,6 +192,18 @@ test_that("to_arrow roundtrip, with dataset (without wrapping)", {
     to_arrow()
 
   expect_r6_class(out, "RecordBatchReader")
+})
+
+test_that("to_arrow preserves grouping from duckdb tables", {
+  ds <- InMemoryDataset$create(example_data)
+
+  out <- ds |>
+    to_duckdb() |>
+    group_by(lgl) |>
+    to_arrow()
+
+  expect_s3_class(out, "arrow_dplyr_query")
+  expect_equal(dplyr::group_vars(out), "lgl")
 })
 
 # The next set of tests use an already-extant connection to test features of

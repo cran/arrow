@@ -1,6 +1,6 @@
 Package: arrow
 Title: Integration to 'Apache' 'Arrow'
-Version: 24.0.0
+Version: 25.0.0
 Authors@R: c(
     person("Neal", "Richardson", email = "neal.p.richardson@gmail.com", role = c("aut")),
     person("Ian", "Cook", email = "ianmcook@gmail.com", role = c("aut")),
@@ -22,7 +22,7 @@ Description: 'Apache' 'Arrow' <https://arrow.apache.org/> is a cross-language
     language-independent columnar memory format for flat and hierarchical data,
     organized for efficient analytic operations on modern hardware. This
     package provides an interface to the 'Arrow C++' library.
-Depends: R (>= 4.1)
+Depends: R (>= 4.2)
 License: Apache License (>= 2.0)
 URL: https://github.com/apache/arrow/, https://arrow.apache.org/docs/r/
 BugReports: https://github.com/apache/arrow/issues
@@ -34,7 +34,6 @@ SystemRequirements: C++20; for AWS S3 support on Linux, libcurl and
 Biarch: true
 Imports: assertthat, bit64 (>= 0.9-7), glue, methods, purrr, R6, rlang
         (>= 1.0.0), stats, tidyselect (>= 1.0.0), utils, vctrs
-RoxygenNote: 7.3.3
 Config/testthat/edition: 3
 Config/build/bootstrap: TRUE
 Suggests: blob, curl, cli, DBI, dbplyr, decor, distro, dplyr, duckdb
@@ -64,10 +63,11 @@ Collate: 'arrowExports.R' 'enums.R' 'arrow-object.R' 'type.R'
         'install-arrow.R' 'ipc-stream.R' 'json.R' 'memory-pool.R'
         'message.R' 'metadata.R' 'parquet.R' 'python.R'
         'query-engine.R' 'record-batch-reader.R'
-        'record-batch-writer.R' 'reexports-bit64.R'
-        'reexports-tidyselect.R' 'schema.R' 'udf.R' 'util.R'
+        'record-batch-writer.R' 'reexports-tidyselect.R' 'schema.R'
+        'udf.R' 'util.R'
+Config/roxygen2/version: 8.0.0
 NeedsCompilation: yes
-Packaged: 2026-04-27 03:37:21 UTC; bryce
+Packaged: 2026-07-15 14:15:14 UTC; nic
 Author: Neal Richardson [aut],
   Ian Cook [aut],
   Nic Crane [aut],
@@ -85,4 +85,4 @@ Author: Neal Richardson [aut],
   Apache Arrow [aut, cph]
 Maintainer: Jonathan Keane <jkeane@gmail.com>
 Repository: CRAN
-Date/Publication: 2026-04-29 13:00:15 UTC
+Date/Publication: 2026-07-16 21:00:19 UTC

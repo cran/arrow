@@ -30,6 +30,7 @@
 #' @importFrom rlang is_bare_list call_name
 #' @importFrom tidyselect vars_pull eval_select eval_rename
 #' @importFrom glue glue
+#' @importFrom bit64 integer64
 #' @useDynLib arrow, .registration = TRUE
 #' @keywords internal
 "_PACKAGE"
@@ -179,12 +180,25 @@ s3_finalizer <- new.env(parent = emptyenv())
 
 configure_tzdb <- function() {
   if (requireNamespace("tzdb", quietly = TRUE)) {
-    tzdb::tzdb_initialize()
-    set_timezone_database(tzdb::tzdb_path("text"))
+    tryCatch(
+      {
+        tzdb::tzdb_initialize()
+        set_timezone_database(tzdb::tzdb_path("text"))
+      },
+      error = function(e) {
+        packageStartupMessage(
+          "The tzdb package was available but failed to initialize: ",
+          e,
+          "Timezones will not be available to Arrow compute functions."
+        )
+      }
+    )
   } else {
     packageStartupMessage(
       "The tzdb package is not installed. ",
-      "Timezones will not be available to Arrow compute functions."
+      "Timezones will not be available to Arrow compute functions. ",
+      "If you get errors when using Arrow on datetimes, try running ",
+      "`install.packages('tzdb')` and trying again."
     )
   }
 }

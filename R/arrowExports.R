@@ -1244,8 +1244,24 @@ Field__name <- function(field) {
   .Call(`_arrow_Field__name`, field)
 }
 
-Field__Equals <- function(field, other) {
-  .Call(`_arrow_Field__Equals`, field, other)
+Field__Equals <- function(field, other, check_metadata) {
+  .Call(`_arrow_Field__Equals`, field, other, check_metadata)
+}
+
+Field__HasMetadata <- function(field) {
+  .Call(`_arrow_Field__HasMetadata`, field)
+}
+
+Field__metadata <- function(field) {
+  .Call(`_arrow_Field__metadata`, field)
+}
+
+Field__WithMetadata <- function(field, metadata) {
+  .Call(`_arrow_Field__WithMetadata`, field, metadata)
+}
+
+Field__RemoveMetadata <- function(field) {
+  .Call(`_arrow_Field__RemoveMetadata`, field)
 }
 
 Field__nullable <- function(field) {

@@ -110,17 +110,6 @@ macro(resolve_option_dependencies)
   if(MSVC_TOOLCHAIN)
     set(ARROW_USE_GLOG OFF)
   endif()
-  # Tests are crashed with mold + sanitizer checks.
-  if(ARROW_USE_ASAN
-     OR ARROW_USE_TSAN
-     OR ARROW_USE_UBSAN)
-    if(ARROW_USE_MOLD)
-      message(WARNING "ARROW_USE_MOLD is disabled when one of "
-                      "ARROW_USE_ASAN, ARROW_USE_TSAN or ARROW_USE_UBSAN is specified "
-                      "because it causes some problems.")
-      set(ARROW_USE_MOLD OFF)
-    endif()
-  endif()
 
   tsort_bool_option_dependencies()
   foreach(option_name ${ARROW_BOOL_OPTION_DEPENDENCIES_TSORTED})
@@ -191,6 +180,9 @@ takes precedence over ccache if a storage backend is configured" ON)
                        "SSE4_2"
                        "AVX2"
                        "AVX512"
+                       "SVE128" # fixed size SVE
+                       "SVE256" # "
+                       "SVE512" # "
                        "MAX")
 
   define_option(ARROW_ALTIVEC "Build with Altivec if compiler has support" ON)
@@ -590,17 +582,19 @@ takes precedence over ccache if a storage backend is configured" ON)
   set_option_category("Parquet")
 
   define_option(PARQUET_BUILD_EXECUTABLES
-                "Build the Parquet executable CLI tools. Requires static libraries to be built."
-                OFF)
+                "Build the Parquet executable CLI tools."
+                OFF
+                DEPENDS
+                ARROW_FILESYSTEM)
 
-  define_option(PARQUET_BUILD_EXAMPLES
-                "Build the Parquet examples. Requires static libraries to be built." OFF)
+  define_option(PARQUET_BUILD_EXAMPLES "Build the Parquet examples." OFF)
 
   define_option(PARQUET_REQUIRE_ENCRYPTION
                 "Build support for encryption. Fail if OpenSSL is not found"
                 OFF
                 DEPENDS
-                ARROW_FILESYSTEM)
+                ARROW_FILESYSTEM
+                ARROW_JSON)
 
   #----------------------------------------------------------------------
   set_option_category("Gandiva")

@@ -1,5 +1,6 @@
 # arrow <img src="https://arrow.apache.org/img/arrow-logo_hex_black-txt_white-bg.png" align="right" alt="" width="120" />
 
+
 ## Overview
 
 The R `{arrow}` package provides access to many of the features of the [Apache Arrow C++ library](https://arrow.apache.org/docs/cpp/index.html) for R users. The goal of arrow is to provide an Arrow C++ backend to `{dplyr}`, and access to the Arrow C++ library through familiar base R and tidyverse functions, or `{R6}` classes. The dedicated R package website is located [here](https://arrow.apache.org/docs/r/index.html).

@@ -526,7 +526,8 @@ build_libarrow <- function(src_dir, dst_dir) {
   # Set up make for parallel building
   # CRAN policy says not to use more than 2 cores during checks
   # If you have more and want to use more, set MAKEFLAGS or NOT_CRAN
-  ncores <- parallel::detectCores()
+  # detectCores() returns NA if number of cores is unknown. Set ncores to 1 if NA.
+  ncores <- max(1, parallel::detectCores(), na.rm = TRUE)
   if (!not_cran) {
     ncores <- min(ncores, 2)
   }
@@ -616,6 +617,7 @@ build_libarrow <- function(src_dir, dst_dir) {
   }
 
   env_var_list <- with_cloud_support(env_var_list)
+  env_var_list <- with_wasm_support(env_var_list)
 
   # turn_off_all_optional_features() needs to happen after
   # with_cloud_support(), since it might turn features ON.
@@ -883,6 +885,40 @@ is_feature_requested <- function(env_varname, env_var_list, default = env_is("LI
   requested
 }
 
+with_wasm_support <- function(env_var_list) {
+  cc <- env_var_list[["CC"]]
+  cxx <- env_var_list[["CXX"]]
+  if (!grepl("emcc", cc) && !grepl("em\\+\\+", cxx)) {
+    return(env_var_list)
+  }
+
+  lg("Emscripten compiler detected; configuring for WASM build", .indent = "****")
+
+  if (!nzchar(Sys.which("emcmake"))) {
+    stop("emcmake is required for Emscripten/webR builds but was not found in PATH")
+  }
+
+  wasm_overrides <- c(
+    CMAKE_WRAPPER = "emcmake",
+    ARROW_DEPENDENCY_SOURCE = "BUNDLED",
+    ARROW_DEPENDENCY_USE_SHARED = "OFF",
+    ARROW_ENABLE_THREADING = "OFF",
+    ARROW_GCS = "OFF",
+    ARROW_JEMALLOC = "OFF",
+    ARROW_MIMALLOC = "OFF",
+    ARROW_S3 = "OFF",
+    ARROW_WITH_BROTLI = "OFF",
+    ARROW_WITH_BZ2 = "OFF",
+    ARROW_WITH_ZSTD = "OFF",
+    N_JOBS = "2",
+    EXTRA_CMAKE_FLAGS = paste(
+      env_var_list[["EXTRA_CMAKE_FLAGS"]],
+      "-DARROW_SIMD_LEVEL=NONE -DARROW_RUNTIME_SIMD_LEVEL=NONE"
+    )
+  )
+  replace(env_var_list, names(wasm_overrides), wasm_overrides)
+}
+
 with_cloud_support <- function(env_var_list) {
   arrow_s3 <- is_feature_requested("ARROW_S3", env_var_list)
   arrow_gcs <- is_feature_requested("ARROW_GCS", env_var_list)
@@ -925,7 +961,11 @@ cmake_find_package <- function(pkg, version = NULL, env_var_list) {
   cleanup(td)
   find_package <- paste0(
     "cmake_minimum_required(VERSION 3.10)\n",
-    "find_package(", pkg, " ", version, " REQUIRED)"
+    "find_package(",
+    pkg,
+    " ",
+    version,
+    " REQUIRED)"
   )
   writeLines(find_package, file.path(td, "CMakeLists.txt"))
   env_vars <- env_vars_as_string(env_var_list)
@@ -939,7 +979,7 @@ cmake_find_package <- function(pkg, version = NULL, env_var_list) {
     " -DCMAKE_FIND_PACKAGE_NO_PACKAGE_REGISTRY=ON",
     " ."
   )
-  system(cmake_cmd, ignore.stdout = TRUE, ignore.stderr = TRUE) == 0
+  system(cmake_cmd, ignore.stdout = quietly, ignore.stderr = quietly) == 0
 }
 
 ############### Main logic #############

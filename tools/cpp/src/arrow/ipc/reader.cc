@@ -79,6 +79,7 @@ namespace flatbuf = org::apache::arrow::flatbuf;
 using internal::AddWithOverflow;
 using internal::checked_cast;
 using internal::checked_pointer_cast;
+using internal::MultiplyWithOverflow;
 
 namespace ipc {
 
@@ -210,7 +211,7 @@ class ArrayLoader {
                              " did not start on 8-byte aligned offset: ", offset);
     }
     if (file_) {
-      return file_->ReadAt(offset, length).Value(out);
+      return file_->ReadAt(offset, length, /*allow_short_read=*/false).Value(out);
     } else {
       if (!AddWithOverflow({read_end.value(), file_offset_}).has_value()) {
         return Status::Invalid("Buffer ", buffer_index_, " exceeds IPC file area");
@@ -573,8 +574,7 @@ Result<std::shared_ptr<Buffer>> DecompressBuffer(const std::shared_ptr<Buffer>& 
                            actual_decompressed);
   }
 
-  // R build with openSUSE155 requires an explicit shared_ptr construction
-  return std::shared_ptr<Buffer>(std::move(uncompressed));
+  return uncompressed;
 }
 
 Status DecompressBuffers(Compression::type compression, const IpcReadOptions& options,
@@ -765,7 +765,8 @@ Status GetCompressionExperimental(const flatbuf::Message* message,
   if (message->custom_metadata() != nullptr) {
     // TODO: Ensure this deserialization only ever happens once
     std::shared_ptr<KeyValueMetadata> metadata;
-    RETURN_NOT_OK(internal::GetKeyValueMetadata(message->custom_metadata(), &metadata));
+    ARROW_ASSIGN_OR_RAISE(metadata,
+                          internal::GetKeyValueMetadata(message->custom_metadata()));
     int index = metadata->FindKey("ARROW:experimental_compression");
     if (index != -1) {
       // Arrow 0.17 stored string in upper case, internal utils now require lower case
@@ -810,8 +811,8 @@ Result<RecordBatchWithMetadata> ReadRecordBatchInternal(
 
   std::shared_ptr<KeyValueMetadata> custom_metadata;
   if (message->custom_metadata() != nullptr) {
-    RETURN_NOT_OK(
-        internal::GetKeyValueMetadata(message->custom_metadata(), &custom_metadata));
+    ARROW_ASSIGN_OR_RAISE(custom_metadata,
+                          internal::GetKeyValueMetadata(message->custom_metadata()));
   }
   ARROW_ASSIGN_OR_RAISE(auto record_batch,
                         LoadRecordBatch(batch, schema, inclusion_mask, context, file));
@@ -857,13 +858,15 @@ Status UnpackSchemaMessage(const void* opaque_schema, const IpcReadOptions& opti
                            DictionaryMemo* dictionary_memo,
                            std::shared_ptr<Schema>* schema,
                            std::shared_ptr<Schema>* out_schema,
-                           std::vector<bool>* field_inclusion_mask, bool* swap_endian) {
+                           std::vector<bool>* field_inclusion_mask,
+                           Endianness* original_endianness, bool* swap_endian) {
   RETURN_NOT_OK(internal::GetSchema(opaque_schema, dictionary_memo, schema));
 
   // If we are selecting only certain fields, populate the inclusion mask now
   // for fast lookups
   RETURN_NOT_OK(GetInclusionMaskAndOutSchema(*schema, options.included_fields,
                                              field_inclusion_mask, out_schema));
+  *original_endianness = out_schema->get()->endianness();
   *swap_endian = options.ensure_native_endian && !out_schema->get()->is_native_endian();
   if (*swap_endian) {
     // create a new schema with native endianness before swapping endian in ArrayData
@@ -877,12 +880,14 @@ Status UnpackSchemaMessage(const Message& message, const IpcReadOptions& options
                            DictionaryMemo* dictionary_memo,
                            std::shared_ptr<Schema>* schema,
                            std::shared_ptr<Schema>* out_schema,
-                           std::vector<bool>* field_inclusion_mask, bool* swap_endian) {
+                           std::vector<bool>* field_inclusion_mask,
+                           Endianness* original_endianness, bool* swap_endian) {
   CHECK_MESSAGE_TYPE(MessageType::SCHEMA, message.type());
   CHECK_HAS_NO_BODY(message);
 
   return UnpackSchemaMessage(message.header(), options, dictionary_memo, schema,
-                             out_schema, field_inclusion_mask, swap_endian);
+                             out_schema, field_inclusion_mask, original_endianness,
+                             swap_endian);
 }
 
 Status ReadDictionary(const Buffer& metadata, IpcReadContext context,
@@ -1061,7 +1066,7 @@ class StreamDecoderInternal : public MessageDecoderListener {
   Status OnSchemaMessageDecoded(std::unique_ptr<Message> message) {
     RETURN_NOT_OK(UnpackSchemaMessage(*message, options_, &dictionary_memo_, &schema_,
                                       &filtered_schema_, &field_inclusion_mask_,
-                                      &swap_endian_));
+                                      &stats_.original_endianness, &swap_endian_));
 
     num_required_initial_dictionaries_ = dictionary_memo_.fields().num_dicts();
     num_read_initial_dictionaries_ = 0;
@@ -1422,8 +1427,8 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
       ARROW_ASSIGN_OR_RAISE(auto message, GetFlatbufMessage(message_obj));
       std::shared_ptr<KeyValueMetadata> custom_metadata;
       if (message->custom_metadata() != nullptr) {
-        RETURN_NOT_OK(
-            internal::GetKeyValueMetadata(message->custom_metadata(), &custom_metadata));
+        ARROW_ASSIGN_OR_RAISE(custom_metadata,
+                              internal::GetKeyValueMetadata(message->custom_metadata()));
       }
       return RecordBatchWithMetadata{std::move(batch), std::move(custom_metadata)};
     }
@@ -1498,7 +1503,7 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
     // Get the schema and record any observed dictionaries
     RETURN_NOT_OK(UnpackSchemaMessage(footer_->schema(), options, &dictionary_memo_,
                                       &schema_, &out_schema_, &field_inclusion_mask_,
-                                      &swap_endian_));
+                                      &original_endianness_, &swap_endian_));
     stats_.num_messages.fetch_add(1, std::memory_order_relaxed);
     return Status::OK();
   }
@@ -1528,7 +1533,8 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
       // Get the schema and record any observed dictionaries
       RETURN_NOT_OK(UnpackSchemaMessage(
           self->footer_->schema(), options, &self->dictionary_memo_, &self->schema_,
-          &self->out_schema_, &self->field_inclusion_mask_, &self->swap_endian_));
+          &self->out_schema_, &self->field_inclusion_mask_, &self->original_endianness_,
+          &self->swap_endian_));
       self->stats_.num_messages.fetch_add(1, std::memory_order_relaxed);
       return Status::OK();
     });
@@ -1538,7 +1544,11 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
 
   std::shared_ptr<const KeyValueMetadata> metadata() const override { return metadata_; }
 
-  ReadStats stats() const override { return stats_.poll(); }
+  ReadStats stats() const override {
+    auto stats = stats_.poll();
+    stats.original_endianness = original_endianness_;
+    return stats;
+  }
 
   Result<AsyncGenerator<std::shared_ptr<RecordBatch>>> GetRecordBatchGenerator(
       const bool coalesce, const io::IOContext& io_context,
@@ -1629,7 +1639,10 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
   };
 
   Result<FileBlock> GetRecordBatchBlock(int i) const {
-    return FileBlockFromFlatbuffer(footer_->recordBatches()->Get(i), footer_offset_);
+    ARROW_ASSIGN_OR_RAISE(
+        auto block,
+        FileBlockFromFlatbuffer(footer_->recordBatches()->Get(i), footer_offset_));
+    return block;
   }
 
   Result<FileBlock> GetDictionaryBlock(int i) const {
@@ -1874,19 +1887,15 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
       return Status::Invalid("File is too small: ", footer_offset_);
     }
 
-    int file_end_size = static_cast<int>(kMagicSize + sizeof(int32_t));
+    constexpr int64_t kTotalMagicSize = kMagicSize + sizeof(int32_t);
     auto self = std::dynamic_pointer_cast<RecordBatchFileReaderImpl>(shared_from_this());
-    auto read_magic = file_->ReadAsync(footer_offset_ - file_end_size, file_end_size);
+    auto read_magic = file_->ReadAsync(footer_offset_ - kTotalMagicSize, kTotalMagicSize,
+                                       /*allow_short_read=*/false);
     if (executor) read_magic = executor->Transfer(std::move(read_magic));
     return read_magic
         .Then([=](const std::shared_ptr<Buffer>& buffer)
                   -> Future<std::shared_ptr<Buffer>> {
-          const int64_t expected_footer_size = kMagicSize + sizeof(int32_t);
-          if (buffer->size() < expected_footer_size) {
-            return Status::Invalid("Unable to read ", expected_footer_size,
-                                   "from end of file");
-          }
-
+          DCHECK_EQ(buffer->size(), kTotalMagicSize);
           const auto magic_start = buffer->data() + sizeof(int32_t);
           if (std::string_view(reinterpret_cast<const char*>(magic_start), kMagicSize) !=
               kArrowMagicBytes) {
@@ -1903,7 +1912,8 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
 
           // Now read the footer
           auto read_footer = self->file_->ReadAsync(
-              self->footer_offset_ - footer_length - file_end_size, footer_length);
+              self->footer_offset_ - footer_length - kTotalMagicSize, footer_length,
+              /*allow_short_read=*/false);
           if (executor) read_footer = executor->Transfer(std::move(read_footer));
           return read_footer;
         })
@@ -1919,8 +1929,8 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
           auto fb_metadata = self->footer_->custom_metadata();
           if (fb_metadata != nullptr) {
             std::shared_ptr<KeyValueMetadata> md;
-            RETURN_NOT_OK(internal::GetKeyValueMetadata(fb_metadata, &md));
-            self->metadata_ = std::move(md);  // const-ify
+            ARROW_ASSIGN_OR_RAISE(self->metadata_,
+                                  internal::GetKeyValueMetadata(fb_metadata));
           }
           return Status::OK();
         });
@@ -1954,6 +1964,7 @@ class RecordBatchFileReaderImpl : public RecordBatchFileReader {
   std::shared_ptr<Schema> out_schema_;
 
   AtomicReadStats stats_;
+  Endianness original_endianness_;
   std::shared_ptr<io::internal::ReadRangeCache> metadata_cache_;
   std::unordered_set<int> cached_data_blocks_;
   Future<> dictionary_load_finished_;
@@ -2281,6 +2292,25 @@ Result<std::shared_ptr<Tensor>> ReadTensor(const Message& message) {
 
 namespace {
 
+Status ValidateSparseCSFIndexMetadata(const flatbuf::SparseTensorIndexCSF* sparse_index,
+                                      int64_t ndim) {
+  if (sparse_index == nullptr) {
+    return Status::Invalid("Missing CSF sparse index metadata");
+  }
+  auto* indptr_buffers = sparse_index->indptrBuffers();
+  auto* indices_buffers = sparse_index->indicesBuffers();
+  auto* axis_order = sparse_index->axisOrder();
+  if (ndim < 2 || indptr_buffers == nullptr || indices_buffers == nullptr ||
+      axis_order == nullptr || static_cast<int64_t>(indptr_buffers->size()) != ndim - 1 ||
+      static_cast<int64_t>(indices_buffers->size()) != ndim ||
+      static_cast<int64_t>(axis_order->size()) != ndim) {
+    return Status::Invalid(
+        "Inconsistent CSF sparse index: a CSF tensor must have at least 2 dimensions "
+        "with indptr, indices and axis_order counts of ndim - 1, ndim and ndim");
+  }
+  return Status::OK();
+}
+
 Result<std::shared_ptr<SparseIndex>> ReadSparseCOOIndex(
     const flatbuf::SparseTensor* sparse_tensor, const std::vector<int64_t>& shape,
     int64_t non_zero_length, io::RandomAccessFile* file) {
@@ -2293,8 +2323,16 @@ Result<std::shared_ptr<SparseIndex>> ReadSparseCOOIndex(
 
   auto* indices_buffer = sparse_index->indicesBuffer();
   ARROW_ASSIGN_OR_RAISE(auto indices_data,
-                        file->ReadAt(indices_buffer->offset(), indices_buffer->length()));
+                        file->ReadAt(indices_buffer->offset(), indices_buffer->length(),
+                                     /*allow_short_read=*/false));
   std::vector<int64_t> indices_shape({non_zero_length, ndim});
+  int64_t indices_minimum_bytes;
+  if (MultiplyWithOverflow(non_zero_length, ndim, &indices_minimum_bytes) ||
+      MultiplyWithOverflow(indices_minimum_bytes, indices_elsize,
+                           &indices_minimum_bytes) ||
+      indices_minimum_bytes > indices_buffer->length()) {
+    return Status::Invalid("shape is inconsistent to the size of indices buffer");
+  }
   auto* indices_strides = sparse_index->indicesStrides();
   std::vector<int64_t> strides(2);
   if (indices_strides && indices_strides->size() > 0) {
@@ -2329,23 +2367,33 @@ Result<std::shared_ptr<SparseIndex>> ReadSparseCSXIndex(
 
   auto* indptr_buffer = sparse_index->indptrBuffer();
   ARROW_ASSIGN_OR_RAISE(auto indptr_data,
-                        file->ReadAt(indptr_buffer->offset(), indptr_buffer->length()));
+                        file->ReadAt(indptr_buffer->offset(), indptr_buffer->length(),
+                                     /*allow_short_read=*/false));
 
   auto* indices_buffer = sparse_index->indicesBuffer();
   ARROW_ASSIGN_OR_RAISE(auto indices_data,
-                        file->ReadAt(indices_buffer->offset(), indices_buffer->length()));
+                        file->ReadAt(indices_buffer->offset(), indices_buffer->length(),
+                                     /*allow_short_read=*/false));
 
   std::vector<int64_t> indices_shape({non_zero_length});
-  const auto indices_minimum_bytes = indices_shape[0] * indices_type->byte_width();
-  if (indices_minimum_bytes > indices_buffer->length()) {
+  const auto indices_minimum_bytes =
+      MultiplyWithOverflow<int64_t>({indices_shape[0], indices_type->byte_width()});
+  if (!indices_minimum_bytes.has_value() ||
+      indices_minimum_bytes.value() > indices_buffer->length()) {
     return Status::Invalid("shape is inconsistent to the size of indices buffer");
   }
 
   switch (sparse_index->compressedAxis()) {
     case flatbuf::SparseMatrixCompressedAxis::SparseMatrixCompressedAxis_Row: {
-      std::vector<int64_t> indptr_shape({shape[0] + 1});
-      const int64_t indptr_minimum_bytes = indptr_shape[0] * indptr_byte_width;
-      if (indptr_minimum_bytes > indptr_buffer->length()) {
+      const auto indptr_length = AddWithOverflow<int64_t>({shape[0], 1});
+      if (!indptr_length.has_value()) {
+        return Status::Invalid("shape is inconsistent to the size of indptr buffer");
+      }
+      std::vector<int64_t> indptr_shape({indptr_length.value()});
+      const auto indptr_minimum_bytes =
+          MultiplyWithOverflow<int64_t>({indptr_shape[0], indptr_byte_width});
+      if (!indptr_minimum_bytes.has_value() ||
+          indptr_minimum_bytes.value() > indptr_buffer->length()) {
         return Status::Invalid("shape is inconsistent to the size of indptr buffer");
       }
       return std::make_shared<SparseCSRIndex>(
@@ -2353,9 +2401,15 @@ Result<std::shared_ptr<SparseIndex>> ReadSparseCSXIndex(
           std::make_shared<Tensor>(indices_type, indices_data, indices_shape));
     }
     case flatbuf::SparseMatrixCompressedAxis::SparseMatrixCompressedAxis_Column: {
-      std::vector<int64_t> indptr_shape({shape[1] + 1});
-      const int64_t indptr_minimum_bytes = indptr_shape[0] * indptr_byte_width;
-      if (indptr_minimum_bytes > indptr_buffer->length()) {
+      const auto indptr_length = AddWithOverflow<int64_t>({shape[1], 1});
+      if (!indptr_length.has_value()) {
+        return Status::Invalid("shape is inconsistent to the size of indptr buffer");
+      }
+      std::vector<int64_t> indptr_shape({indptr_length.value()});
+      const auto indptr_minimum_bytes =
+          MultiplyWithOverflow<int64_t>({indptr_shape[0], indptr_byte_width});
+      if (!indptr_minimum_bytes.has_value() ||
+          indptr_minimum_bytes.value() > indptr_buffer->length()) {
         return Status::Invalid("shape is inconsistent to the size of indptr buffer");
       }
       return std::make_shared<SparseCSCIndex>(
@@ -2372,6 +2426,7 @@ Result<std::shared_ptr<SparseIndex>> ReadSparseCSFIndex(
     io::RandomAccessFile* file) {
   auto* sparse_index = sparse_tensor->sparseIndex_as_SparseTensorIndexCSF();
   const auto ndim = static_cast<int64_t>(shape.size());
+  RETURN_NOT_OK(ValidateSparseCSFIndexMetadata(sparse_index, ndim));
   auto* indptr_buffers = sparse_index->indptrBuffers();
   auto* indices_buffers = sparse_index->indicesBuffers();
   std::vector<std::shared_ptr<Buffer>> indptr_data(ndim - 1);
@@ -2384,12 +2439,13 @@ Result<std::shared_ptr<SparseIndex>> ReadSparseCSFIndex(
       sparse_index, &axis_order, &indices_size, &indptr_type, &indices_type));
   for (int i = 0; i < static_cast<int>(indptr_buffers->size()); ++i) {
     ARROW_ASSIGN_OR_RAISE(indptr_data[i], file->ReadAt(indptr_buffers->Get(i)->offset(),
-                                                       indptr_buffers->Get(i)->length()));
+                                                       indptr_buffers->Get(i)->length(),
+                                                       /*allow_short_read=*/false));
   }
   for (int i = 0; i < static_cast<int>(indices_buffers->size()); ++i) {
-    ARROW_ASSIGN_OR_RAISE(indices_data[i],
-                          file->ReadAt(indices_buffers->Get(i)->offset(),
-                                       indices_buffers->Get(i)->length()));
+    ARROW_ASSIGN_OR_RAISE(indices_data[i], file->ReadAt(indices_buffers->Get(i)->offset(),
+                                                        indices_buffers->Get(i)->length(),
+                                                        /*allow_short_read=*/false));
   }
 
   return SparseCSFIndex::Make(indptr_type, indices_type, indices_size, axis_order,
@@ -2479,6 +2535,9 @@ Result<size_t> GetSparseTensorBodyBufferCount(SparseTensorFormat::type format_id
       return 3;
 
     case SparseTensorFormat::CSF:
+      if (ndim < 2) {
+        return Status::Invalid("Invalid shape length for a sparse CSF tensor");
+      }
       return 2 * ndim;
 
     default:
@@ -2574,9 +2633,11 @@ Result<std::shared_ptr<SparseTensor>> ReadSparseTensorPayload(const IpcPayload& 
       std::shared_ptr<DataType> indptr_type, indices_type;
       std::vector<int64_t> axis_order, indices_size;
 
+      auto fb_sparse_index = sparse_tensor->sparseIndex_as_SparseTensorIndexCSF();
+      RETURN_NOT_OK(ValidateSparseCSFIndexMetadata(fb_sparse_index,
+                                                   static_cast<int64_t>(shape.size())));
       RETURN_NOT_OK(internal::GetSparseCSFIndexMetadata(
-          sparse_tensor->sparseIndex_as_SparseTensorIndexCSF(), &axis_order,
-          &indices_size, &indptr_type, &indices_type));
+          fb_sparse_index, &axis_order, &indices_size, &indptr_type, &indices_type));
       ARROW_CHECK_EQ(indptr_type, indices_type);
 
       const int64_t ndim = shape.size();
@@ -2619,7 +2680,8 @@ Result<std::shared_ptr<SparseTensor>> ReadSparseTensor(const Buffer& metadata,
                                          &non_zero_length, &sparse_tensor_format_id,
                                          &sparse_tensor, &buffer));
 
-  ARROW_ASSIGN_OR_RAISE(auto data, file->ReadAt(buffer->offset(), buffer->length()));
+  ARROW_ASSIGN_OR_RAISE(auto data, file->ReadAt(buffer->offset(), buffer->length(),
+                                                /*allow_short_read=*/false));
 
   std::shared_ptr<SparseIndex> sparse_index;
   switch (sparse_tensor_format_id) {
@@ -2790,6 +2852,7 @@ Status FuzzIpcFile(const uint8_t* data, int64_t size) {
   struct IpcReadResult {
     std::shared_ptr<Schema> schema;
     std::vector<RecordBatchWithMetadata> batches = {};
+    ReadStats stats = {};
   };
 
   // Try to read the IPC file as a stream to compare the results (differential fuzzing)
@@ -2811,7 +2874,7 @@ Status FuzzIpcFile(const uint8_t* data, int64_t size) {
       RETURN_NOT_OK(ValidateFuzzBatch(batch));
       batches.push_back(batch);
     }
-    return IpcReadResult{batch_reader->schema(), batches};
+    return IpcReadResult{batch_reader->schema(), batches, batch_reader->stats()};
   };
 
   auto do_file_read = [&](bool pre_buffer) -> Result<IpcReadResult> {
@@ -2834,6 +2897,7 @@ Status FuzzIpcFile(const uint8_t* data, int64_t size) {
       result.batches.push_back(batch);
     }
     RETURN_NOT_OK(st);
+    result.stats = batch_reader->stats();
     return result;
   };
 
@@ -2858,7 +2922,7 @@ Status FuzzIpcFile(const uint8_t* data, int64_t size) {
     }
   }
 
-  if (maybe_read_result.has_value()) {
+  if (final_status.ok()) {
     // IPC file read successful: compare results with IPC stream reader,
     // if possible.
     // NOTE: some valid IPC files may not be readable as IPC streams,
@@ -2867,19 +2931,31 @@ Status FuzzIpcFile(const uint8_t* data, int64_t size) {
     auto maybe_stream_result = do_stream_read();
     final_status &= maybe_stream_result.status();
     if (maybe_stream_result.ok()) {
-      if (maybe_read_result->schema->Equals(maybe_stream_result->schema,
-                                            /*check_metadata=*/true)) {
-        // XXX: in some rare cases, an IPC file might read unequal to the enclosed
-        // IPC stream, for example if the footer skips some batches or orders the
-        // batches differently. We should revisit this if the fuzzer generates such
-        // files.
-        compare_result(*maybe_stream_result);
-      } else {
-        // The fuzzer might have mutated the schema definition that is duplicated
-        // in the IPC file footer, in which case the comparison above would fail.
+      if (!maybe_read_result->schema->Equals(maybe_stream_result->schema,
+                                             /*check_metadata=*/true)) {
+        // The fuzzer may have mutated the schema definition that is duplicated
+        // in the IPC file footer, in which case the comparison would fail.
         final_status &= Status::TypeError(
             "Schema mismatch between IPC stream and IPC file footer, skipping "
             "comparison");
+      } else if (maybe_read_result->batches.size() !=
+                 maybe_stream_result->batches.size()) {
+        // The footer of a fuzzer-mutated IPC file might have added or removed some
+        // batches that are physically present in the IPC stream. In this case we
+        // don't want to abort with a comparison failure.
+        // XXX There might be more elaborate cases where the fuzzer reorders
+        // batches in the IPC file without adding or removing any, which is going
+        // to be considerably more difficult to detect.
+        final_status &= Status::Invalid(
+            "Different number of batches between IPC stream and IPC file footer, "
+            "skipping comparison");
+      } else if (maybe_read_result->stats.original_endianness !=
+                 maybe_stream_result->stats.original_endianness) {
+        final_status &= Status::Invalid(
+            "Different endianness between IPC stream and IPC file footer, "
+            "skipping comparison");
+      } else {
+        compare_result(*maybe_stream_result);
       }
     }
   }
@@ -2906,8 +2982,12 @@ Status FuzzIpcTensorStream(const uint8_t* data, int64_t size) {
 Result<int64_t> IoRecordedRandomAccessFile::GetSize() { return file_size_; }
 
 Result<int64_t> IoRecordedRandomAccessFile::ReadAt(int64_t position, int64_t nbytes,
-                                                   void* out) {
+                                                   bool allow_short_read, void* out) {
   auto num_bytes_read = std::min(file_size_, position + nbytes) - position;
+  if (!allow_short_read && num_bytes_read != nbytes) {
+    return Status::IOError("File too short: expected to be able to read ", nbytes,
+                           " bytes, got ", num_bytes_read);
+  }
 
   if (!read_ranges_.empty() &&
       position == read_ranges_.back().offset + read_ranges_.back().length) {
@@ -2920,11 +3000,11 @@ Result<int64_t> IoRecordedRandomAccessFile::ReadAt(int64_t position, int64_t nby
   return num_bytes_read;
 }
 
-Result<std::shared_ptr<Buffer>> IoRecordedRandomAccessFile::ReadAt(int64_t position,
-                                                                   int64_t nbytes) {
-  std::shared_ptr<Buffer> out;
-  auto result = ReadAt(position, nbytes, &out);
-  return out;
+Result<std::shared_ptr<Buffer>> IoRecordedRandomAccessFile::ReadAt(
+    int64_t position, int64_t nbytes, bool allow_short_read) {
+  // We're not supposed to actually read anything, so pass a null output pointer.
+  RETURN_NOT_OK(ReadAt(position, nbytes, allow_short_read, /*out=*/nullptr));
+  return nullptr;
 }
 
 Status IoRecordedRandomAccessFile::Close() {
@@ -2951,6 +3031,7 @@ Result<int64_t> IoRecordedRandomAccessFile::Read(int64_t nbytes, void* out) {
 
 Result<std::shared_ptr<Buffer>> IoRecordedRandomAccessFile::Read(int64_t nbytes) {
   ARROW_ASSIGN_OR_RAISE(std::shared_ptr<Buffer> buffer, ReadAt(position_, nbytes));
+  // Cannot use buffer->size() since a null buffer is returned...
   auto num_bytes_read = std::min(file_size_, position_ + nbytes) - position_;
   position_ += num_bytes_read;
   return buffer;

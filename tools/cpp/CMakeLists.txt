@@ -96,7 +96,7 @@ if(POLICY CMP0170)
   cmake_policy(SET CMP0170 NEW)
 endif()
 
-set(ARROW_VERSION "24.0.0")
+set(ARROW_VERSION "25.0.0")
 
 string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" ARROW_BASE_VERSION "${ARROW_VERSION}")
 
@@ -174,7 +174,7 @@ set(ARROW_GDB_DIR "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/gdb")
 set(ARROW_FULL_GDB_DIR "${CMAKE_INSTALL_FULL_DATADIR}/${PROJECT_NAME}/gdb")
 set(ARROW_GDB_AUTO_LOAD_DIR "${CMAKE_INSTALL_DATADIR}/gdb/auto-load")
 set(ARROW_CMAKE_DIR "${CMAKE_INSTALL_LIBDIR}/cmake")
-set(ARROW_DOC_DIR "share/doc/${PROJECT_NAME}")
+set(ARROW_DOC_DIR "${CMAKE_INSTALL_DOCDIR}")
 
 set(BUILD_SUPPORT_DIR "${CMAKE_SOURCE_DIR}/build-support")
 
@@ -550,9 +550,6 @@ message(STATUS "CMAKE_CXX_FLAGS_${UPPERCASE_BUILD_TYPE}: ${CMAKE_CXX_FLAGS_${UPP
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 include_directories(src)
-
-# Compiled flatbuffers files
-include_directories(src/generated)
 
 #
 # Visibility

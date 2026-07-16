@@ -154,7 +154,7 @@ write_dataset <- function(
     if (inherits(dataset, "grouped_df")) {
       force(partitioning)
       # Drop the grouping metadata before writing; we've already consumed it
-      # now to construct `partitioning` and don't want it in the metadata$r
+      # now to construct `partitioning` and don't want it in the metadata[["r"]]
       dataset <- dplyr::ungroup(dataset)
     }
     dataset <- as_adq(dataset)
@@ -218,7 +218,12 @@ write_dataset <- function(
   existing_data_behavior_opts <- c("delete_matching", "overwrite", "error")
   existing_data_behavior <- match(match.arg(existing_data_behavior), existing_data_behavior_opts) - 1L
 
-  if (!missing(max_rows_per_file) && missing(max_rows_per_group) && max_rows_per_group > max_rows_per_file) {
+  if (
+    !missing(max_rows_per_file) &&
+      missing(max_rows_per_group) &&
+      max_rows_per_file > 0 &&
+      max_rows_per_group > max_rows_per_file
+  ) {
     max_rows_per_group <- max_rows_per_file
   }
 
@@ -290,7 +295,12 @@ write_delim_dataset <- function(
   quote = c("needed", "all", "none"),
   preserve_order = FALSE
 ) {
-  if (!missing(max_rows_per_file) && missing(max_rows_per_group) && max_rows_per_group > max_rows_per_file) {
+  if (
+    !missing(max_rows_per_file) &&
+      missing(max_rows_per_group) &&
+      max_rows_per_file > 0 &&
+      max_rows_per_group > max_rows_per_file
+  ) {
     max_rows_per_group <- max_rows_per_file
   }
 
@@ -343,7 +353,12 @@ write_csv_dataset <- function(
   quote = c("needed", "all", "none"),
   preserve_order = FALSE
 ) {
-  if (!missing(max_rows_per_file) && missing(max_rows_per_group) && max_rows_per_group > max_rows_per_file) {
+  if (
+    !missing(max_rows_per_file) &&
+      missing(max_rows_per_group) &&
+      max_rows_per_file > 0 &&
+      max_rows_per_group > max_rows_per_file
+  ) {
     max_rows_per_group <- max_rows_per_file
   }
 
@@ -395,7 +410,12 @@ write_tsv_dataset <- function(
   quote = c("needed", "all", "none"),
   preserve_order = FALSE
 ) {
-  if (!missing(max_rows_per_file) && missing(max_rows_per_group) && max_rows_per_group > max_rows_per_file) {
+  if (
+    !missing(max_rows_per_file) &&
+      missing(max_rows_per_group) &&
+      max_rows_per_file > 0 &&
+      max_rows_per_group > max_rows_per_file
+  ) {
     max_rows_per_group <- max_rows_per_file
   }
 

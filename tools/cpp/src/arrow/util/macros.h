@@ -75,7 +75,7 @@
 #if defined(__GNUC__)  // GCC and compatible compilers (clang, Intel ICC)
 #  define ARROW_NORETURN __attribute__((noreturn))
 #  define ARROW_NOINLINE __attribute__((noinline))
-#  define ARROW_FORCE_INLINE __attribute__((always_inline))
+#  define ARROW_FORCE_INLINE __attribute__((always_inline)) inline
 #  define ARROW_PREDICT_FALSE(x) (__builtin_expect(!!(x), 0))
 #  define ARROW_PREDICT_TRUE(x) (__builtin_expect(!!(x), 1))
 #  define ARROW_RESTRICT __restrict
@@ -152,13 +152,13 @@
 
 #ifdef __clang__
 #  define ARROW_SUPPRESS_DEPRECATION_WARNING \
-    _Pragma("clang diagnostic push");        \
-    _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
+    _Pragma("clang diagnostic push")         \
+        _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
 #  define ARROW_UNSUPPRESS_DEPRECATION_WARNING _Pragma("clang diagnostic pop")
 #elif defined(__GNUC__)
 #  define ARROW_SUPPRESS_DEPRECATION_WARNING \
-    _Pragma("GCC diagnostic push");          \
-    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+    _Pragma("GCC diagnostic push")           \
+        _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 #  define ARROW_UNSUPPRESS_DEPRECATION_WARNING _Pragma("GCC diagnostic pop")
 #elif defined(_MSC_VER)
 #  define ARROW_SUPPRESS_DEPRECATION_WARNING \
@@ -174,8 +174,8 @@
 // Macros to disable warnings about undeclared global functions
 #if defined(__GNUC__)
 #  define ARROW_SUPPRESS_MISSING_DECLARATIONS_WARNING \
-    _Pragma("GCC diagnostic push");                   \
-    _Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"")
+    _Pragma("GCC diagnostic push")                    \
+        _Pragma("GCC diagnostic ignored \"-Wmissing-declarations\"")
 #  define ARROW_UNSUPPRESS_MISSING_DECLARATIONS_WARNING _Pragma("GCC diagnostic pop")
 #else
 #  define ARROW_SUPPRESS_MISSING_DECLARATIONS_WARNING

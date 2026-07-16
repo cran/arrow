@@ -15,23 +15,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "parquet/page_index.h"
+#include <limits>
+#include <numeric>
+
+#include "arrow/io/interfaces.h"
+#include "arrow/util/int_util_overflow.h"
+#include "arrow/util/logging_internal.h"
+#include "arrow/util/unreachable.h"
+
 #include "parquet/encoding.h"
 #include "parquet/encryption/encryption_internal.h"
 #include "parquet/encryption/internal_file_decryptor.h"
 #include "parquet/encryption/internal_file_encryptor.h"
 #include "parquet/exception.h"
 #include "parquet/metadata.h"
+#include "parquet/page_index.h"
 #include "parquet/schema.h"
 #include "parquet/statistics.h"
 #include "parquet/thrift_internal.h"
-
-#include "arrow/util/int_util_overflow.h"
-#include "arrow/util/logging_internal.h"
-#include "arrow/util/unreachable.h"
-
-#include <limits>
-#include <numeric>
 
 namespace parquet {
 
@@ -334,9 +335,14 @@ class RowGroupPageIndexReaderImpl : public RowGroupPageIndexReader {
     }
 
     /// Page index location must be within the range of the read range.
+    int64_t index_end = 0;
+    int64_t range_end = 0;
     if (index_location.offset < index_read_range->offset ||
-        index_location.offset + index_location.length >
-            index_read_range->offset + index_read_range->length) {
+        ::arrow::internal::AddWithOverflow(index_location.offset, index_location.length,
+                                           &index_end) ||
+        ::arrow::internal::AddWithOverflow(index_read_range->offset,
+                                           index_read_range->length, &range_end) ||
+        index_end > range_end) {
       throw ParquetException("Page index location [offset:", index_location.offset,
                              ",length:", index_location.length,
                              "] is out of range from previous WillNeed request [offset:",
@@ -348,11 +354,8 @@ class RowGroupPageIndexReaderImpl : public RowGroupPageIndexReader {
 
   std::shared_ptr<Buffer> ReadIndexBuffer(int64_t offset, int64_t length,
                                           const char* offset_kind) {
-    PARQUET_ASSIGN_OR_THROW(auto buffer, input_->ReadAt(offset, length));
-    if (buffer->size() < length) {
-      throw ParquetException("Invalid or truncated ", offset_kind, ": attempted to read ",
-                             length, " bytes but got only ", buffer->size(), " bytes");
-    }
+    PARQUET_ASSIGN_OR_THROW(auto buffer,
+                            input_->ReadAt(offset, length, /*allow_short_read=*/false));
     return buffer;
   }
 
