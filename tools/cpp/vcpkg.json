@@ -1,6 +1,6 @@
 {
   "name": "arrow",
-  "version-string": "25.0.1",
+  "version-string": "26.0.0",
   "dependencies": [
     "abseil",
     {
@@ -48,9 +48,11 @@
     "protobuf",
     "rapidjson",
     "re2",
+    "simdjson",
     "snappy",
     "sqlite3",
     "thrift",
+    "uriparser",
     "utf8proc",
     "xsimd",
     "zlib",
